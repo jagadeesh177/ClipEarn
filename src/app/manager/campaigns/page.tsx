@@ -15,12 +15,16 @@ import {
   Eye,
   DollarSign,
   TrendingUp,
+  Trash2,
+  Loader2,
 } from "lucide-react";
 
 export default function ManagerCampaignsPage() {
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [campaignToDelete, setCampaignToDelete] = useState<any | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const loadCampaigns = () => {
     setLoading(true);
@@ -57,6 +61,27 @@ export default function ManagerCampaignsPage() {
       alert("Network error");
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const handleDeleteCampaign = async () => {
+    if (!campaignToDelete) return;
+    try {
+      setDeleting(true);
+      const res = await fetch(`/api/campaigns/${campaignToDelete.id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setCampaigns((prev) => prev.filter((c) => c.id !== campaignToDelete.id));
+        setCampaignToDelete(null);
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to delete campaign");
+      }
+    } catch {
+      alert("Network error deleting campaign");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -201,6 +226,15 @@ export default function ManagerCampaignsPage() {
                           >
                             <Download className="w-4 h-4" />
                           </a>
+
+                          {/* Delete Campaign */}
+                          <button
+                            onClick={() => setCampaignToDelete(camp)}
+                            title="Delete Campaign"
+                            className="p-2 rounded-lg bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 border border-slate-700/60 hover:border-red-500/40 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -211,6 +245,48 @@ export default function ManagerCampaignsPage() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {campaignToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-[#0F141F] border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <div className="flex items-center gap-3 text-red-400 mb-4">
+              <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/20">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">Delete Campaign?</h3>
+                <span className="text-xs text-slate-400 font-medium">This action cannot be undone.</span>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed bg-slate-900/60 border border-slate-800 p-3.5 rounded-xl mb-6">
+              Are you sure you want to delete <span className="text-white font-bold">{campaignToDelete.name}</span> ({campaignToDelete.brand_name})?
+              All associated creator memberships, submissions, and view snapshots will be permanently removed.
+            </p>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => setCampaignToDelete(null)}
+                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={handleDeleteCampaign}
+                className="px-5 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-xs transition-colors flex items-center gap-2 shadow-lg shadow-red-500/20"
+              >
+                {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                <span>{deleting ? "Deleting..." : "Permanently Delete"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

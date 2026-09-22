@@ -117,3 +117,39 @@ export async function PATCH(
     return NextResponse.json({ error: err?.message || "Failed to update campaign" }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const user = await requireRole([UserRole.MANAGER, UserRole.ADMIN]);
+
+    const campaign = await prisma.campaign.findUnique({
+      where: { id: params.id },
+    });
+
+    if (!campaign) {
+      return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
+    }
+
+    await prisma.campaign.delete({
+      where: { id: params.id },
+    });
+
+    await logAuditEvent({
+      actorId: user.id,
+      action: "CAMPAIGN_DELETED",
+      targetType: "CAMPAIGN",
+      targetId: params.id,
+      oldValue: { name: campaign.name, brand: campaign.brand_name },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: `Campaign "${campaign.name}" was deleted permanently.`,
+    });
+  } catch (err: any) {
+    return NextResponse.json({ error: err?.message || "Failed to delete campaign" }, { status: 500 });
+  }
+}
