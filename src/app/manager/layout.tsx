@@ -94,6 +94,14 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
         </button>
       </div>
 
+      {/* Backdrop for mobile drawer */}
+      {mobileMenuOpen && (
+        <div
+          onClick={() => setMobileMenuOpen(false)}
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-20 md:hidden"
+        />
+      )}
+
       {/* Manager Sidebar */}
       <aside
         className={`fixed md:sticky top-0 left-0 z-30 h-screen w-64 bg-[#0A0F1D] border-r border-slate-800/80 flex flex-col justify-between transition-transform duration-300 ${

@@ -449,7 +449,7 @@ export default function LandingPage() {
             <span>&copy; {new Date().getFullYear()} ClipEarn Inc. All rights reserved.</span>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
             <Link href="/clipper/guidelines" className="hover:text-slate-300">Guidelines</Link>
             <Link href="/manager/login" className="hover:text-slate-300">Manager Login</Link>
             <Link href="/login" className="hover:text-slate-300">Clipper Sign In</Link>
