@@ -45,9 +45,11 @@ export async function POST(request: Request) {
       redirectTo: user.role === UserRole.CLIPPER ? "/clipper/dashboard" : "/manager/dashboard",
     });
 
+    const isHttps = request.headers.get("x-forwarded-proto") === "https" || request.url.startsWith("https://");
+
     response.cookies.set(COOKIE_NAME, token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: isHttps,
       sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60,
       path: "/",

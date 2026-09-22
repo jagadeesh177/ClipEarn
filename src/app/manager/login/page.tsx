@@ -27,7 +27,7 @@ export default function ManagerLoginPage() {
       const data = await res.json();
 
       if (res.ok && data.redirectTo) {
-        router.push(data.redirectTo);
+        window.location.href = data.redirectTo;
       } else {
         setError(data.error || "Login failed");
         setLoading(false);
@@ -49,7 +49,7 @@ export default function ManagerLoginPage() {
       });
       const data = await res.json();
       if (res.ok && data.redirectTo) {
-        router.push(data.redirectTo);
+        window.location.href = data.redirectTo;
       } else {
         setError(data.error || "Quick login failed");
         setLoading(false);

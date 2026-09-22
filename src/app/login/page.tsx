@@ -32,7 +32,7 @@ function ClipperLoginContent() {
       });
       const data = await res.json();
       if (res.ok && data.redirectTo) {
-        router.push(data.redirectTo);
+        window.location.href = data.redirectTo;
       } else {
         setErrorMessage(data.error || "Demo login failed");
         setLoadingDemo(false);
