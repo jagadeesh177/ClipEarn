@@ -1,0 +1,368 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CLIPPER
+  MANAGER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
+}
+
+enum Platform {
+  INSTAGRAM
+  TIKTOK
+  YOUTUBE
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REVOKED
+  DISCONNECTED
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ENDED
+  CANCELLED
+}
+
+enum ViewEligibilityMode {
+  FROM_SUBMISSION
+  FROM_APPROVAL
+  LIFETIME
+}
+
+enum SubmissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAUSED
+  REMOVED
+}
+
+enum PayoutStatus {
+  PENDING
+  AVAILABLE
+  PROCESSING
+  PAID
+  FAILED
+}
+
+enum ReferralStatus {
+  PENDING
+  QUALIFIED
+}
+
+enum FraudSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum FraudStatus {
+  OPEN
+  INVESTIGATING
+  RESOLVED
+  DISMISSED
+}
+
+model User {
+  id                    String                @id @default(uuid())
+  discord_id            String?               @unique
+  username              String
+  email                 String?               @unique
+  password_hash         String?
+  avatar_url            String?
+  role                  UserRole              @default(CLIPPER)
+  status                UserStatus            @default(ACTIVE)
+  referral_code         String                @unique
+  referred_by_id        String?
+  created_at            DateTime              @default(now())
+  updated_at            DateTime              @updatedAt
+  last_login_at         DateTime?
+
+  // Relations
+  referred_by           User?                 @relation("UserReferrals", fields: [referred_by_id], references: [id])
+  referrals_made        User[]                @relation("UserReferrals")
+  referral_records_as_referrer Referral[]     @relation("ReferrerRel")
+  referral_record_as_referred  Referral?      @relation("ReferredRel")
+  
+  social_accounts       SocialAccount[]
+  campaign_memberships  CampaignMembership[]
+  submissions           Submission[]
+  earnings_ledger       EarningsLedger[]
+  payouts               Payout[]
+  notifications         Notification[]
+  audit_logs            AuditLog[]
+  fraud_flags           FraudFlag[]
+  campaigns_created     Campaign[]            @relation("CampaignsCreated")
+  submissions_reviewed  Submission[]          @relation("ReviewedBy")
+
+  @@index([discord_id])
+  @@index([role])
+  @@index([status])
+  @@map("users")
+}
+
+model SocialAccount {
+  id                      String              @id @default(uuid())
+  user_id                 String
+  platform                Platform
+  platform_user_id        String
+  username                String
+  profile_url             String?
+  verification_code       String?
+  verification_status     VerificationStatus  @default(PENDING)
+  verification_method     String              @default("BIO_CODE")
+  access_token_encrypted  String?
+  refresh_token_encrypted String?
+  token_expires_at        DateTime?
+  verified_at             DateTime?
+  created_at              DateTime            @default(now())
+  updated_at              DateTime            @updatedAt
+
+  user                    User                @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  submissions             Submission[]
+
+  @@unique([platform, platform_user_id])
+  @@index([user_id])
+  @@index([platform])
+  @@index([verification_status])
+  @@map("social_accounts")
+}
+
+model Campaign {
+  id                        String              @id @default(uuid())
+  name                      String
+  brand_name                String
+  description               String              @db.Text
+  image_url                 String?
+  status                    CampaignStatus      @default(ACTIVE)
+  start_date                DateTime            @default(now())
+  end_date                  DateTime?
+  cpm                       Decimal             @default(1.00) @db.Decimal(10, 2)
+  total_budget              Decimal             @default(10000.00) @db.Decimal(12, 2)
+  used_budget               Decimal             @default(0.00) @db.Decimal(12, 2)
+  minimum_views_for_payout  Int                 @default(100000)
+  maximum_views_per_clip    Int?
+  allowed_platforms         Platform[]
+  requirements              Json?
+  prohibited_content        Json?
+  view_eligibility_mode     ViewEligibilityMode @default(FROM_SUBMISSION)
+  created_by                String
+  created_at                DateTime            @default(now())
+  updated_at                DateTime            @updatedAt
+
+  creator                   User                @relation("CampaignsCreated", fields: [created_by], references: [id])
+  memberships               CampaignMembership[]
+  submissions               Submission[]
+  earnings_ledger           EarningsLedger[]
+
+  @@index([status])
+  @@index([created_by])
+  @@map("campaigns")
+}
+
+model CampaignMembership {
+  id            String    @id @default(uuid())
+  campaign_id   String
+  user_id       String
+  status        String    @default("ACTIVE")
+  joined_at     DateTime  @default(now())
+
+  campaign      Campaign  @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
+  user          User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([campaign_id, user_id])
+  @@index([user_id])
+  @@index([campaign_id])
+  @@map("campaign_memberships")
+}
+
+model Submission {
+  id                    String            @id @default(uuid())
+  campaign_id           String
+  user_id               String
+  social_account_id     String
+  platform              Platform
+  post_url              String            @db.Text
+  platform_post_id      String
+  status                SubmissionStatus  @default(PENDING)
+  submitted_at          DateTime          @default(now())
+  reviewed_at           DateTime?
+  reviewed_by           String?
+  rejection_reason      String?           @db.Text
+  current_views         Int               @default(0)
+  eligible_views        Int               @default(0)
+  paid_views            Int               @default(0)
+  current_earnings      Decimal           @default(0.00) @db.Decimal(12, 2)
+  last_view_update      DateTime?
+  last_sync_status      String?
+  last_sync_error       String?           @db.Text
+  last_successful_sync  DateTime?
+  created_at            DateTime          @default(now())
+  updated_at            DateTime          @updatedAt
+
+  campaign              Campaign          @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
+  user                  User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  social_account        SocialAccount     @relation(fields: [social_account_id], references: [id], onDelete: Restrict)
+  reviewer              User?             @relation("ReviewedBy", fields: [reviewed_by], references: [id])
+  
+  view_snapshots        ViewSnapshot[]
+  earnings_ledger       EarningsLedger[]
+  fraud_flags           FraudFlag[]
+
+  @@unique([campaign_id, platform, platform_post_id])
+  @@index([campaign_id])
+  @@index([user_id])
+  @@index([social_account_id])
+  @@index([status])
+  @@index([platform_post_id])
+  @@map("submissions")
+}
+
+model ViewSnapshot {
+  id            String      @id @default(uuid())
+  submission_id String
+  views         Int
+  captured_at   DateTime    @default(now())
+  source        String      @default("PLATFORM_API")
+
+  submission    Submission  @relation(fields: [submission_id], references: [id], onDelete: Cascade)
+
+  @@index([submission_id])
+  @@index([captured_at])
+  @@map("view_snapshots")
+}
+
+model EarningsLedger {
+  id              String      @id @default(uuid())
+  user_id         String
+  campaign_id     String
+  submission_id   String
+  event_type      String      @default("VIEW_SYNC")
+  views           Int
+  rate_per_1000   Decimal     @db.Decimal(10, 2)
+  amount          Decimal     @db.Decimal(12, 4)
+  created_at      DateTime    @default(now())
+
+  user            User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  campaign        Campaign    @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
+  submission      Submission  @relation(fields: [submission_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([campaign_id])
+  @@index([submission_id])
+  @@index([created_at])
+  @@map("earnings_ledger")
+}
+
+model Payout {
+  id              String        @id @default(uuid())
+  user_id         String
+  amount          Decimal       @db.Decimal(12, 2)
+  currency        String        @default("USD")
+  method          String        @default("PAYPAL")
+  account_details Json?
+  status          PayoutStatus  @default(PENDING)
+  transaction_id  String?
+  requested_at    DateTime      @default(now())
+  processed_at    DateTime?
+  failure_reason  String?       @db.Text
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt
+
+  user            User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([status])
+  @@map("payouts")
+}
+
+model Notification {
+  id          String    @id @default(uuid())
+  user_id     String
+  type        String
+  title       String
+  message     String    @db.Text
+  read_at     DateTime?
+  created_at  DateTime  @default(now())
+
+  user        User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([read_at])
+  @@map("notifications")
+}
+
+model AuditLog {
+  id          String    @id @default(uuid())
+  actor_id    String?
+  action      String
+  target_type String
+  target_id   String?
+  old_value   Json?
+  new_value   Json?
+  ip_address  String?
+  created_at  DateTime  @default(now())
+
+  actor       User?     @relation(fields: [actor_id], references: [id], onDelete: SetNull)
+
+  @@index([actor_id])
+  @@index([action])
+  @@index([created_at])
+  @@map("audit_logs")
+}
+
+model Referral {
+  id                String          @id @default(uuid())
+  referrer_id       String
+  referred_user_id  String          @unique
+  referral_code     String
+  status            ReferralStatus  @default(PENDING)
+  created_at        DateTime        @default(now())
+  qualified_at      DateTime?
+
+  referrer          User            @relation("ReferrerRel", fields: [referrer_id], references: [id], onDelete: Cascade)
+  referred_user     User            @relation("ReferredRel", fields: [referred_user_id], references: [id], onDelete: Cascade)
+
+  @@index([referrer_id])
+  @@index([referral_code])
+  @@map("referrals")
+}
+
+model FraudFlag {
+  id            String        @id @default(uuid())
+  user_id       String?
+  submission_id String?
+  type          String
+  severity      FraudSeverity @default(MEDIUM)
+  description   String        @db.Text
+  status        FraudStatus   @default(OPEN)
+  created_at    DateTime      @default(now())
+  resolved_at   DateTime?
+  resolved_by   String?
+
+  user          User?         @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  submission    Submission?   @relation(fields: [submission_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id])
+  @@index([submission_id])
+  @@index([status])
+  @@map("fraud_flags")
+}
