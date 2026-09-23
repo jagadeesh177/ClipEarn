@@ -498,31 +498,31 @@ export default function CampaignDetailsPage() {
                           </span>
 
                           {sub.status === "APPROVED" && (
-                            <span className="px-2.5 py-0.5 rounded-full bg-brand-cyan/15 text-brand-cyan border border-brand-cyan/30 text-[11px] font-bold">
-                              approved
+                            <span className="px-2.5 py-1 rounded-full bg-brand-cyan/15 text-brand-cyan border border-brand-cyan/30 text-xs font-semibold">
+                              Approved
                             </span>
                           )}
 
                           {sub.status === "PENDING" && (
-                            <span className="px-2.5 py-0.5 rounded-full bg-yellow-500/15 text-yellow-400 border border-yellow-500/30 text-[11px] font-bold">
-                              pending
+                            <span className="px-2.5 py-1 rounded-full bg-yellow-500/15 text-yellow-400 border border-yellow-500/30 text-xs font-semibold">
+                              Pending
                             </span>
                           )}
 
                           {sub.status === "APPEALED" && (
-                            <span className="px-2.5 py-0.5 rounded-full bg-purple-500/15 text-purple-400 border border-purple-500/30 text-[11px] font-bold">
-                              appealed
+                            <span className="px-2.5 py-1 rounded-full bg-purple-500/15 text-purple-400 border border-purple-500/30 text-xs font-semibold">
+                              Appealed
                             </span>
                           )}
 
                           {sub.status === "REJECTED" && (
                             <div className="flex items-center gap-2">
-                              <span className="px-2.5 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 text-[11px] font-bold">
-                                rejected
+                              <span className="px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 text-xs font-semibold">
+                                Rejected
                               </span>
                               <button
                                 onClick={() => handleOpenAppeal(sub)}
-                                className="px-2.5 py-1 rounded-lg border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors"
+                                className="px-3 py-1.5 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs font-semibold transition-colors"
                               >
                                 Appeal
                               </button>
@@ -543,28 +543,28 @@ export default function CampaignDetailsPage() {
                   <div className="text-2xl sm:text-3xl font-black text-white">
                     {myStats?.totalViews?.toLocaleString() || 0}
                   </div>
-                  <div className="text-[11px] font-semibold text-slate-400">Total Views</div>
+                  <div className="text-xs font-medium text-slate-400">Total Views</div>
                 </div>
 
                 <div className="p-6 rounded-2xl bg-[#0D131D] border border-slate-800/80 text-center space-y-1">
                   <div className="text-2xl sm:text-3xl font-black text-brand-cyan">
                     ${(myStats?.totalEarnings || 0).toFixed(2)}
                   </div>
-                  <div className="text-[11px] font-semibold text-slate-400">Total Earnings</div>
+                  <div className="text-xs font-medium text-slate-400">Total Earnings</div>
                 </div>
 
                 <div className="p-6 rounded-2xl bg-[#0D131D] border border-slate-800/80 text-center space-y-1">
                   <div className="text-2xl sm:text-3xl font-black text-white">
                     {myStats?.clipsSubmitted || mySubmissions.length}
                   </div>
-                  <div className="text-[11px] font-semibold text-slate-400">Clips Submitted</div>
+                  <div className="text-xs font-medium text-slate-400">Clips Submitted</div>
                 </div>
 
                 <div className="p-6 rounded-2xl bg-[#0D131D] border border-slate-800/80 text-center space-y-1">
                   <div className="text-2xl sm:text-3xl font-black text-brand-cyan">
                     {myStats?.approvedClips || mySubmissions.filter((s) => s.status === "APPROVED").length}
                   </div>
-                  <div className="text-[11px] font-semibold text-slate-400">Approved</div>
+                  <div className="text-xs font-medium text-slate-400">Approved</div>
                 </div>
 
                 {/* Payout Eligibility Status Card */}
@@ -579,12 +579,12 @@ export default function CampaignDetailsPage() {
                           <div className="text-xs sm:text-sm font-bold text-white">
                             You&apos;re eligible for payout
                           </div>
-                          <div className="text-[11px] text-emerald-400/90 font-medium">
+                          <div className="text-xs text-emerald-400/90 font-medium">
                             Threshold reached • Your approved views are earning payouts
                           </div>
                         </div>
                       </div>
-                      <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-bold text-[10px] uppercase tracking-wider shrink-0 border border-emerald-500/40">
+                      <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-bold text-xs shrink-0 border border-emerald-500/40">
                         Eligible
                       </span>
                     </div>
@@ -602,7 +602,7 @@ export default function CampaignDetailsPage() {
                           style={{ width: `${myStats.progressPercent || 0}%` }}
                         />
                       </div>
-                      <div className="flex justify-between items-center text-[11px] text-slate-500">
+                      <div className="flex justify-between items-center text-xs text-slate-400">
                         <span>{myStats.payoutFractionText}</span>
                         <span>{myStats.progressPercent || 0}% complete</span>
                       </div>
@@ -622,13 +622,13 @@ export default function CampaignDetailsPage() {
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
-                      <thead className="bg-[#080C14] text-[11px] text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                      <thead className="bg-[#080C14] text-xs font-semibold text-slate-400 border-b border-slate-800">
                         <tr>
                           <th className="py-3 px-4 w-12">#</th>
-                          <th className="py-3 px-4">CLIPPER</th>
-                          <th className="py-3 px-4 text-right">VIEWS</th>
-                          <th className="py-3 px-4 text-right">CLIPS</th>
-                          <th className="py-3 px-4 text-right">EARNINGS</th>
+                          <th className="py-3 px-4">Clipper</th>
+                          <th className="py-3 px-4 text-right">Views</th>
+                          <th className="py-3 px-4 text-right">Clips</th>
+                          <th className="py-3 px-4 text-right">Earnings</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-800/60 font-medium">
@@ -856,16 +856,16 @@ export default function CampaignDetailsPage() {
                 <button
                   type="button"
                   onClick={() => setAppealModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition-colors"
+                  className="px-4 py-2.5 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white font-semibold text-xs transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingAppeal}
-                  className="px-5 py-2.5 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-bold text-xs transition-all shadow-md shadow-cyan-500/20 flex items-center gap-2"
+                  className="px-5 py-2.5 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-bold text-xs transition-all disabled:opacity-50 shadow-md shadow-cyan-500/20 flex items-center gap-2"
                 >
-                  {submittingAppeal ? <Loader2 className="w-4 h-4 animate-spin text-slate-950" /> : <Send className="w-4 h-4" />}
+                  {submittingAppeal ? <Loader2 className="w-4 h-4 animate-spin text-slate-950" /> : <Send className="w-4 h-4 text-slate-950" />}
                   <span>{submittingAppeal ? "Submitting..." : "Submit Appeal"}</span>
                 </button>
               </div>

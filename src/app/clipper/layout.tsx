@@ -290,8 +290,8 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
               <div className="text-xs font-bold text-white truncate">
                 {user?.username || "Anya"}
               </div>
-              <span className="inline-block px-1.5 py-0.5 rounded bg-brand-cyan/15 border border-brand-cyan/30 text-[9px] font-bold text-brand-cyan uppercase tracking-wider">
-                CLIPPER
+              <span className="inline-block px-2 py-0.5 rounded-full bg-brand-cyan/15 border border-brand-cyan/30 text-xs font-semibold text-brand-cyan">
+                Clipper
               </span>
             </div>
           </div>
@@ -315,10 +315,11 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
         {children}
       </main>
 
-      {/* Floating "Need help?" Button in Brand Cyan */}
-      <div className="fixed bottom-6 right-6 z-40">
+      {/* Floating "Need help?" Button in Brand Cyan cleanly docked bottom-right */}
+      <div className="fixed bottom-6 right-6 z-50">
         <button
           onClick={() => setHelpOpen(true)}
+          aria-label="Open help and support dialog"
           className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-bold text-xs sm:text-sm shadow-xl shadow-cyan-500/25 transition-all hover:scale-105 active:scale-95"
         >
           <MessageCircle className="w-4 h-4 fill-slate-950" />
@@ -337,12 +338,13 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-white">ClipEarn Support</h3>
-                  <p className="text-xs text-slate-400">Get assistance from managers & community</p>
+                  <p className="text-xs text-slate-400">Get assistance from managers &amp; community</p>
                 </div>
               </div>
               <button
                 onClick={() => setHelpOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                aria-label="Close help dialog"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -363,8 +365,8 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
                     <span className="font-bold text-white block group-hover:text-brand-cyan">
                       Join Clipper Discord
                     </span>
-                    <span className="text-[11px] text-slate-400">
-                      Live 24/7 staff support & clipping tips
+                    <span className="text-xs text-slate-400">
+                      Live 24/7 staff support &amp; clipping tips
                     </span>
                   </div>
                 </div>
@@ -382,9 +384,9 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
                   </div>
                   <div>
                     <span className="font-bold text-white block group-hover:text-brand-cyan">
-                      Clipping Guidelines & Rules
+                      Clipping Guidelines &amp; Rules
                     </span>
-                    <span className="text-[11px] text-slate-400">
+                    <span className="text-xs text-slate-400">
                       Pacing, hashtags, and view eligibility
                     </span>
                   </div>
@@ -395,8 +397,9 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
 
             <div className="mt-5 pt-3 border-t border-slate-800 text-center">
               <button
+                type="button"
                 onClick={() => setHelpOpen(false)}
-                className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs"
+                className="w-full py-2.5 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-200 font-semibold text-xs transition-colors"
               >
                 Close
               </button>
