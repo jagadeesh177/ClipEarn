@@ -26,6 +26,101 @@ export default function ManagerCampaignsPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [campaignToDelete, setCampaignToDelete] = useState<any | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [editingCampaign, setEditingCampaign] = useState<any | null>(null);
+  const [editForm, setEditForm] = useState<{
+    cpm: string;
+    total_budget: string;
+    allowed_platforms: string[];
+    status: string;
+  }>({
+    cpm: "1.00",
+    total_budget: "10000",
+    allowed_platforms: ["TIKTOK", "INSTAGRAM", "YOUTUBE"],
+    status: "ACTIVE",
+  });
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const handleOpenEdit = (camp: any) => {
+    setEditingCampaign(camp);
+    setEditForm({
+      cpm: String(camp.cpm || "1.00"),
+      total_budget: String(camp.total_budget || "10000"),
+      allowed_platforms:
+        Array.isArray(camp.allowed_platforms) && camp.allowed_platforms.length > 0
+          ? camp.allowed_platforms
+          : ["TIKTOK", "INSTAGRAM", "YOUTUBE"],
+      status: camp.status || "ACTIVE",
+    });
+  };
+
+  const togglePlatform = (plat: string) => {
+    setEditForm((prev) => {
+      const exists = prev.allowed_platforms.includes(plat);
+      if (exists) {
+        if (prev.allowed_platforms.length === 1) {
+          alert("A campaign must allow at least one platform.");
+          return prev;
+        }
+        return { ...prev, allowed_platforms: prev.allowed_platforms.filter((p) => p !== plat) };
+      } else {
+        return { ...prev, allowed_platforms: [...prev.allowed_platforms, plat] };
+      }
+    });
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCampaign) return;
+    const cpmNum = parseFloat(editForm.cpm);
+    const budgetNum = parseFloat(editForm.total_budget);
+
+    if (isNaN(cpmNum) || cpmNum <= 0) {
+      alert("Please enter a valid CPM rate (e.g. 1.50).");
+      return;
+    }
+    if (isNaN(budgetNum) || budgetNum <= 0) {
+      alert("Please enter a valid budget amount (e.g. 15000).");
+      return;
+    }
+
+    try {
+      setSavingEdit(true);
+      const res = await fetch(`/api/campaigns/${editingCampaign.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cpm: cpmNum,
+          total_budget: budgetNum,
+          allowed_platforms: editForm.allowed_platforms,
+          status: editForm.status,
+        }),
+      });
+
+      if (res.ok) {
+        setCampaigns((prev) =>
+          prev.map((c) =>
+            c.id === editingCampaign.id
+              ? {
+                  ...c,
+                  cpm: cpmNum,
+                  total_budget: budgetNum,
+                  allowed_platforms: editForm.allowed_platforms,
+                  status: editForm.status,
+                }
+              : c
+          )
+        );
+        setEditingCampaign(null);
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to update campaign parameters");
+      }
+    } catch {
+      alert("Network error updating campaign parameters");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
 
   const loadCampaigns = () => {
     setLoading(true);
@@ -221,6 +316,17 @@ export default function ManagerCampaignsPage() {
 
                       <td className="py-4 text-right">
                         <div className="flex items-center justify-end gap-2.5 sm:gap-3">
+                          {/* Edit Parameters (CPM, Budget, Platforms) */}
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEdit(camp)}
+                            title="Edit Campaign Parameters (CPM, Budget, Platforms)"
+                            aria-label={`Edit Parameters for ${camp.name}`}
+                            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-800/90 hover:bg-brand-cyan/20 text-slate-300 hover:text-brand-cyan border border-slate-700/60 hover:border-brand-cyan/40 transition-colors flex items-center justify-center shrink-0"
+                          >
+                            <Edit className="w-4 h-4 text-brand-cyan" />
+                          </button>
+
                           {/* Toggle pause/resume */}
                           <button
                             type="button"
@@ -273,6 +379,174 @@ export default function ManagerCampaignsPage() {
           </div>
         )}
       </div>
+
+      {/* Edit Campaign Modal */}
+      {editingCampaign && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-[#0F141F] border border-slate-800 rounded-2xl max-w-lg w-full p-6 sm:p-7 shadow-2xl relative">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800/80 mb-5">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-brand-cyan/10 border border-brand-cyan/20 text-brand-cyan">
+                  <Edit className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Edit Campaign Parameters</h3>
+                  <span className="text-xs text-brand-emerald font-semibold">
+                    {editingCampaign.brand_name} • {editingCampaign.name}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setEditingCampaign(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-5 text-xs">
+              {/* CPM Rate */}
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1.5">
+                  Cost Per 1,000 Views (CPM Rate in USD)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 font-bold">$</span>
+                  <input
+                    type="number"
+                    step="0.05"
+                    min="0.10"
+                    required
+                    value={editForm.cpm}
+                    onChange={(e) => setEditForm({ ...editForm, cpm: e.target.value })}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-8 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-cyan"
+                    placeholder="1.00"
+                  />
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Rate paid to creators per 1,000 verified views. Changing this immediately updates payout calculations for future view syncs.
+                </p>
+              </div>
+
+              {/* Total Budget */}
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1.5">
+                  Total Campaign Budget (USD)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 font-bold">$</span>
+                  <input
+                    type="number"
+                    step="100"
+                    min={editingCampaign.used_budget || 0}
+                    required
+                    value={editForm.total_budget}
+                    onChange={(e) => setEditForm({ ...editForm, total_budget: e.target.value })}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-8 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-cyan"
+                    placeholder="10000"
+                  />
+                </div>
+                <div className="flex justify-between items-center text-[11px] text-slate-500 mt-1">
+                  <span>Contracted brand sponsor budget pool.</span>
+                  <span className="text-brand-cyan font-medium">
+                    Accrued spend: ${(Number(editingCampaign.used_budget) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+              </div>
+
+              {/* Allowed Platforms */}
+              <div>
+                <label className="block text-slate-300 font-semibold mb-2">
+                  Allowed Clipping Platforms (Click to enable / disable)
+                </label>
+                <div className="grid grid-cols-3 gap-2.5">
+                  {[
+                    { id: "TIKTOK", label: "TikTok", activeBg: "bg-cyan-500/20 text-cyan-300 border-cyan-500/40" },
+                    { id: "INSTAGRAM", label: "Instagram", activeBg: "bg-pink-500/20 text-pink-300 border-pink-500/40" },
+                    { id: "YOUTUBE", label: "YouTube", activeBg: "bg-red-500/20 text-red-300 border-red-500/40" },
+                  ].map((p) => {
+                    const isSelected = editForm.allowed_platforms.includes(p.id);
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => togglePlatform(p.id)}
+                        className={`py-2.5 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                          isSelected
+                            ? p.activeBg
+                            : "bg-slate-900/80 text-slate-500 border-slate-800 hover:text-slate-300"
+                        }`}
+                      >
+                        <span>{p.label}</span>
+                        {isSelected ? <CheckCircle2 className="w-3.5 h-3.5" /> : null}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1.5">
+                  Creators can only submit clip links from the selected platforms above.
+                </p>
+              </div>
+
+              {/* Status */}
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1.5">
+                  Campaign Operational Status
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setEditForm({ ...editForm, status: "ACTIVE" })}
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                      editForm.status === "ACTIVE"
+                        ? "bg-brand-emerald/20 text-brand-emerald border-brand-emerald/40"
+                        : "bg-slate-900 text-slate-400 border-slate-800 hover:text-white"
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-brand-emerald" />
+                    <span>Active (Accepting clips)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setEditForm({ ...editForm, status: "PAUSED" })}
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                      editForm.status === "PAUSED"
+                        ? "bg-yellow-400/20 text-yellow-400 border-yellow-400/40"
+                        : "bg-slate-900 text-slate-400 border-slate-800 hover:text-white"
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-yellow-400" />
+                    <span>Paused (Submissions paused)</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+                <button
+                  type="button"
+                  disabled={savingEdit}
+                  onClick={() => setEditingCampaign(null)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingEdit}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand-cyan to-brand-emerald text-black font-bold text-xs transition-all hover:opacity-90 flex items-center gap-2 shadow-lg shadow-brand-cyan/20"
+                >
+                  {savingEdit ? <Loader2 className="w-4 h-4 animate-spin text-black" /> : null}
+                  <span>{savingEdit ? "Saving..." : "Save Parameters"}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       {campaignToDelete && (
