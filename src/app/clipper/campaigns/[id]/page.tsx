@@ -275,13 +275,13 @@ export default function CampaignDetailsPage() {
         <div className="text-xs text-slate-400 space-y-1">
           {campaign.brand_name && campaign.brand_name.trim().toLowerCase() !== campaign.name.trim().toLowerCase() ? (
             <p className="font-semibold text-slate-300">Brand: {campaign.brand_name}</p>
-          ) : (
-            <p className="text-slate-400 font-medium">Verified Campaign</p>
-          )}
+          ) : null}
           <p className="text-slate-400">
-            {campaign.description && campaign.description.trim().toLowerCase() !== campaign.name.trim().toLowerCase()
+            {campaign.description &&
+            campaign.description.trim().toLowerCase() !== campaign.name.trim().toLowerCase() &&
+            (!campaign.brand_name || campaign.description.trim().toLowerCase() !== campaign.brand_name.trim().toLowerCase())
               ? campaign.description
-              : `Clip content & earn $${Number(campaign.cpm).toFixed(2)} per 1,000 views.`}
+              : `Create and post engaging short-form clips to earn $${Number(campaign.cpm).toFixed(2)} per 1,000 views.`}
           </p>
         </div>
 
