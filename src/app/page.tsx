@@ -31,7 +31,7 @@ export default function LandingPage() {
       cpm: "$1.00",
       budget: "$10,000",
       used: "$122.02",
-      views: "363,523 / 10M",
+      views: "363,523 / 10m views",
       platforms: ["Instagram", "TikTok", "YouTube"],
       image: "https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=600",
     },
@@ -41,7 +41,7 @@ export default function LandingPage() {
       cpm: "$1.50",
       budget: "$15,000",
       used: "$3,450.00",
-      views: "2,300,000 / 10M",
+      views: "2,300,000 / 10m views",
       platforms: ["TikTok", "Instagram"],
       image: "https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600",
     },
@@ -51,13 +51,21 @@ export default function LandingPage() {
       cpm: "$2.00",
       budget: "$25,000",
       used: "$8,940.00",
-      views: "4,470,000 / 12.5M",
+      views: "4,470,000 / 12.5m views",
       platforms: ["YouTube", "TikTok", "Instagram"],
       image: "https://images.unsplash.com/photo-1621416894569-0f39ed31d247?w=600",
     },
   ];
 
   const faqs = [
+    {
+      q: "What is ClipEarn?",
+      a: "ClipEarn is a platform where clippers earn money by creating and posting clips for active campaigns.",
+    },
+    {
+      q: "When do I get paid?",
+      a: "Earnings are calculated based on the campaign's payout rate and your eligible views. You'll get paid once campaign reach Goal Views.",
+    },
     {
       q: "How does ClipEarn calculate my earnings?",
       a: "Every campaign specifies a CPM (cost per 1,000 views), such as $1.00 or $2.00 CPM. Once a campaign manager approves your clip, our automated view sync engine captures historical snapshots every 8 hours and calculates your payable earnings straight into an immutable ledger.",
@@ -71,10 +79,6 @@ export default function LandingPage() {
       a: "When you connect an account, ClipEarn generates a unique verification code (e.g. clipearn-81fa2b). You simply paste this code into your profile bio on that platform, wait ~20 seconds, and click Verify. This ensures clippers only submit content from channels they genuinely own.",
     },
     {
-      q: "When can I request a payout?",
-      a: "As soon as your approved views hit the campaign threshold (e.g. 100,000 approved views), your earnings unlock for instant payout requests via PayPal, Bank Transfer, Wise, or Crypto.",
-    },
-    {
       q: "Can brands launch custom clipping campaigns?",
       a: "Yes! Brands partner with ClipEarn to syndicate content through thousands of talented clippers, setting custom budgets, CPM rates, hashtag requirements, and brand safety guidelines.",
     },
@@ -83,7 +87,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#070A0F] text-slate-100 flex flex-col selection:bg-brand-cyan/20 selection:text-brand-cyan">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#070A0F]/80 border-b border-slate-800/80">
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#070A0F]/90 border-b border-slate-800/80 w-full">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <ClipEarnLogo size="md" href="/" />
@@ -95,10 +99,10 @@ export default function LandingPage() {
             </nav>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4 sm:gap-6">
             <Link
               href="/manager/login"
-              className="text-xs sm:text-sm font-medium text-slate-400 hover:text-white px-3 py-1.5 rounded-lg border border-slate-800 hover:border-slate-700 transition-colors"
+              className="text-xs sm:text-sm font-semibold text-slate-200 hover:text-white px-4 py-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 hover:border-slate-500 transition-all shadow-sm flex items-center gap-1.5"
             >
               Manager Portal
             </Link>
@@ -150,7 +154,7 @@ export default function LandingPage() {
 
             <button
               onClick={() => setBrandModalOpen(true)}
-              className="w-full sm:w-auto px-8 py-4 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-white font-semibold text-base transition-colors flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-8 py-4 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-600 hover:border-slate-500 text-white font-bold text-base transition-all flex items-center justify-center gap-2 shadow-sm"
             >
               For Brands & Advertisers
             </button>
@@ -179,7 +183,7 @@ export default function LandingPage() {
       </section>
 
       {/* How Clipping Works */}
-      <section id="how-it-works" className="py-24 bg-[#0A0F1D]/60 border-y border-slate-800/80">
+      <section id="how-it-works" className="py-24 bg-[#0A0F1D]/60 border-y border-slate-800/80 scroll-mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <p className="text-xs font-bold text-brand-cyan uppercase tracking-widest">Workflow</p>
@@ -236,7 +240,7 @@ export default function LandingPage() {
       </section>
 
       {/* Featured Campaigns Section */}
-      <section id="campaigns" className="py-24">
+      <section id="campaigns" className="py-24 scroll-mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <p className="text-xs font-bold text-brand-cyan uppercase tracking-widest">Active Budgets</p>
@@ -315,7 +319,7 @@ export default function LandingPage() {
       </section>
 
       {/* For Brands Section */}
-      <section id="brands" className="py-24 bg-[#0A0F1D]/80 border-t border-slate-800">
+      <section id="brands" className="py-24 bg-[#0A0F1D]/80 border-t border-slate-800 scroll-mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
@@ -365,39 +369,46 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="p-6 sm:p-8 rounded-2xl bg-[#0F141F] border border-slate-800 shadow-glow">
-              <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                <Flame className="w-5 h-5 text-brand-cyan" />
-                Live Campaign Performance Example
-              </h3>
+            <div className="p-6 sm:p-8 rounded-2xl bg-[#0B0F17] border border-slate-800 shadow-xl relative overflow-hidden">
+              <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-800/80">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-slate-700" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-slate-700" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-slate-700" />
+                  <span className="text-[11px] font-mono text-slate-400 ml-2">Campaign Console • Steve Wynn Media</span>
+                </div>
+                <div className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#1cf7fd]/10 text-[#1cf7fd] border border-[#1cf7fd]/20">
+                  LIVE ESCROW
+                </div>
+              </div>
 
               <div className="space-y-4 text-xs">
-                <div className="p-5 sm:p-6 rounded-xl bg-slate-900 border border-slate-800 flex justify-between items-center gap-4">
+                <div className="p-4 rounded-xl bg-[#070A0F] border border-slate-800/90 flex justify-between items-center gap-4">
                   <div className="space-y-0.5">
                     <div className="text-slate-400 font-medium">Campaign CPM</div>
-                    <div className="text-lg font-bold text-white">$1.00 per 1,000 views</div>
+                    <div className="text-base font-bold text-white font-mono">$1.00 per 1,000 views</div>
                   </div>
-                  <div className="px-3.5 py-1.5 rounded-full bg-brand-cyan/10 border border-brand-cyan/20 text-brand-cyan font-bold tracking-wide shrink-0">
+                  <div className="px-3 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-[11px] tracking-wide shrink-0">
                     ACTIVE
                   </div>
                 </div>
 
-                <div className="p-5 sm:p-6 rounded-xl bg-slate-900 border border-slate-800 grid grid-cols-2 gap-4">
+                <div className="p-4 rounded-xl bg-[#070A0F] border border-slate-800/90 grid grid-cols-2 gap-4">
                   <div className="space-y-0.5">
                     <div className="text-slate-400 font-medium">Total Views Tracked</div>
-                    <div className="text-xl font-black text-brand-cyan">363,523</div>
+                    <div className="text-lg font-black text-[#1cf7fd] font-mono">363,523</div>
                   </div>
                   <div className="space-y-0.5">
                     <div className="text-slate-400 font-medium">Budget Consumed</div>
-                    <div className="text-xl font-black text-white">$122.02 / $10,000</div>
+                    <div className="text-lg font-black text-white font-mono">$122.02 / $10,000</div>
                   </div>
                 </div>
 
-                <div className="p-5 sm:p-6 rounded-xl bg-slate-900/60 border border-slate-800 text-slate-400">
+                <div className="p-4 rounded-xl bg-[#070A0F]/80 border border-slate-800/80 text-slate-400">
                   <p className="italic leading-relaxed">
                     "ClipEarn drove over 20M views for our podcast launch in 30 days through a distributed network of active clippers."
                   </p>
-                  <div className="mt-3 text-slate-200 font-semibold">— Growth Lead, Steve Wynn Media</div>
+                  <div className="mt-2.5 text-slate-200 font-semibold text-[11px]">— Growth Lead, Steve Wynn Media</div>
                 </div>
               </div>
             </div>
@@ -406,7 +417,7 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ Section */}
-      <section id="faq" className="py-24">
+      <section id="faq" className="py-24 scroll-mt-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <p className="text-xs font-bold text-brand-cyan uppercase tracking-widest">Questions</p>
@@ -443,17 +454,17 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="mt-auto py-12 border-t border-slate-800 bg-[#05080E] text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left">
             <ClipEarnLogo size="sm" href="/" />
-            <span>&copy; {new Date().getFullYear()} ClipEarn Inc. All rights reserved.</span>
+            <span className="text-slate-400">&copy; {new Date().getFullYear()} ClipEarn Inc. All rights reserved.</span>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
-            <Link href="/clipper/guidelines" className="hover:text-slate-300">Guidelines</Link>
-            <Link href="/manager/login" className="hover:text-slate-300">Manager Login</Link>
-            <Link href="/login" className="hover:text-slate-300">Clipper Sign In</Link>
-          </div>
+          <nav aria-label="Footer navigation" className="flex flex-wrap items-center justify-center gap-6 sm:gap-8 font-medium">
+            <Link href="/clipper/guidelines" className="text-slate-400 hover:text-slate-200 transition-colors">Guidelines</Link>
+            <Link href="/manager/login" className="text-slate-400 hover:text-slate-200 transition-colors">Manager Login</Link>
+            <Link href="/login" className="text-slate-400 hover:text-slate-200 transition-colors">Clipper Sign In</Link>
+          </nav>
         </div>
       </footer>
 

@@ -34,10 +34,10 @@ export default function ClipperEarningsPage() {
 
   // Set Up Payout Method Modal State
   const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
-  const [setupPaymentMethod, setSetupPaymentMethod] = useState("Bank (India)");
-  const [accountHolderName, setAccountHolderName] = useState("EASALA JAGADEESH");
-  const [accountNumber, setAccountNumber] = useState("086201000013736");
-  const [ifscCode, setIfscCode] = useState("IOBA0000862");
+  const [setupPaymentMethod, setSetupPaymentMethod] = useState("Bank (IBAN)");
+  const [accountHolderName, setAccountHolderName] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [ifscCode, setIfscCode] = useState("");
   const [routingNumber, setRoutingNumber] = useState("");
   const [iban, setIban] = useState("");
   const [swiftCode, setSwiftCode] = useState("");
@@ -46,6 +46,7 @@ export default function ClipperEarningsPage() {
   const [usdtAddress, setUsdtAddress] = useState("");
   const [savingDetails, setSavingDetails] = useState(false);
   const [setupSuccessMessage, setSetupSuccessMessage] = useState("");
+  const [hasSavedDetails, setHasSavedDetails] = useState(false);
 
   useEffect(() => {
     try {
@@ -62,6 +63,9 @@ export default function ClipperEarningsPage() {
         if (parsed.paypalEmail) setPaypalEmail(parsed.paypalEmail);
         if (parsed.wiseEmail) setWiseEmail(parsed.wiseEmail);
         if (parsed.usdtAddress) setUsdtAddress(parsed.usdtAddress);
+        setHasSavedDetails(Boolean(
+          parsed.accountNumber || parsed.iban || parsed.paypalEmail || parsed.wiseEmail || parsed.usdtAddress
+        ));
       }
     } catch {}
   }, []);
@@ -87,12 +91,34 @@ export default function ClipperEarningsPage() {
     } catch {}
     setTimeout(() => {
       setSavingDetails(false);
+      setHasSavedDetails(true);
       setSetupSuccessMessage("Payment details saved successfully!");
       setTimeout(() => {
         setSetupSuccessMessage("");
         setIsSetupModalOpen(false);
       }, 1200);
     }, 400);
+  };
+
+  const handleDisconnectPayoutDetails = () => {
+    try {
+      localStorage.removeItem("clipearn_payout_details");
+    } catch {}
+    setAccountHolderName("");
+    setAccountNumber("");
+    setIfscCode("");
+    setRoutingNumber("");
+    setIban("");
+    setSwiftCode("");
+    setPaypalEmail("");
+    setWiseEmail("");
+    setUsdtAddress("");
+    setHasSavedDetails(false);
+    setSetupSuccessMessage("Payment method disconnected.");
+    setTimeout(() => {
+      setSetupSuccessMessage("");
+      setIsSetupModalOpen(false);
+    }, 1000);
   };
 
   const loadData = () => {
@@ -126,60 +152,26 @@ export default function ClipperEarningsPage() {
     loadData();
   }, []);
 
-  // Primary numbers - ground with API data when non-zero, otherwise default to requested template values
-  const grossEarnings =
-    data?.summary?.grossEarnings && data.summary.grossEarnings > 0
-      ? data.summary.grossEarnings
-      : 2620.85;
-
-  const totalPaidOut =
-    data?.summary?.totalPaidOut && data.summary.totalPaidOut > 0
-      ? data.summary.totalPaidOut
-      : 1969.69;
-
-  const remainingPayout =
-    data?.summary?.availableBalance && data.summary.availableBalance > 0
-      ? data.summary.availableBalance
-      : 651.16;
-
-  const pendingApproval =
-    data?.summary?.pendingApprovalEarnings && data.summary.pendingApprovalEarnings > 0
-      ? data.summary.pendingApprovalEarnings
-      : 0.0;
+  // Primary numbers - ground with real API data, defaulting cleanly to 0
+  const grossEarnings = Number(data?.summary?.grossEarnings || 0);
+  const totalPaidOut = Number(data?.summary?.totalPaidOut || 0);
+  const remainingPayout = Number(data?.summary?.availableBalance || 0);
+  const pendingApproval = Number(data?.summary?.pendingApprovalEarnings || 0);
 
   // Platform Fee (3%)
   const platformFee = grossEarnings * 0.03;
   const netEarnings = grossEarnings - platformFee;
 
   // Performance numbers
-  const activeCampaigns = userProfile?.stats?.campaignsJoined || 12;
-  const totalViews = userProfile?.stats?.totalViews || 5635159;
-  const totalSubmissions = userProfile?.stats?.totalClips || 175;
-  const approvedClips = userProfile?.stats?.approvedClips || 172;
-  const approvalRate = totalSubmissions > 0 ? Math.round((approvedClips / totalSubmissions) * 100) : 98;
+  const activeCampaigns = Number(userProfile?.stats?.campaignsJoined || 0);
+  const totalViews = Number(userProfile?.stats?.totalViews || 0);
+  const totalSubmissions = Number(userProfile?.stats?.totalClips || 0);
+  const approvedClips = Number(userProfile?.stats?.approvedClips || 0);
+  const approvalRate = totalSubmissions > 0 ? Math.round((approvedClips / totalSubmissions) * 100) : 0;
 
-  // Recent Payouts list (real or provided mockup default)
-  const defaultRecentPayouts = [
-    {
-      id: "payout-default-1",
-      amount: 1167.15,
-      campaign: "Brendan Backstrom Clipping #7",
-      method: "wise",
-      status: "Paid",
-      date: "Jun 18, 2026",
-    },
-    {
-      id: "payout-default-2",
-      amount: 802.54,
-      campaign: "Brendan Backstrom Clipping #6",
-      method: "wise",
-      status: "Paid",
-      date: "Apr 16, 2026",
-    },
-  ];
-
+  // Recent Payouts list (real payouts or empty array)
   const recentPayoutsList =
-    data?.payouts && data.payouts.length > 0
+    data?.payouts && Array.isArray(data.payouts) && data.payouts.length > 0
       ? data.payouts.slice(0, 10).map((p: any) => ({
           id: p.id,
           amount: Number(p.amount),
@@ -192,7 +184,7 @@ export default function ClipperEarningsPage() {
             year: "numeric",
           }),
         }))
-      : defaultRecentPayouts;
+      : [];
 
   const hasChartData =
     chartData.length > 0 && chartData.some((d) => d.earnings > 0 || d.views > 0);
@@ -206,14 +198,25 @@ export default function ClipperEarningsPage() {
             <DollarSign className="w-7 h-7 text-brand-cyan" />
             Your Earnings Overview
           </h1>
-          <button
-            type="button"
-            onClick={() => setIsSetupModalOpen(true)}
-            className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-brand-cyan hover:underline cursor-pointer group"
-          >
-            <CheckCircle2 className="w-3.5 h-3.5 text-brand-cyan" />
-            <span className="group-hover:text-[#1cf7fd]">Payout Method Connected</span>
-          </button>
+          {hasSavedDetails ? (
+            <button
+              type="button"
+              onClick={() => setIsSetupModalOpen(true)}
+              className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-brand-cyan hover:underline cursor-pointer group"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5 text-brand-cyan" />
+              <span className="group-hover:text-[#1cf7fd]">Payout Method Connected ({setupPaymentMethod})</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsSetupModalOpen(true)}
+              className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-slate-200 cursor-pointer group"
+            >
+              <AlertCircle className="w-3.5 h-3.5 text-slate-500" />
+              <span>No Payout Method Connected</span>
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
@@ -444,28 +447,36 @@ export default function ClipperEarningsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 font-medium">
-              {recentPayoutsList.map((payout: any) => (
-                <tr key={payout.id} className="hover:bg-slate-900/40 transition-colors">
-                  <td className="py-3.5 pr-4 text-sm font-black text-brand-cyan font-mono">
-                    ${payout.amount.toFixed(2)}
-                  </td>
-                  <td className="py-3.5 pr-4 text-white font-bold max-w-[240px] truncate">
-                    {payout.campaign}
-                  </td>
-                  <td className="py-3.5 pr-4 text-slate-300 uppercase font-semibold">
-                    {payout.method}
-                  </td>
-                  <td className="py-3.5 pr-4">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider bg-brand-cyan/10 text-brand-cyan border border-brand-cyan/30 pointer-events-none select-none">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      {payout.status}
-                    </span>
-                  </td>
-                  <td className="py-3.5 text-xs text-slate-400 whitespace-nowrap">
-                    {payout.date}
+              {recentPayoutsList.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center text-slate-500 text-xs">
+                    No payouts recorded yet.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                recentPayoutsList.map((payout: any) => (
+                  <tr key={payout.id} className="hover:bg-slate-900/40 transition-colors">
+                    <td className="py-3.5 pr-4 text-sm font-black text-brand-cyan font-mono">
+                      ${payout.amount.toFixed(2)}
+                    </td>
+                    <td className="py-3.5 pr-4 text-white font-bold max-w-[240px] truncate">
+                      {payout.campaign}
+                    </td>
+                    <td className="py-3.5 pr-4 text-slate-300 uppercase font-semibold">
+                      {payout.method}
+                    </td>
+                    <td className="py-3.5 pr-4">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider bg-brand-cyan/10 text-brand-cyan border border-brand-cyan/30 pointer-events-none select-none">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        {payout.status}
+                      </span>
+                    </td>
+                    <td className="py-3.5 text-xs text-slate-400 whitespace-nowrap">
+                      {payout.date}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -565,7 +576,7 @@ export default function ClipperEarningsPage() {
                     <input
                       type="text"
                       required
-                      placeholder="EASALA JAGADEESH"
+                      placeholder="Account Holder Name"
                       value={accountHolderName}
                       onChange={(e) => setAccountHolderName(e.target.value)}
                       className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-cyan font-medium"
@@ -579,7 +590,7 @@ export default function ClipperEarningsPage() {
                     <input
                       type="text"
                       required
-                      placeholder="086201000013736"
+                      placeholder="Account Number"
                       value={accountNumber}
                       onChange={(e) => setAccountNumber(e.target.value)}
                       className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-cyan font-mono"
@@ -593,7 +604,7 @@ export default function ClipperEarningsPage() {
                     <input
                       type="text"
                       required
-                      placeholder="IOBA0000862"
+                      placeholder="e.g. HDFC0001234"
                       value={ifscCode}
                       onChange={(e) => setIfscCode(e.target.value.toUpperCase())}
                       className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-cyan font-mono uppercase"
@@ -804,22 +815,33 @@ export default function ClipperEarningsPage() {
                 </>
               )}
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsSetupModalOpen(false)}
-                  className="h-9 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={savingDetails}
-                  className="h-9 px-6 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-bold text-xs flex items-center gap-2 shadow-md shadow-cyan-500/20 disabled:opacity-50"
-                >
-                  {savingDetails ? <Loader2 className="w-4 h-4 animate-spin text-slate-950" /> : null}
-                  <span>Save Details</span>
-                </button>
+              <div className="flex items-center justify-between gap-3 pt-4 border-t border-slate-800">
+                {hasSavedDetails ? (
+                  <button
+                    type="button"
+                    onClick={handleDisconnectPayoutDetails}
+                    className="h-9 px-3.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-bold text-xs transition-colors border border-rose-500/20 cursor-pointer"
+                  >
+                    Disconnect Method
+                  </button>
+                ) : <div />}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsSetupModalOpen(false)}
+                    className="h-9 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingDetails}
+                    className="h-9 px-6 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-bold text-xs flex items-center gap-2 shadow-md shadow-cyan-500/20 disabled:opacity-50 cursor-pointer"
+                  >
+                    {savingDetails ? <Loader2 className="w-4 h-4 animate-spin text-slate-950" /> : null}
+                    <span>Save Details</span>
+                  </button>
+                </div>
               </div>
             </form>
           </div>
