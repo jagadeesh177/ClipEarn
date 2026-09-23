@@ -237,8 +237,8 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
 
           {/* PERSONAL Group */}
           <div className="mt-5">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3">
-              CLIPPER WORKSPACE
+            <span className="text-xs font-semibold text-slate-400 px-3 tracking-normal">
+              Clipper Workspace
             </span>
             <div className="mt-2 space-y-1">
               {personalNav.map((item) => {
@@ -249,19 +249,20 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
                     key={item.href}
                     href={item.href}
                     prefetch={true}
+                    aria-current={isActive ? "page" : undefined}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                    className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                       isActive
-                        ? "bg-brand-cyan text-slate-950 font-bold shadow-md shadow-cyan-500/25"
-                        : "text-slate-400 hover:text-white hover:bg-slate-900/80"
+                        ? "bg-brand-cyan/10 text-brand-cyan border border-brand-cyan/30 font-bold"
+                        : "text-slate-400 hover:text-white hover:bg-slate-900/80 border border-transparent"
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <Icon className={`w-4 h-4 ${isActive ? "text-slate-950 stroke-[2.2]" : "text-slate-400"}`} />
+                      <Icon className={`w-4 h-4 ${isActive ? "text-brand-cyan stroke-[2.2]" : "text-slate-400"}`} />
                       <span>{item.label}</span>
                     </div>
                     {item.badge && item.badge > 0 ? (
-                      <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${isActive ? "bg-slate-950 text-brand-cyan" : "bg-brand-cyan text-black"}`}>
+                      <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${isActive ? "bg-brand-cyan text-slate-950" : "bg-slate-800 text-slate-300"}`}>
                         {item.badge}
                       </span>
                     ) : null}
@@ -273,17 +274,17 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
         </div>
 
         {/* Sidebar Footer with Theme Toggle and User Info */}
-        <div className="p-4 border-t border-slate-800/80 bg-[#080C14] shrink-0">
+        <div className="p-5 pb-6 border-t border-slate-800/80 bg-[#080C14] shrink-0 space-y-3.5">
           {/* Theme Toggle: Black & White */}
-          <div className="p-2 mb-3 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+          <div className="p-2 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-slate-400">
               Theme
             </span>
             <div className="flex items-center gap-1 p-0.5 bg-slate-950/80 rounded-lg border border-slate-800">
               <button
                 type="button"
                 onClick={() => toggleTheme("dark")}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold transition-all ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
                   theme === "dark"
                     ? "bg-slate-800 text-brand-cyan shadow-sm"
                     : "text-slate-400 hover:text-white"
@@ -295,7 +296,7 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
               <button
                 type="button"
                 onClick={() => toggleTheme("light")}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold transition-all ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
                   theme === "light"
                     ? "bg-white text-slate-950 shadow-sm"
                     : "text-slate-400 hover:text-white"
@@ -317,18 +318,18 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
               <div className="text-xs font-bold text-white truncate">
                 {user?.username || "Anya"}
               </div>
-              <span className="inline-block px-1.5 py-0.2 rounded bg-brand-cyan/15 border border-brand-cyan/30 text-[9px] font-bold text-brand-cyan uppercase tracking-wider">
+              <span className="inline-block px-1.5 py-0.5 rounded bg-brand-cyan/15 border border-brand-cyan/30 text-[9px] font-bold text-brand-cyan uppercase tracking-wider">
                 CLIPPER
               </span>
             </div>
           </div>
 
-          {/* Action buttons */}
-          <div className="mt-3">
+          {/* Action buttons with increased breathing room */}
+          <div className="pt-1">
             <button
               type="button"
               onClick={handleLogout}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-red-500/10 border border-slate-800 hover:border-red-500/30 text-slate-400 hover:text-red-400 text-xs font-semibold transition-colors"
+              className="w-full flex items-center justify-center gap-2.5 px-3 py-2.5 rounded-xl bg-slate-900/90 hover:bg-red-500/10 border border-slate-800 hover:border-red-500/30 text-slate-400 hover:text-red-400 text-xs font-semibold transition-colors"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span>Logout</span>

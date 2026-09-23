@@ -92,47 +92,47 @@ export default function ClipperDashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <div className="p-5 rounded-2xl bg-[#0F141F] border border-slate-800 flex items-center justify-between hover:border-slate-700 transition-colors">
           <div>
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Submissions</div>
+            <div className="text-xs font-semibold text-slate-400">Total Submissions</div>
             <div className="text-3xl font-black text-white mt-1">{stats.totalClips}</div>
             <div className="text-[11px] text-slate-500 mt-1">Clips uploaded</div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-            <Video className="w-6 h-6" />
+          <div className="text-blue-400/80 p-2" aria-hidden="true">
+            <Video className="w-7 h-7 stroke-[1.75]" />
           </div>
         </div>
 
         <div className="p-5 rounded-2xl bg-[#0F141F] border border-slate-800 flex items-center justify-between hover:border-slate-700 transition-colors">
           <div>
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Approved</div>
+            <div className="text-xs font-semibold text-slate-400">Approved</div>
             <div className="text-3xl font-black text-brand-cyan mt-1">{stats.approvedClips}</div>
             <div className="text-[11px] text-slate-500 mt-1">Actively generating views</div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-brand-cyan/10 border border-brand-cyan/20 flex items-center justify-center text-brand-cyan">
-            <CheckCircle2 className="w-6 h-6" />
+          <div className="text-brand-cyan/80 p-2" aria-hidden="true">
+            <CheckCircle2 className="w-7 h-7 stroke-[1.75]" />
           </div>
         </div>
 
         <div className="p-5 rounded-2xl bg-[#0F141F] border border-slate-800 flex items-center justify-between hover:border-slate-700 transition-colors">
           <div>
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Earnings</div>
+            <div className="text-xs font-semibold text-slate-400">Total Earnings</div>
             <div className="text-3xl font-black text-brand-cyan mt-1">
               ${stats.totalEarnings.toFixed(2)}
             </div>
             <div className="text-[11px] text-slate-500 mt-1">Available via ledger</div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-brand-cyan/10 border border-brand-cyan/20 flex items-center justify-center text-brand-cyan">
-            <DollarSign className="w-6 h-6" />
+          <div className="text-emerald-400/80 p-2" aria-hidden="true">
+            <DollarSign className="w-7 h-7 stroke-[1.75]" />
           </div>
         </div>
 
         <div className="p-5 rounded-2xl bg-[#0F141F] border border-slate-800 flex items-center justify-between hover:border-slate-700 transition-colors">
           <div>
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Active Campaigns</div>
+            <div className="text-xs font-semibold text-slate-400">Active Campaigns</div>
             <div className="text-3xl font-black text-purple-400 mt-1">{stats.campaignsJoined}</div>
             <div className="text-[11px] text-slate-500 mt-1">Joined & eligible</div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
-            <Compass className="w-6 h-6" />
+          <div className="text-purple-400/80 p-2" aria-hidden="true">
+            <Compass className="w-7 h-7 stroke-[1.75]" />
           </div>
         </div>
       </div>
@@ -141,25 +141,31 @@ export default function ClipperDashboardPage() {
       <div className="p-6 rounded-2xl bg-[#0F141F] border border-slate-800">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-brand-cyan" />
-              Earnings & Views Velocity
+            <h2 className="text-lg font-bold text-white flex items-center gap-2 leading-snug">
+              <TrendingUp className="w-5 h-5 text-brand-cyan shrink-0" aria-hidden="true" />
+              <span>Earnings & Views Velocity</span>
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-400 mt-1">
               Verified views and earnings snapshots captured every 8 hours.
             </p>
           </div>
 
-          {/* Time range selector: 7d, 30d, 90d */}
-          <div className="flex items-center gap-1.5 p-1 bg-slate-900 border border-slate-800 rounded-xl text-xs font-semibold">
+          {/* Time range selector: 7d, 30d, 90d vertically aligned */}
+          <div
+            role="group"
+            aria-label="Time range selector"
+            className="flex items-center gap-1 p-1 bg-slate-900 border border-slate-800 rounded-xl text-xs font-semibold self-start sm:self-center"
+          >
             {(["7d", "30d", "90d"] as const).map((r) => (
               <button
                 key={r}
+                type="button"
+                aria-pressed={performanceRange === r}
                 onClick={() => setPerformanceRange(r)}
                 className={`px-3 py-1.5 rounded-lg transition-colors ${
                   performanceRange === r
-                    ? "bg-brand-cyan text-black"
-                    : "text-slate-400 hover:text-white"
+                    ? "bg-brand-cyan text-slate-950 font-bold shadow-sm"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/60"
                 }`}
               >
                 Last {r}
