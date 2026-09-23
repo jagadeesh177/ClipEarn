@@ -2,6 +2,8 @@ import { Platform } from "@prisma/client";
 import { SocialProvider, SocialAccountData, VerificationResult, VideoMetadata } from "./types";
 import { MockSocialProvider } from "./mock-provider";
 
+import { verifySocialBio } from "./bio-verifier";
+
 export class InstagramProvider implements SocialProvider {
   public platform = Platform.INSTAGRAM;
   private mockFallback = new MockSocialProvider(Platform.INSTAGRAM);
@@ -56,7 +58,7 @@ export class InstagramProvider implements SocialProvider {
   }
 
   async verifyAccount(username: string, verificationCode: string): Promise<VerificationResult> {
-    return this.mockFallback.verifyAccount(username, verificationCode);
+    return verifySocialBio(Platform.INSTAGRAM, username, verificationCode);
   }
 
   async getProfile(platformUserId: string) {

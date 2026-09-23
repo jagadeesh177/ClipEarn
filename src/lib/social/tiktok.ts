@@ -2,6 +2,8 @@ import { Platform } from "@prisma/client";
 import { SocialProvider, SocialAccountData, VerificationResult, VideoMetadata } from "./types";
 import { MockSocialProvider } from "./mock-provider";
 
+import { verifySocialBio } from "./bio-verifier";
+
 export class TikTokProvider implements SocialProvider {
   public platform = Platform.TIKTOK;
   private mockFallback = new MockSocialProvider(Platform.TIKTOK);
@@ -63,7 +65,7 @@ export class TikTokProvider implements SocialProvider {
   }
 
   async verifyAccount(username: string, verificationCode: string): Promise<VerificationResult> {
-    return this.mockFallback.verifyAccount(username, verificationCode);
+    return verifySocialBio(Platform.TIKTOK, username, verificationCode);
   }
 
   async getProfile(platformUserId: string) {

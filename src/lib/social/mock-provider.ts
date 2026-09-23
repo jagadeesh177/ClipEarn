@@ -1,6 +1,8 @@
 import { Platform } from "@prisma/client";
 import { SocialProvider, SocialAccountData, VerificationResult, VideoMetadata } from "./types";
 
+import { verifySocialBio } from "./bio-verifier";
+
 export class MockSocialProvider implements SocialProvider {
   public platform: Platform;
 
@@ -51,29 +53,7 @@ export class MockSocialProvider implements SocialProvider {
   }
 
   async verifyAccount(username: string, verificationCode: string): Promise<VerificationResult> {
-    // In mock/development mode, simulate checking the bio.
-    // If the username contains "invalid" or code is empty, fail. Otherwise succeed.
-    if (!verificationCode || verificationCode.length < 6) {
-      return {
-        is_verified: false,
-        error: "Verification code is missing or malformed.",
-      };
-    }
-
-    if (username.toLowerCase().includes("fail")) {
-      return {
-        is_verified: false,
-        bio_text: "Official creator account. Collabs: contact@creator.com",
-        verification_code_found: false,
-        error: `Could not locate verification code "${verificationCode}" in @${username}'s bio. Please add it and try again.`,
-      };
-    }
-
-    return {
-      is_verified: true,
-      bio_text: `UGC Short-form content creator | ${verificationCode}`,
-      verification_code_found: true,
-    };
+    return verifySocialBio(this.platform, username, verificationCode);
   }
 
   async getProfile(platformUserId: string): Promise<{ username: string; profile_url: string; bio?: string }> {

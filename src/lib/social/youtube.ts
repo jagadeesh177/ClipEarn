@@ -2,6 +2,8 @@ import { Platform } from "@prisma/client";
 import { SocialProvider, SocialAccountData, VerificationResult, VideoMetadata } from "./types";
 import { MockSocialProvider } from "./mock-provider";
 
+import { verifySocialBio } from "./bio-verifier";
+
 export class YouTubeProvider implements SocialProvider {
   public platform = Platform.YOUTUBE;
   private mockFallback = new MockSocialProvider(Platform.YOUTUBE);
@@ -64,7 +66,7 @@ export class YouTubeProvider implements SocialProvider {
   }
 
   async verifyAccount(username: string, verificationCode: string): Promise<VerificationResult> {
-    return this.mockFallback.verifyAccount(username, verificationCode);
+    return verifySocialBio(Platform.YOUTUBE, username, verificationCode);
   }
 
   async getProfile(platformUserId: string) {

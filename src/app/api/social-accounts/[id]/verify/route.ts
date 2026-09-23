@@ -24,12 +24,18 @@ export async function POST(
       return NextResponse.json({ success: true, message: "Account is already verified", account });
     }
 
-    if (!account.verification_code) {
-      return NextResponse.json({ error: "No verification code generated for this account" }, { status: 400 });
+    let verificationCode = account.verification_code;
+    if (!verificationCode || verificationCode.startsWith("verified-") || verificationCode.length < 6) {
+      const randomHex = Math.random().toString(36).substring(2, 8);
+      verificationCode = `clipearn-${randomHex}`;
+      await prisma.socialAccount.update({
+        where: { id: account.id },
+        data: { verification_code: verificationCode },
+      });
     }
 
     const provider = getSocialProvider(account.platform);
-    const result = await provider.verifyAccount(account.username, account.verification_code);
+    const result = await provider.verifyAccount(account.username, verificationCode);
 
     if (result.is_verified) {
       const updated = await prisma.socialAccount.update({
