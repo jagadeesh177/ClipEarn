@@ -88,9 +88,10 @@ export default function LandingPage() {
     <div className="min-h-screen bg-[#070A0F] text-slate-100 flex flex-col selection:bg-brand-cyan/20 selection:text-brand-cyan">
       {/* Top Navbar */}
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#070A0F]/90 border-b border-slate-800/80 w-full">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <ClipEarnLogo size="md" href="/" />
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-4 sm:gap-8 shrink-0">
+            <ClipEarnLogo size="sm" href="/" className="sm:hidden" />
+            <ClipEarnLogo size="md" href="/" className="hidden sm:inline-flex" />
             <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-400">
               <a href="#how-it-works" className="hover:text-white transition-colors">How It Works</a>
               <a href="#campaigns" className="hover:text-white transition-colors">Campaigns</a>
@@ -99,21 +100,22 @@ export default function LandingPage() {
             </nav>
           </div>
 
-          <div className="flex items-center gap-4 sm:gap-6">
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             <Link
               href="/manager/login"
-              className="text-xs sm:text-sm font-semibold text-slate-200 hover:text-white px-4 py-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 hover:border-slate-500 transition-all shadow-sm flex items-center gap-1.5"
+              className="text-[11px] sm:text-xs md:text-sm font-semibold text-slate-200 hover:text-white px-2.5 py-1.5 sm:px-4 sm:py-2.5 rounded-lg sm:rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 hover:border-slate-500 transition-all shadow-sm flex items-center gap-1 shrink-0 whitespace-nowrap"
             >
-              Manager Portal
+              <span className="sm:hidden">Manager</span>
+              <span className="hidden sm:inline">Manager Portal</span>
             </Link>
             <Link
               href="/login"
-              className="relative group overflow-hidden rounded-xl p-[1px] focus:outline-none focus:ring-2 focus:ring-brand-cyan"
+              className="relative group overflow-hidden rounded-lg sm:rounded-xl p-[1px] focus:outline-none focus:ring-2 focus:ring-brand-cyan shrink-0 whitespace-nowrap"
             >
-              <span className="absolute inset-0 bg-gradient-to-r from-brand-cyan to-brand-emerald rounded-xl group-hover:opacity-90 transition-opacity"></span>
-              <span className="relative flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#090E17] text-white text-sm font-semibold transition-all group-hover:bg-opacity-90">
-                Start Clipping
-                <ArrowRight className="w-4 h-4 text-brand-cyan group-hover:translate-x-0.5 transition-transform" />
+              <span className="absolute inset-0 bg-gradient-to-r from-brand-cyan to-brand-emerald rounded-lg sm:rounded-xl group-hover:opacity-90 transition-opacity"></span>
+              <span className="relative flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#090E17] text-white text-xs sm:text-sm font-semibold transition-all group-hover:bg-opacity-90 whitespace-nowrap">
+                <span>Start Clipping</span>
+                <ArrowRight className="w-3.5 h-3.5 text-brand-cyan group-hover:translate-x-0.5 transition-transform shrink-0" />
               </span>
             </Link>
           </div>
