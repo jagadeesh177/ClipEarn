@@ -120,15 +120,15 @@ export async function POST(request: Request) {
       view_eligibility_mode,
     } = body;
 
-    if (!name || !brand_name || !description || !cpm || !total_budget) {
-      return NextResponse.json({ error: "Missing required campaign fields" }, { status: 400 });
+    if (!name || !cpm || !total_budget) {
+      return NextResponse.json({ error: "Missing required campaign fields (name, cpm, total_budget)" }, { status: 400 });
     }
 
     const campaign = await prisma.campaign.create({
       data: {
         name,
-        brand_name,
-        description,
+        brand_name: brand_name || name,
+        description: description || "",
         image_url: image_url || null,
         cpm: new Prisma.Decimal(cpm),
         total_budget: new Prisma.Decimal(total_budget),

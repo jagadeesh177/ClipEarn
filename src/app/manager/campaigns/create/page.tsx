@@ -20,8 +20,6 @@ export default function CreateCampaignPage() {
   const router = useRouter();
 
   const [name, setName] = useState("");
-  const [brandName, setBrandName] = useState("");
-  const [description, setDescription] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [cpm, setCpm] = useState("1.00");
   const [totalBudget, setTotalBudget] = useState("10000");
@@ -94,8 +92,8 @@ export default function CreateCampaignPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
-          brand_name: brandName.trim(),
-          description: description.trim(),
+          brand_name: name.trim(),
+          description: name.trim(),
           image_url: imageUrl.trim() || null,
           cpm: parseFloat(cpm),
           total_budget: parseFloat(totalBudget),
@@ -153,40 +151,14 @@ export default function CreateCampaignPage() {
         <div className="p-6 rounded-2xl bg-[#0F141F] border border-slate-800 space-y-4">
           <h2 className="text-sm font-bold text-white mb-2">Campaign Overview</h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-slate-300 font-semibold mb-1">Campaign Title</label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. Steve Wynn #2"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-brand-cyan"
-              />
-            </div>
-
-            <div>
-              <label className="block text-slate-300 font-semibold mb-1">Brand / Sponsor Name</label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. Steve Wynn Media"
-                value={brandName}
-                onChange={(e) => setBrandName(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-brand-cyan"
-              />
-            </div>
-          </div>
-
           <div>
-            <label className="block text-slate-300 font-semibold mb-1">Description & Creative Brief</label>
-            <textarea
+            <label className="block text-slate-300 font-semibold mb-1">Campaign Title</label>
+            <input
+              type="text"
               required
-              rows={3}
-              placeholder="Explain the campaign goals, tone, hooks, and talking points..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Campaign title..."
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-brand-cyan"
             />
           </div>
@@ -336,7 +308,7 @@ export default function CreateCampaignPage() {
           <div className="flex gap-2">
             <input
               type="text"
-              placeholder="Add requirement (e.g. Include #SteveWynn in caption)"
+              placeholder="Add requirement (e.g. Include official hashtag in caption)"
               value={newReq}
               onChange={(e) => setNewReq(e.target.value)}
               onKeyDown={(e) => {
