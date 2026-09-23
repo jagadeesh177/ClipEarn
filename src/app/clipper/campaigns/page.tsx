@@ -70,6 +70,33 @@ function formatViewsM(views: number): string {
   return `${views}`;
 }
 
+function CampaignAvatar({ imageUrl, name }: { imageUrl?: string | null; name: string }) {
+  const [imageError, setImageError] = useState(false);
+  const initial = (name || "C").trim().charAt(0).toUpperCase();
+
+  if (!imageUrl || imageError) {
+    return (
+      <div
+        className="w-11 h-11 rounded-full bg-gradient-to-br from-cyan-950 via-[#0E1B2A] to-slate-900 border border-brand-cyan/40 shrink-0 flex items-center justify-center font-black text-brand-cyan text-base shadow-sm select-none"
+        aria-label={`${name} avatar`}
+      >
+        <span>{initial}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-11 h-11 rounded-full bg-slate-900 border border-slate-700/80 overflow-hidden shrink-0 flex items-center justify-center font-bold text-white text-sm">
+      <img
+        src={imageUrl}
+        alt={name}
+        className="w-full h-full object-cover"
+        onError={() => setImageError(true)}
+      />
+    </div>
+  );
+}
+
 export default function BrowseCampaignsPage() {
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [search, setSearch] = useState("");
@@ -127,29 +154,31 @@ export default function BrowseCampaignsPage() {
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Top Search & Filter Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pb-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
         <div className="relative flex-1 w-full max-w-md">
-          <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             placeholder="Search campaigns by brand, creator, or keyword..."
+            aria-label="Search campaigns by brand, creator, or keyword"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && fetchCampaigns()}
-            className="w-full bg-[#0D131D] border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-cyan transition-colors"
+            className="w-full h-10 bg-[#131B2A] border border-slate-700/80 hover:border-slate-600 rounded-xl pl-10 pr-4 text-xs text-white placeholder:text-slate-400 focus:outline-none focus:border-brand-cyan focus:ring-2 focus:ring-brand-cyan/20 focus:bg-[#162032] transition-colors"
           />
         </div>
 
         {/* Platform Filter Buttons */}
-        <div className="flex items-center gap-1.5 p-1 bg-[#0D131D] border border-slate-800 rounded-xl text-xs font-semibold overflow-x-auto self-stretch sm:self-auto">
+        <div className="h-10 flex items-center gap-1.5 p-1 bg-[#131B2A] border border-slate-700/80 rounded-xl text-xs font-semibold overflow-x-auto self-stretch sm:self-auto">
           {["ALL", "TIKTOK", "INSTAGRAM", "YOUTUBE"].map((plat) => (
             <button
               key={plat}
+              type="button"
               onClick={() => setSelectedPlatform(plat)}
-              className={`px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap text-xs font-bold ${
+              className={`h-8 px-3.5 rounded-lg transition-colors whitespace-nowrap text-xs font-bold flex items-center justify-center ${
                 selectedPlatform === plat
                   ? "bg-brand-cyan text-slate-950 shadow-sm"
-                  : "text-slate-400 hover:text-white"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800/60"
               }`}
             >
               {plat === "ALL" ? "All Platforms" : plat}
@@ -202,34 +231,19 @@ export default function BrowseCampaignsPage() {
                   {/* Top Row: Brand Logo, Title & Active tag, and Top-Right Avg Review tag */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
-                      {/* Brand Logo / Avatar Circle */}
-                      <div className="w-11 h-11 rounded-full bg-slate-800 border border-slate-700/80 overflow-hidden shrink-0 flex items-center justify-center font-bold text-white text-sm">
-                        {camp.image_url ? (
-                          <img
-                            src={camp.image_url}
-                            alt={camp.brand_name || camp.name}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLElement).style.display = "none";
-                            }}
-                          />
-                        ) : (
-                          <span className="text-brand-cyan font-black">
-                            {(camp.brand_name || camp.name).charAt(0).toUpperCase()}
-                          </span>
-                        )}
-                      </div>
+                      {/* Brand Logo / Avatar Circle with Graceful Fallback */}
+                      <CampaignAvatar imageUrl={camp.image_url} name={camp.brand_name || camp.name} />
 
                       {/* Title & Status */}
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <Link
                           href={`/clipper/campaigns/${camp.id}`}
-                          className="font-bold text-white text-sm sm:text-base hover:text-brand-cyan transition-colors truncate block"
+                          className="font-bold text-white text-sm sm:text-base hover:text-brand-cyan transition-colors line-clamp-2 leading-snug block"
                           title={camp.name}
                         >
                           {camp.name}
                         </Link>
-                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-brand-cyan/15 text-brand-cyan border border-brand-cyan/30 uppercase tracking-wider inline-block mt-0.5">
+                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-brand-cyan/15 text-brand-cyan border border-brand-cyan/30 uppercase tracking-wider inline-block mt-1">
                           {camp.status || "ACTIVE"}
                         </span>
                       </div>
@@ -279,11 +293,11 @@ export default function BrowseCampaignsPage() {
                   <div className="mt-5 space-y-3.5">
                     {/* Progress Bar 1: Budget Used */}
                     <div>
-                      <div className="flex justify-between items-center text-[11px] font-bold text-slate-400 tracking-wider">
+                      <div className="flex justify-between items-center text-xs font-semibold text-slate-300">
                         <span>
-                          {formatBudgetK(usedBudgetNum)} OF {formatBudgetK(totalBudgetNum)} USED
+                          {formatBudgetK(usedBudgetNum)} of {formatBudgetK(totalBudgetNum)} used
                         </span>
-                        <span className="text-slate-300 font-bold">{budgetPercent}%</span>
+                        <span className="text-white font-bold">{budgetPercent}%</span>
                       </div>
                       <div className="w-full h-1.5 bg-slate-800/90 rounded-full overflow-hidden mt-1.5">
                         <div
@@ -296,11 +310,11 @@ export default function BrowseCampaignsPage() {
                     {/* Progress Bar 2: Views Progress (unless Retainer) */}
                     {!isRetainer && (
                       <div>
-                        <div className="flex justify-between items-center text-[11px] font-bold text-slate-400 tracking-wider">
+                        <div className="flex justify-between items-center text-xs font-semibold text-slate-300">
                           <span>
-                            {formatViewsM(currentViewsNum)} / {formatViewsM(maxViewsNum)} VIEWS
+                            {formatViewsM(currentViewsNum)} / {formatViewsM(maxViewsNum)} views
                           </span>
-                          <span className="text-slate-300 font-bold">{viewsPercent}%</span>
+                          <span className="text-white font-bold">{viewsPercent}%</span>
                         </div>
                         <div className="w-full h-1.5 bg-slate-800/90 rounded-full overflow-hidden mt-1.5">
                           <div
@@ -313,24 +327,24 @@ export default function BrowseCampaignsPage() {
                   </div>
                 </div>
 
-                {/* Bottom Action Row: Discord Button + Join Campaign CTA in Brand Cyan */}
+                {/* Bottom Action Row: Standardized 40px Height Discord + Join Campaign CTA */}
                 <div className="mt-5 pt-4 border-t border-slate-800/60 flex items-center gap-2.5">
                   {/* Discord Button */}
                   <button
                     type="button"
                     onClick={(e) => handleDiscordClick(camp, e)}
-                    className="px-3 py-2.5 rounded-xl bg-[#141C2B] hover:bg-[#1A253A] border border-slate-700/70 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shrink-0"
+                    className="h-10 px-3.5 rounded-xl bg-[#141C2B] hover:bg-[#1A253A] border border-slate-700/80 text-slate-200 hover:text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shrink-0"
                     title="Join Campaign Community on Discord"
                   >
                     <DiscordIcon className="w-4 h-4 text-[#5865F2]" />
                     <span>Discord</span>
                   </button>
 
-                  {/* Main CTA */}
+                  {/* Main CTA Button */}
                   {camp.is_joined ? (
                     <Link
                       href={`/clipper/campaigns/${camp.id}`}
-                      className="flex-1 py-2.5 px-3 rounded-xl bg-brand-cyan/15 hover:bg-brand-cyan/25 border border-brand-cyan/30 text-brand-cyan font-bold text-xs flex items-center justify-center gap-1.5 transition-colors text-center"
+                      className="h-10 flex-1 px-4 rounded-xl bg-brand-cyan/15 hover:bg-brand-cyan/25 border border-brand-cyan/40 text-brand-cyan font-bold text-xs flex items-center justify-center gap-1.5 transition-colors text-center"
                     >
                       <Check className="w-4 h-4 text-brand-cyan" />
                       <span>Joined &bull; Submit Clip</span>
@@ -340,7 +354,7 @@ export default function BrowseCampaignsPage() {
                       type="button"
                       onClick={(e) => handleJoin(camp.id, e)}
                       disabled={joiningId === camp.id}
-                      className="flex-1 py-2.5 px-3 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all shadow-md shadow-cyan-500/20 active:scale-[0.98]"
+                      className="h-10 flex-1 px-4 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md shadow-brand-cyan/20 active:scale-[0.98]"
                     >
                       {joiningId === camp.id ? (
                         <>
@@ -348,9 +362,7 @@ export default function BrowseCampaignsPage() {
                           <span>Joining...</span>
                         </>
                       ) : (
-                        <>
-                          <span>+ Join Campaign</span>
-                        </>
+                        <span>+ Join Campaign</span>
                       )}
                     </button>
                   )}
