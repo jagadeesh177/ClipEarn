@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { signSessionToken, COOKIE_NAME } from "@/lib/auth";
-import { UserRole, ReferralStatus } from "@prisma/client";
+import { UserRole, UserStatus, ReferralStatus } from "@prisma/client";
+import { verifyPreAuthTicket, PREAUTH_COOKIE_NAME } from "@/lib/managerAccessKey";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -9,17 +10,55 @@ export async function GET(request: Request) {
   const state = searchParams.get("state");
 
   let referralCode: string | null = null;
+  let requestedRole: string = "CLIPPER";
+  let managerKeyId: string | null = null;
+
   if (state) {
     try {
       const decoded = JSON.parse(Buffer.from(state, "base64").toString("utf-8"));
       referralCode = decoded.ref;
+      if (decoded.role === "MANAGER") {
+        requestedRole = "MANAGER";
+        managerKeyId = decoded.managerKeyId || null;
+      }
     } catch {
       // ignore state decode error
     }
   }
 
+  // If Manager role was requested:
+  // - If managerKeyId is present: First-Time Manager Invitation linking.
+  // - If managerKeyId is null: Returning Manager login with linked Discord account.
+  let validatedKeyRecord: any = null;
+  const isManagerInvite = requestedRole === "MANAGER" && Boolean(managerKeyId);
+
+  if (isManagerInvite) {
+    const cookieHeader = request.headers.get("cookie") || "";
+    const ticketMatch = cookieHeader.match(new RegExp(`${PREAUTH_COOKIE_NAME}=([^;]+)`));
+    const ticketToken = ticketMatch ? decodeURIComponent(ticketMatch[1]) : null;
+
+    if (!ticketToken || !managerKeyId) {
+      return NextResponse.redirect(new URL("/manager/login?error=key_required", request.url));
+    }
+
+    const verification = verifyPreAuthTicket(ticketToken);
+    if (!verification.valid || verification.keyId !== managerKeyId) {
+      return NextResponse.redirect(new URL("/manager/login?error=key_invalid", request.url));
+    }
+
+    // Verify key in DB is STILL active
+    validatedKeyRecord = await prisma.managerAccessKey.findUnique({
+      where: { id: managerKeyId },
+    });
+
+    if (!validatedKeyRecord || validatedKeyRecord.status !== "ACTIVE" || (validatedKeyRecord.expires_at && validatedKeyRecord.expires_at < new Date())) {
+      return NextResponse.redirect(new URL("/manager/login?error=key_revoked", request.url));
+    }
+  }
+
   if (!code) {
-    return NextResponse.redirect(new URL("/login?error=missing_code", request.url));
+    const failureRedirect = requestedRole === "MANAGER" ? "/manager/login?error=missing_code" : "/login?error=missing_code";
+    return NextResponse.redirect(new URL(failureRedirect, request.url));
   }
 
   let discordId: string;
@@ -29,9 +68,10 @@ export async function GET(request: Request) {
 
   if (code.startsWith("mock_discord_code")) {
     // Development fallback mock
-    discordId = "123456789012345678";
-    username = "DemoClipper";
-    email = "clipper@clipearn.com";
+    const suffix = code.replace("mock_discord_code_", "");
+    discordId = requestedRole === "MANAGER" ? (suffix ? `987654321_${suffix}` : "987654321098765432") : "123456789012345678";
+    username = requestedRole === "MANAGER" ? "DiscordManager" : "DemoClipper";
+    email = requestedRole === "MANAGER" ? `discord.manager.${suffix || "0"}@clipearn.com` : "clipper@clipearn.com";
     avatarUrl = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150";
   } else {
     // Official Discord OAuth token exchange
@@ -71,12 +111,13 @@ export async function GET(request: Request) {
         : null;
     } catch (err: any) {
       console.error("Discord OAuth Error:", err);
-      return NextResponse.redirect(new URL("/login?error=oauth_failed", request.url));
+      const failureRedirect = requestedRole === "MANAGER" ? "/manager/login?error=oauth_failed" : "/login?error=oauth_failed";
+      return NextResponse.redirect(new URL(failureRedirect, request.url));
     }
   }
 
   try {
-    // Automatic profile provisioning
+    // 1. Find user by discord_id
     let user = await prisma.user.findUnique({
       where: { discord_id: discordId },
     });
@@ -87,20 +128,31 @@ export async function GET(request: Request) {
         where: { email },
       });
       if (existingUser) {
-        user = await prisma.user.update({
-          where: { id: existingUser.id },
-          data: {
-            discord_id: discordId,
-            avatar_url: avatarUrl || existingUser.avatar_url,
-            last_login_at: new Date(),
-          },
-        });
+        user = existingUser;
+      }
+    }
+
+    // 2. Returning Campaign Manager Authorization Check:
+    // If Manager role requested without an invite key, user MUST already be an active linked MANAGER.
+    if (requestedRole === "MANAGER" && !isManagerInvite) {
+      if (!user || user.role !== UserRole.MANAGER) {
+        return NextResponse.redirect(new URL("/manager/login?error=not_authorized", request.url));
+      }
+      if (user.status === UserStatus.SUSPENDED || user.status === UserStatus.BANNED) {
+        return NextResponse.redirect(new URL("/manager/login?error=account_suspended", request.url));
+      }
+    }
+
+    // 3. First-Time Manager Invitation Check:
+    if (requestedRole === "MANAGER" && isManagerInvite) {
+      if (user && (user.status === UserStatus.SUSPENDED || user.status === UserStatus.BANNED)) {
+        return NextResponse.redirect(new URL("/manager/login?error=account_suspended", request.url));
       }
     }
 
     if (!user) {
       let referrerId: string | null = null;
-      if (referralCode) {
+      if (referralCode && requestedRole === "CLIPPER") {
         const referrer = await prisma.user.findUnique({
           where: { referral_code: referralCode },
         });
@@ -116,7 +168,8 @@ export async function GET(request: Request) {
           username,
           email,
           avatar_url: avatarUrl,
-          role: UserRole.CLIPPER,
+          role: isManagerInvite ? UserRole.MANAGER : UserRole.CLIPPER,
+          status: UserStatus.ACTIVE,
           referral_code: uniqueCode,
           referred_by_id: referrerId,
           last_login_at: new Date(),
@@ -137,9 +190,23 @@ export async function GET(request: Request) {
       user = await prisma.user.update({
         where: { id: user.id },
         data: {
+          discord_id: discordId,
           username: user.username || username,
           avatar_url: avatarUrl || user.avatar_url,
           last_login_at: new Date(),
+          ...(isManagerInvite ? { role: UserRole.MANAGER, status: UserStatus.ACTIVE } : {}),
+        },
+      });
+    }
+
+    // If manager role was authorized via access key, mark key as USED
+    if (isManagerInvite && validatedKeyRecord) {
+      await prisma.managerAccessKey.update({
+        where: { id: validatedKeyRecord.id },
+        data: {
+          status: "USED",
+          used_by: user.id,
+          used_at: new Date(),
         },
       });
     }
@@ -151,7 +218,11 @@ export async function GET(request: Request) {
       email: user.email,
     });
 
-    const response = NextResponse.redirect(new URL("/clipper/dashboard", request.url));
+    const destination = user.role === UserRole.MANAGER || user.role === UserRole.ADMIN
+      ? "/manager/dashboard"
+      : "/clipper/dashboard";
+
+    const response = NextResponse.redirect(new URL(destination, request.url));
     const isHttps = request.headers.get("x-forwarded-proto") === "https" || request.url.startsWith("https://");
 
     response.cookies.set(COOKIE_NAME, token, {
@@ -162,9 +233,15 @@ export async function GET(request: Request) {
       path: "/",
     });
 
+    // Clear manager preauth ticket once successfully consumed
+    if (requestedRole === "MANAGER") {
+      response.cookies.delete(PREAUTH_COOKIE_NAME);
+    }
+
     return response;
   } catch (err: any) {
     console.error("Discord profile provisioning error:", err);
-    return NextResponse.redirect(new URL("/login?error=profile_failed", request.url));
+    const failureRedirect = requestedRole === "MANAGER" ? "/manager/login?error=profile_failed" : "/login?error=profile_failed";
+    return NextResponse.redirect(new URL(failureRedirect, request.url));
   }
 }

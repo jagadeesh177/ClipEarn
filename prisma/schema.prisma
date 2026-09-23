@@ -113,8 +113,10 @@ model User {
   fraud_flags           FraudFlag[]
   campaigns_created     Campaign[]            @relation("CampaignsCreated")
   submissions_reviewed  Submission[]          @relation("ReviewedBy")
-  created_access_codes  CampaignAccessCode[]  @relation("CreatedAccessCodes")
-  redeemed_access_codes CampaignAccessCode[]  @relation("RedeemedAccessCodes")
+  created_access_codes        CampaignAccessCode[]  @relation("CreatedAccessCodes")
+  redeemed_access_codes       CampaignAccessCode[]  @relation("RedeemedAccessCodes")
+  created_manager_access_keys ManagerAccessKey[]    @relation("CreatedManagerAccessKeys")
+  used_manager_access_keys    ManagerAccessKey[]    @relation("UsedManagerAccessKeys")
 
   @@index([discord_id])
   @@index([role])
@@ -377,7 +379,9 @@ model CampaignAccessCode {
   id            String    @id @default(uuid())
   campaign_id   String
   code          String    @unique
+  code_preview  String?
   status        String    @default("ACTIVE")
+  expires_at    DateTime?
   created_by    String
   redeemed_by   String?
   redeemed_at   DateTime?
@@ -392,4 +396,25 @@ model CampaignAccessCode {
   @@index([code])
   @@index([redeemed_by])
   @@map("campaign_access_codes")
+}
+
+model ManagerAccessKey {
+  id            String    @id @default(uuid())
+  key_hash      String    @unique
+  key_preview   String
+  status        String    @default("ACTIVE")
+  created_by    String
+  used_by       String?
+  used_at       DateTime?
+  expires_at    DateTime?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  creator       User      @relation("CreatedManagerAccessKeys", fields: [created_by], references: [id], onDelete: Cascade)
+  used_by_user  User?     @relation("UsedManagerAccessKeys", fields: [used_by], references: [id], onDelete: SetNull)
+
+  @@index([key_hash])
+  @@index([status])
+  @@index([created_by])
+  @@map("manager_access_keys")
 }

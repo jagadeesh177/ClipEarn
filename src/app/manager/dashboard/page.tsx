@@ -15,12 +15,82 @@ import {
   ArrowRight,
   ShieldAlert,
   Key,
+  Copy,
+  Check,
+  X,
+  Shield,
+  Loader2,
 } from "lucide-react";
 
 export default function ManagerDashboardPage() {
   const [currentUser, setCurrentUser] = useState<any | null>(null);
   const [analytics, setAnalytics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
+  // Admin Manager Access Keys State
+  const [keysModalOpen, setKeysModalOpen] = useState(false);
+  const [accessKeysList, setAccessKeysList] = useState<any[]>([]);
+  const [loadingKeys, setLoadingKeys] = useState(false);
+  const [generatingKey, setGeneratingKey] = useState(false);
+  const [justGeneratedKey, setJustGeneratedKey] = useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState(false);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
+
+  const handleOpenKeysModal = async () => {
+    setKeysModalOpen(true);
+    setJustGeneratedKey(null);
+    setCopiedKey(false);
+    setLoadingKeys(true);
+    try {
+      const res = await fetch("/api/admin/manager-access-keys");
+      const data = await res.json();
+      if (res.ok && data.data) {
+        setAccessKeysList(data.data);
+      }
+    } catch {
+      setAccessKeysList([]);
+    } finally {
+      setLoadingKeys(false);
+    }
+  };
+
+  const handleGenerateKey = async () => {
+    try {
+      setGeneratingKey(true);
+      const res = await fetch("/api/admin/manager-access-keys", { method: "POST" });
+      const data = await res.json();
+      if (res.ok && data.key) {
+        setJustGeneratedKey(data.key);
+        setAccessKeysList((prev) => [data.accessKey, ...prev]);
+      } else {
+        alert(data.error || "Failed to generate manager access code");
+      }
+    } catch {
+      alert("Network error generating manager access code");
+    } finally {
+      setGeneratingKey(false);
+    }
+  };
+
+  const handleRevokeKey = async (id: string) => {
+    if (!confirm("Are you sure you want to revoke this manager access code? Any manager authentication in progress will be immediately blocked.")) return;
+    try {
+      setRevokingId(id);
+      const res = await fetch(`/api/admin/manager-access-keys/${id}/revoke`, { method: "POST" });
+      if (res.ok) {
+        setAccessKeysList((prev) =>
+          prev.map((k) => (k.id === id ? { ...k, status: "REVOKED" } : k))
+        );
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to revoke manager access code");
+      }
+    } catch {
+      alert("Network error revoking manager access code");
+    } finally {
+      setRevokingId(null);
+    }
+  };
 
   useEffect(() => {
     fetch("/api/manager/analytics")
@@ -96,13 +166,23 @@ export default function ManagerDashboardPage() {
           </Link>
 
           {currentUser?.role === "ADMIN" && (
-            <Link
-              href="/manager/campaigns/create"
-              className="px-4 py-2.5 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-black text-xs transition-opacity hover:opacity-95 flex items-center gap-2 shadow-lg shadow-brand-cyan/20"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Create Campaign</span>
-            </Link>
+            <>
+              <button
+                onClick={handleOpenKeysModal}
+                className="px-4 py-2.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 hover:text-white border border-purple-500/40 text-xs font-bold transition-all flex items-center gap-2 shadow-sm"
+              >
+                <Key className="w-4 h-4 text-purple-400" />
+                <span>Campaign Managers</span>
+              </button>
+
+              <Link
+                href="/manager/campaigns/create"
+                className="px-4 py-2.5 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-black text-xs transition-opacity hover:opacity-95 flex items-center gap-2 shadow-lg shadow-brand-cyan/20"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Create Campaign</span>
+              </Link>
+            </>
           )}
         </div>
       </div>
@@ -282,6 +362,202 @@ export default function ManagerDashboardPage() {
           </Link>
         </div>
       </div>
+
+      {/* Admin Manager Access Codes Modal */}
+      {keysModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-[#0c1019] border border-slate-800 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl relative animate-scaleIn my-8">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-slate-800/80 flex items-start justify-between gap-4 bg-slate-900/30">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-400 flex items-center justify-center shrink-0">
+                  <Key className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-white flex items-center gap-2">
+                    Campaign Manager Management
+                    <span className="px-2 py-0.5 rounded-md bg-purple-500/20 border border-purple-500/40 text-purple-300 text-[10px] font-bold uppercase tracking-wider">
+                      Admin Only
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Generate one-time invitation keys to onboard Campaign Managers. Once linked with Discord, managers log in permanently without an access key.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setKeysModalOpen(false)}
+                className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800/60 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-6">
+              {/* Generate Key Button & Fresh Key Display */}
+              <div className="p-4 rounded-xl bg-purple-950/20 border border-purple-900/40 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h4 className="text-sm font-bold text-white">Generate One-Time Manager Invitation Key</h4>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      New managers enter this invitation key once on /manager/login to permanently link their Discord account.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleGenerateKey}
+                    disabled={generatingKey}
+                    className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-purple-600/30 transition-all shrink-0"
+                  >
+                    {generatingKey ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Plus className="w-4 h-4" />
+                    )}
+                    <span>{generatingKey ? "Generating..." : "Generate Code"}</span>
+                  </button>
+                </div>
+
+                {justGeneratedKey && (
+                  <div className="mt-4 p-4 rounded-xl bg-purple-900/40 border border-purple-500/50 space-y-2 animate-fadeIn">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-purple-300 flex items-center gap-1.5">
+                        <Check className="w-4 h-4 text-emerald-400" />
+                        Manager Invitation Key Created Successfully:
+                      </span>
+                      <span className="text-[11px] text-amber-300 font-mono">
+                        Valid for 7 days
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 bg-black/60 border border-purple-500/60 rounded-lg px-3 py-2 text-purple-200 font-mono text-base font-bold tracking-widest selection:bg-purple-500">
+                        {justGeneratedKey}
+                      </div>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(justGeneratedKey);
+                          setCopiedKey(true);
+                          setTimeout(() => setCopiedKey(false), 2000);
+                        }}
+                        className="px-3 py-2 bg-purple-500 hover:bg-purple-400 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors shadow"
+                      >
+                        {copiedKey ? (
+                          <>
+                            <Check className="w-4 h-4" />
+                            <span>Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4" />
+                            <span>Copy Code</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-slate-400 flex items-center gap-1">
+                      <ShieldAlert className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      Save or share this code now. Plaintext codes are not stored or shown again for security.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Keys List */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Manager Access Code History
+                </h4>
+
+                {loadingKeys ? (
+                  <div className="py-8 flex items-center justify-center text-slate-400 text-xs">
+                    <Loader2 className="w-5 h-5 animate-spin mr-2 text-purple-400" />
+                    Loading access codes...
+                  </div>
+                ) : accessKeysList.length === 0 ? (
+                  <div className="py-8 text-center border border-dashed border-slate-800 rounded-xl text-slate-500 text-xs">
+                    No manager access codes generated yet. Click &quot;Generate Code&quot; above to create one.
+                  </div>
+                ) : (
+                  <div className="border border-slate-800 rounded-xl overflow-hidden max-h-60 overflow-y-auto divide-y divide-slate-800/80">
+                    {accessKeysList.map((k) => (
+                      <div
+                        key={k.id}
+                        className="p-3 bg-[#0a0e17] flex items-center justify-between gap-3 text-xs"
+                      >
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-white tracking-wider">
+                              {k.key_preview}
+                            </span>
+                            <span
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                k.status === "ACTIVE"
+                                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                                  : k.status === "USED"
+                                  ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                                  : k.status === "REVOKED"
+                                  ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                                  : "bg-slate-700 text-slate-400"
+                              }`}
+                            >
+                              {k.status}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-slate-400 flex items-center gap-2">
+                            <span>
+                              Created: {new Date(k.created_at).toLocaleDateString()}
+                            </span>
+                            {k.used_at && (
+                              <span>
+                                • Used: {new Date(k.used_at).toLocaleDateString()}
+                              </span>
+                            )}
+                            {k.used_by_user?.username && (
+                              <span className="text-purple-300 font-medium">
+                                • Linked Discord: @{k.used_by_user.username}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {k.status === "ACTIVE" && (
+                          <button
+                            onClick={() => handleRevokeKey(k.id)}
+                            disabled={revokingId === k.id}
+                            className="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:text-rose-300 font-semibold text-[11px] transition-colors shrink-0 disabled:opacity-50"
+                          >
+                            {revokingId === k.id ? "Revoking..." : "Revoke Invite"}
+                          </button>
+                        )}
+
+                        {k.status === "USED" && (
+                          <button
+                            onClick={() => handleRevokeKey(k.id)}
+                            disabled={revokingId === k.id}
+                            className="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:text-rose-300 font-semibold text-[11px] transition-colors shrink-0 disabled:opacity-50"
+                          >
+                            {revokingId === k.id ? "Revoking..." : "Revoke Access"}
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-950/60 border-t border-slate-800 flex justify-end">
+              <button
+                onClick={() => setKeysModalOpen(false)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

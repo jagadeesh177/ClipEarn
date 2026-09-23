@@ -34,6 +34,88 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return bcrypt.compare(password, hash);
 }
 
+export const ALLOWED_ADMIN_EMAILS = [
+  "aronyesh63@gmail.com",
+  "easalajagadeesh@gmail.com",
+] as const;
+
+export function isAllowedAdminEmail(email?: string | null): boolean {
+  if (!email) return false;
+  const normalized = email.toLowerCase().trim();
+  return ALLOWED_ADMIN_EMAILS.some((adm) => adm.toLowerCase().trim() === normalized);
+}
+
+export async function ensureRealAdmins(): Promise<void> {
+  const realAdmins = [
+    { email: "aronyesh63@gmail.com", username: "AronAdmin", pass: "Aron@2006", ref: "ADMINARON01" },
+    { email: "easalajagadeesh@gmail.com", username: "JagadeeshAdmin", pass: "Jazz@2006", ref: "ADMINJAZZ01" },
+  ];
+
+  for (const adm of realAdmins) {
+    try {
+      const existing = await prisma.user.findUnique({
+        where: { email: adm.email },
+      });
+      if (!existing) {
+        const hash = await hashPassword(adm.pass);
+        await prisma.user.create({
+          data: {
+            email: adm.email,
+            username: adm.username,
+            password_hash: hash,
+            role: UserRole.ADMIN,
+            status: UserStatus.ACTIVE,
+            referral_code: adm.ref,
+          },
+        });
+      } else if (existing.role !== UserRole.ADMIN || !existing.password_hash) {
+        const hash = await hashPassword(adm.pass);
+        await prisma.user.update({
+          where: { id: existing.id },
+          data: {
+            role: UserRole.ADMIN,
+            password_hash: hash,
+            status: UserStatus.ACTIVE,
+          },
+        });
+      }
+    } catch {
+      // Ignore transient errors
+    }
+  }
+
+  // Clean up legacy demo admin & demo manager accounts
+  try {
+    const aronUser = await prisma.user.findUnique({ where: { email: "aronyesh63@gmail.com" } });
+    if (aronUser) {
+      const demoUsers = await prisma.user.findMany({
+        where: { email: { in: ["admin@clipearn.com", "manager@clipearn.com"] } },
+      });
+      for (const demoUser of demoUsers) {
+        await prisma.campaign.updateMany({
+          where: { created_by: demoUser.id },
+          data: { created_by: aronUser.id },
+        });
+        await prisma.auditLog.updateMany({
+          where: { actor_id: demoUser.id },
+          data: { actor_id: aronUser.id },
+        });
+        await prisma.managerAccessKey.updateMany({
+          where: { created_by: demoUser.id },
+          data: { created_by: aronUser.id },
+        });
+        await prisma.managerAccessKey.updateMany({
+          where: { used_by: demoUser.id },
+          data: { used_by: null, status: "REVOKED" },
+        });
+        await prisma.user.delete({ where: { id: demoUser.id } }).catch(() => {});
+      }
+    }
+  } catch {
+    // Ignore cleanup errors
+  }
+}
+
 export async function getSessionUser(): Promise<User | null> {
   try {
     const cookieStore = cookies();
@@ -51,8 +133,24 @@ export async function getSessionUser(): Promise<User | null> {
       },
     });
 
-    if (!user || user.status === UserStatus.BANNED) {
+    if (!user || user.status === UserStatus.BANNED || user.status === UserStatus.SUSPENDED) {
       return null;
+    }
+
+    // Completely disallow legacy demo admin/manager identities
+    if (
+      user.email === "admin@clipearn.com" ||
+      user.email === "manager@clipearn.com" ||
+      user.username === "DemoAdmin" ||
+      user.username === "DemoManager"
+    ) {
+      return null;
+    }
+
+    // Exact Admin Access Protection:
+    // Only the two designated real Admin accounts are allowed the ADMIN role in active sessions.
+    if (user.role === UserRole.ADMIN && !isAllowedAdminEmail(user.email)) {
+      user.role = UserRole.CLIPPER;
     }
 
     return user;
@@ -74,9 +172,19 @@ export async function requireAuth(): Promise<User> {
 
 export async function requireRole(allowedRoles: UserRole[]): Promise<User> {
   const user = await requireAuth();
+  if (user.status !== UserStatus.ACTIVE) {
+    throw new Error("ACCOUNT_SUSPENDED");
+  }
   if (!allowedRoles.includes(user.role)) {
     throw new Error("FORBIDDEN");
   }
+
+  // Exact Admin Access Protection:
+  // If the user's role is ADMIN, strictly enforce that they are one of the two authorized Admin accounts.
+  if (user.role === UserRole.ADMIN && !isAllowedAdminEmail(user.email)) {
+    throw new Error("FORBIDDEN");
+  }
+
   return user;
 }
 

@@ -1,71 +1,81 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { signSessionToken, verifyPassword, COOKIE_NAME } from "@/lib/auth";
+import { signSessionToken, verifyPassword, COOKIE_NAME, isAllowedAdminEmail, ensureRealAdmins } from "@/lib/auth";
 import { UserRole } from "@prisma/client";
 import { logAuditEvent } from "@/lib/audit";
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json();
+    const body = await request.json().catch(() => ({}));
+    const { email, password } = body;
 
-    if (!email || !password) {
+    if (!email || !password || typeof email !== "string" || typeof password !== "string") {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase().trim() },
-    });
+    const normalizedEmail = email.toLowerCase().trim();
 
-    if (!user || (user.role !== UserRole.MANAGER && user.role !== UserRole.ADMIN)) {
-      return NextResponse.json({ error: "Invalid credentials or unauthorized role" }, { status: 401 });
-    }
+    // Ensure real admin accounts are initialized in database
+    await ensureRealAdmins();
 
-    if (user.password_hash) {
+    // 1. Exact Real Admin Authentication Gate
+    if (isAllowedAdminEmail(normalizedEmail)) {
+      const user = await prisma.user.findUnique({
+        where: { email: normalizedEmail },
+      });
+
+      if (!user || user.role !== UserRole.ADMIN || !user.password_hash) {
+        return NextResponse.json({ error: "Invalid admin credentials." }, { status: 401 });
+      }
+
       const isValid = await verifyPassword(password, user.password_hash);
       if (!isValid) {
-        return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+        return NextResponse.json({ error: "Invalid admin credentials." }, { status: 401 });
       }
-    } else if (password !== "manager123" && password !== "admin123") {
-      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
-    }
 
-    const token = signSessionToken({
-      userId: user.id,
-      role: user.role,
-      username: user.username,
-      email: user.email,
-    });
-
-    await logAuditEvent({
-      actorId: user.id,
-      action: "MANAGER_LOGIN",
-      targetType: "USER",
-      targetId: user.id,
-    });
-
-    const response = NextResponse.json({
-      success: true,
-      user: {
-        id: user.id,
+      const token = signSessionToken({
+        userId: user.id,
+        role: user.role,
         username: user.username,
         email: user.email,
-        role: user.role,
-      },
-      redirectTo: "/manager/dashboard",
-    });
+      });
 
-    const isHttps = request.headers.get("x-forwarded-proto") === "https" || request.url.startsWith("https://");
+      await logAuditEvent({
+        actorId: user.id,
+        action: "ADMIN_LOGIN",
+        targetType: "USER",
+        targetId: user.id,
+      });
 
-    response.cookies.set(COOKIE_NAME, token, {
-      httpOnly: true,
-      secure: isHttps,
-      sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60,
-      path: "/",
-    });
+      const response = NextResponse.json({
+        success: true,
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+        },
+        redirectTo: "/manager/dashboard",
+      });
 
-    return response;
+      const isHttps =
+        request.headers.get("x-forwarded-proto") === "https" ||
+        request.url.startsWith("https://");
+
+      response.cookies.set(COOKIE_NAME, token, {
+        httpOnly: true,
+        secure: isHttps,
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60,
+        path: "/",
+      });
+
+      return response;
+    }
+
+    // 2. Non-admin or unrecognized accounts attempting Admin login
+    return NextResponse.json({ error: "Invalid admin credentials." }, { status: 401 });
   } catch (err: any) {
-    return NextResponse.json({ error: err?.message || "Manager login failed" }, { status: 500 });
+    return NextResponse.json({ error: err?.message || "Login failed" }, { status: 500 });
   }
 }

@@ -5,23 +5,30 @@ import { UserRole } from "@prisma/client";
 
 export async function POST(request: Request) {
   try {
-    const { role } = await request.json();
+    const body = await request.json().catch(() => ({}));
+    const role = body?.role;
 
-    const targetRole = role === "MANAGER" ? UserRole.MANAGER : role === "ADMIN" ? UserRole.ADMIN : UserRole.CLIPPER;
+    // Strict security: Demo login is permitted ONLY for Clippers preview.
+    // Demo Admin and Demo Campaign Manager access has been completely removed.
+    if (role && role !== "CLIPPER") {
+      return NextResponse.json(
+        { error: "Demo access for Admin and Campaign Manager has been removed. Only Clipper demo preview is available." },
+        { status: 403 }
+      );
+    }
 
-    // Find or create demo user
+    const targetRole = UserRole.CLIPPER;
+
+    // Find or create demo clipper user
     let user = await prisma.user.findFirst({
-      where: { role: targetRole },
+      where: { role: targetRole, email: "clipper@clipearn.com" },
     });
 
     if (!user) {
-      const username = targetRole === UserRole.MANAGER ? "DemoManager" : targetRole === UserRole.ADMIN ? "DemoAdmin" : "DemoClipper";
-      const email = targetRole === UserRole.MANAGER ? "manager@clipearn.com" : targetRole === UserRole.ADMIN ? "admin@clipearn.com" : "clipper@clipearn.com";
-
       user = await prisma.user.create({
         data: {
-          username,
-          email,
+          username: "DemoClipper",
+          email: "clipper@clipearn.com",
           role: targetRole,
           referral_code: `DEMO${Math.floor(1000 + Math.random() * 9000)}`,
         },
@@ -42,7 +49,7 @@ export async function POST(request: Request) {
         username: user.username,
         role: user.role,
       },
-      redirectTo: user.role === UserRole.CLIPPER ? "/clipper/dashboard" : "/manager/dashboard",
+      redirectTo: "/clipper/dashboard",
     });
 
     const isHttps = request.headers.get("x-forwarded-proto") === "https" || request.url.startsWith("https://");

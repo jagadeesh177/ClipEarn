@@ -242,7 +242,7 @@ export default function ManagerCampaignsPage() {
         setRedeemError(data.error || "Invalid or expired campaign access code.");
       }
     } catch {
-      setRedeemError("Network error redeeming access code.");
+      setRedeemError("Network error redeeming campaign access code.");
     } finally {
       setRedeemingCode(false);
     }
@@ -789,7 +789,7 @@ export default function ManagerCampaignsPage() {
                   <Key className="w-5 h-5" />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-white">Manager Access Codes</h2>
+                  <h2 className="text-base font-bold text-white">Campaign Access Codes</h2>
                   <p className="text-xs text-slate-400">{accessCodeCampaign.name} &bull; {accessCodeCampaign.brand_name}</p>
                 </div>
               </div>
@@ -804,8 +804,8 @@ export default function ManagerCampaignsPage() {
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-[#080C14] border border-slate-800">
               <div>
-                <span className="text-xs font-semibold text-slate-200 block">Generate Manager Access Code</span>
-                <p className="text-[11px] text-slate-400 mt-0.5">Generate a secure code for the intended Campaign Manager.</p>
+                <span className="text-xs font-semibold text-slate-200 block">Generate Campaign Access Code</span>
+                <p className="text-[11px] text-slate-400 mt-0.5">Generate a secure code for a manager to access this campaign.</p>
               </div>
               <button
                 type="button"
@@ -818,7 +818,7 @@ export default function ManagerCampaignsPage() {
                 ) : (
                   <Key className="w-4 h-4" />
                 )}
-                <span>Generate Manager Access Code</span>
+                <span>Generate Campaign Access Code</span>
               </button>
             </div>
 
@@ -851,7 +851,7 @@ export default function ManagerCampaignsPage() {
 
             {/* Codes History */}
             <div className="space-y-2">
-              <span className="text-xs font-bold text-slate-300 block">Existing Codes &amp; Manager Redemptions</span>
+              <span className="text-xs font-bold text-slate-300 block">Existing Campaign Access Codes</span>
               <div className="max-h-56 overflow-y-auto space-y-2 pr-1">
                 {accessCodesList.length === 0 ? (
                   <div className="p-4 text-center text-xs text-slate-500 rounded-xl bg-[#080C14] border border-slate-800/80">
@@ -865,18 +865,9 @@ export default function ManagerCampaignsPage() {
                     >
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <span className="font-mono font-bold text-white text-sm">{ac.code}</span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              navigator.clipboard.writeText(ac.code);
-                              alert(`Copied ${ac.code} to clipboard!`);
-                            }}
-                            title="Copy code"
-                            className="text-slate-400 hover:text-white"
-                          >
-                            <Copy className="w-3.5 h-3.5" />
-                          </button>
+                          <span className="font-mono font-bold text-white text-sm">
+                            {ac.code_preview || (ac.code ? (ac.code.startsWith("CE-MGR-") ? ac.code : "CE-MGR-••••••••") : "CE-MGR-••••••••")}
+                          </span>
                           {ac.status === "REDEEMED" ? (
                             <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold">
                               Redeemed

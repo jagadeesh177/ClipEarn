@@ -50,7 +50,13 @@ export async function GET(request: Request) {
         include: {
           memberships: user ? { where: { user_id: user.id } } : false,
           access_codes: user?.role === UserRole.ADMIN ? {
-            include: {
+            select: {
+              id: true,
+              code_preview: true,
+              status: true,
+              expires_at: true,
+              created_at: true,
+              redeemed_at: true,
               manager: {
                 select: { id: true, username: true, email: true },
               },

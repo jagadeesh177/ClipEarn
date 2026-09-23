@@ -20,32 +20,29 @@ async function main() {
   await prisma.referral.deleteMany({});
   await prisma.user.deleteMany({});
 
-  const hashedManagerPassword = await bcrypt.hash("manager123", 10);
-  const hashedAdminPassword = await bcrypt.hash("admin123", 10);
+  const hashedAronPassword = await bcrypt.hash("Aron@2006", 10);
+  const hashedJazzPassword = await bcrypt.hash("Jazz@2006", 10);
 
-  // 1. Create Admin
-  const admin = await prisma.user.create({
+  // Real Authorized Admins
+  const aronAdmin = await prisma.user.create({
     data: {
-      username: "DemoAdmin",
-      email: "admin@clipearn.com",
-      password_hash: hashedAdminPassword,
+      username: "AronAdmin",
+      email: "aronyesh63@gmail.com",
+      password_hash: hashedAronPassword,
       role: UserRole.ADMIN,
       status: UserStatus.ACTIVE,
-      referral_code: "ADMIN001",
-      avatar_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+      referral_code: "ADMINARON01",
     },
   });
 
-  // 2. Create Manager
-  const manager = await prisma.user.create({
+  await prisma.user.create({
     data: {
-      username: "DemoManager",
-      email: "manager@clipearn.com",
-      password_hash: hashedManagerPassword,
-      role: UserRole.MANAGER,
+      username: "JagadeeshAdmin",
+      email: "easalajagadeesh@gmail.com",
+      password_hash: hashedJazzPassword,
+      role: UserRole.ADMIN,
       status: UserStatus.ACTIVE,
-      referral_code: "MGR001",
-      avatar_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+      referral_code: "ADMINJAZZ01",
     },
   });
 
@@ -160,7 +157,7 @@ async function main() {
       maximum_views_per_clip: 2000000,
       allowed_platforms: [Platform.INSTAGRAM, Platform.TIKTOK, Platform.YOUTUBE],
       view_eligibility_mode: ViewEligibilityMode.FROM_SUBMISSION,
-      created_by: manager.id,
+      created_by: aronAdmin.id,
       requirements: [
         "Minimum 30 seconds length, maximum 90 seconds",
         "Include #SteveWynn and #BusinessStrategy in caption",
@@ -190,7 +187,7 @@ async function main() {
       used_budget: 3450.00,
       minimum_views_for_payout: 50000,
       allowed_platforms: [Platform.TIKTOK, Platform.INSTAGRAM],
-      created_by: manager.id,
+      created_by: aronAdmin.id,
       requirements: [
         "Show Apex Energy can prominently in first 3 seconds",
         "Mention zero-sugar & natural caffeine benefits in caption",
@@ -213,7 +210,7 @@ async function main() {
       used_budget: 8940.00,
       minimum_views_for_payout: 25000,
       allowed_platforms: [Platform.YOUTUBE, Platform.TIKTOK, Platform.INSTAGRAM],
-      created_by: manager.id,
+      created_by: aronAdmin.id,
       requirements: [
         "Include legal disclaimer: 'Not financial advice' in caption",
         "Highlight security & non-custodial wallet features",
@@ -259,7 +256,7 @@ async function main() {
         status: SubmissionStatus.APPROVED,
         submitted_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
         reviewed_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000),
-        reviewed_by: manager.id,
+        reviewed_by: aronAdmin.id,
         current_views: item.views,
         eligible_views: item.eligible,
         current_earnings: item.earnings,
@@ -305,7 +302,7 @@ async function main() {
       status: SubmissionStatus.APPROVED,
       submitted_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
       reviewed_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
-      reviewed_by: manager.id,
+      reviewed_by: aronAdmin.id,
       current_views: 125420,
       eligible_views: 120000,
       current_earnings: 120.00,
@@ -364,7 +361,7 @@ async function main() {
       status: SubmissionStatus.REJECTED,
       submitted_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
       reviewed_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-      reviewed_by: manager.id,
+      reviewed_by: aronAdmin.id,
       rejection_reason: "Campaign requirement not followed: Missing #ApexEnergy hashtag and product can is obscured.",
       current_views: 4500,
       eligible_views: 0,
@@ -427,7 +424,7 @@ async function main() {
   // 13. Audit Log
   await prisma.auditLog.create({
     data: {
-      actor_id: manager.id,
+      actor_id: aronAdmin.id,
       action: "CAMPAIGN_CREATED",
       target_type: "CAMPAIGN",
       target_id: steveWynnCampaign.id,
@@ -436,10 +433,11 @@ async function main() {
   });
 
   console.log("Database seeded successfully!");
-  console.log("Credentials:");
-  console.log("  Clipper: Demo Login button on /login or Discord OAuth");
-  console.log("  Manager: manager@clipearn.com / manager123 on /manager/login");
-  console.log("  Admin:   admin@clipearn.com / admin123 on /manager/login");
+  console.log("Authorized Access:");
+  console.log("  Clipper: 1-Click Demo Login button on /login or Discord OAuth");
+  console.log("  Admin:   aronyesh63@gmail.com / Aron@2006 on /manager/login");
+  console.log("  Admin:   easalajagadeesh@gmail.com / Jazz@2006 on /manager/login");
+  console.log("  Manager: Invitation key onboarding via /manager/login, then Discord OAuth");
 }
 
 main()
