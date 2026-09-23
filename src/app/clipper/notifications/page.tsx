@@ -117,7 +117,7 @@ export default function NotificationsPage() {
                 onClick={() => isUnread && handleMarkRead(n.id)}
                 className={`p-4 sm:p-5 rounded-2xl border transition-all flex items-start gap-4 cursor-pointer ${
                   isUnread
-                    ? "bg-[#111827] border-brand-cyan/40 shadow-[0_0_15px_-5px_rgba(0,242,254,0.15)]"
+                    ? "bg-[#111827] border-brand-cyan/40 shadow-[0_0_15px_-5px_rgba(28,247,253,0.15)]"
                     : "bg-[#0F141F] border-slate-800/80 hover:border-slate-700"
                 }`}
               >

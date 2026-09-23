@@ -179,7 +179,7 @@ export default function ManagerDashboardPage() {
           </div>
           <div className="w-full h-3.5 bg-slate-900 rounded-full overflow-hidden p-0.5 border border-slate-800">
             <div
-              className="h-full bg-gradient-to-r from-brand-cyan to-brand-emerald rounded-full transition-all duration-500 shadow-[0_0_12px_rgba(0,242,254,0.3)]"
+              className="h-full bg-brand-cyan rounded-full transition-all duration-500 shadow-[0_0_12px_rgba(28,247,253,0.3)]"
               style={{
                 width: `${
                   data.totalBudget > 0

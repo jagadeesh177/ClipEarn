@@ -314,7 +314,7 @@ export default function ManagerCampaignsPage() {
                           <span
                             className={`w-2 h-2 rounded-full shrink-0 ${
                               camp.status === "ACTIVE"
-                                ? "bg-brand-cyan shadow-[0_0_8px_rgba(0,242,254,0.6)]"
+                                ? "bg-brand-cyan shadow-[0_0_8px_rgba(28,247,253,0.6)]"
                                 : camp.status === "PAUSED"
                                 ? "bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.6)]"
                                 : "bg-slate-500"

@@ -112,7 +112,7 @@ export default function ClipperEarningsPage() {
         <button
           onClick={() => setIsPayoutModalOpen(true)}
           disabled={summary.availableBalance <= 0}
-          className="px-5 py-2.5 rounded-xl bg-brand-cyan hover:bg-brand-cyan/90 disabled:opacity-40 disabled:cursor-not-allowed text-black font-black text-xs transition-colors flex items-center gap-2 shadow-[0_0_20px_-3px_rgba(0,242,254,0.3)] self-start sm:self-auto"
+          className="px-5 py-2.5 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] disabled:opacity-40 disabled:cursor-not-allowed text-slate-950 font-black text-xs transition-colors flex items-center gap-2 shadow-[0_0_20px_-3px_rgba(28,247,253,0.3)] self-start sm:self-auto"
         >
           <CreditCard className="w-4 h-4" />
           <span>Request Payout (${summary.availableBalance.toFixed(2)})</span>

@@ -196,7 +196,7 @@ export default function MySubmissionsPage() {
         <button
           type="button"
           onClick={() => setShowQuickSubmit((prev) => !prev)}
-          className="px-4 py-2.5 rounded-xl bg-brand-cyan hover:bg-brand-cyan/90 text-black font-bold text-xs transition-all flex items-center gap-2 shadow-[0_0_20px_-3px_rgba(0,242,254,0.3)] self-start sm:self-auto"
+          className="px-4 py-2.5 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-bold text-xs transition-all flex items-center gap-2 shadow-[0_0_20px_-3px_rgba(28,247,253,0.3)] self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
           <span>{showQuickSubmit ? "Hide Submit Form" : "Quick Submit Clip"}</span>

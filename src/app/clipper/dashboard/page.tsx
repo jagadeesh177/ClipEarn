@@ -71,7 +71,7 @@ export default function ClipperDashboardPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/clipper/campaigns"
-            className="px-4 py-2.5 rounded-xl bg-brand-cyan hover:bg-brand-cyan/90 text-black font-bold text-xs transition-colors flex items-center gap-2 shadow-[0_0_20px_-3px_rgba(0,242,254,0.3)]"
+            className="px-4 py-2.5 rounded-xl bg-brand-cyan hover:bg-brand-cyan/90 text-black font-bold text-xs transition-colors flex items-center gap-2 shadow-[0_0_20px_-3px_rgba(28,247,253,0.3)]"
           >
             <Compass className="w-4 h-4" />
             <span>Browse Campaigns</span>
@@ -166,8 +166,8 @@ export default function ClipperDashboardPage() {
               <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="earningsGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#00F2FE" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#00F2FE" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#1cf7fd" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#1cf7fd" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <XAxis
@@ -199,7 +199,7 @@ export default function ClipperDashboardPage() {
                 <Area
                   type="monotone"
                   dataKey="earnings"
-                  stroke="#00F2FE"
+                  stroke="#1cf7fd"
                   strokeWidth={2.5}
                   fillOpacity={1}
                   fill="url(#earningsGrad)"

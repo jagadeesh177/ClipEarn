@@ -130,7 +130,7 @@ export default function LandingPage() {
 
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white max-w-4xl mx-auto leading-[1.1]">
             Get Paid to Post{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-[#1cf7fd] to-[#00F2FE]">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-[#1cf7fd] to-[#1cf7fd]">
               Short-Form Clips
             </span>
           </h1>
@@ -142,7 +142,7 @@ export default function LandingPage() {
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/login"
-              className="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-brand-cyan to-brand-emerald text-black font-black text-base shadow-[0_0_30px_-5px_rgba(0,242,254,0.4)] hover:shadow-[0_0_40px_-5px_rgba(0,242,254,0.6)] transition-all flex items-center justify-center gap-2.5"
+              className="w-full sm:w-auto px-8 py-4 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-black font-black text-base shadow-[0_0_30px_-5px_rgba(28,247,253,0.4)] hover:shadow-[0_0_40px_-5px_rgba(28,247,253,0.6)] transition-all flex items-center justify-center gap-2.5"
             >
               Start Clipping Now
               <ArrowRight className="w-5 h-5 text-black" />
@@ -303,7 +303,7 @@ export default function LandingPage() {
 
                   <Link
                     href="/login"
-                    className="mt-6 w-full py-2.5 rounded-xl bg-brand-cyan/15 hover:bg-brand-cyan text-brand-cyan hover:text-black border border-brand-cyan/30 hover:border-brand-cyan font-bold text-xs transition-all shadow-[0_0_15px_-3px_rgba(0,242,254,0.15)] hover:shadow-[0_0_20px_-3px_rgba(0,242,254,0.4)] flex items-center justify-center gap-2"
+                    className="mt-6 w-full py-2.5 rounded-xl bg-brand-cyan/15 hover:bg-brand-cyan text-brand-cyan hover:text-black border border-brand-cyan/30 hover:border-brand-cyan font-bold text-xs transition-all shadow-[0_0_15px_-3px_rgba(28,247,253,0.15)] hover:shadow-[0_0_20px_-3px_rgba(28,247,253,0.4)] flex items-center justify-center gap-2"
                   >
                     + Join Campaign
                   </Link>
