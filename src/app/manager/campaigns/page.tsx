@@ -19,6 +19,7 @@ import {
   Trash2,
   Loader2,
 } from "lucide-react";
+import { ImageUpload } from "@/components/ui/ImageUpload";
 
 export default function ManagerCampaignsPage() {
   const [campaigns, setCampaigns] = useState<any[]>([]);
@@ -32,11 +33,13 @@ export default function ManagerCampaignsPage() {
     total_budget: string;
     allowed_platforms: string[];
     status: string;
+    image_url: string;
   }>({
     cpm: "1.00",
     total_budget: "10000",
     allowed_platforms: ["TIKTOK", "INSTAGRAM", "YOUTUBE"],
     status: "ACTIVE",
+    image_url: "",
   });
   const [savingEdit, setSavingEdit] = useState(false);
 
@@ -50,6 +53,7 @@ export default function ManagerCampaignsPage() {
           ? camp.allowed_platforms
           : ["TIKTOK", "INSTAGRAM", "YOUTUBE"],
       status: camp.status || "ACTIVE",
+      image_url: camp.image_url || "",
     });
   };
 
@@ -93,6 +97,7 @@ export default function ManagerCampaignsPage() {
           total_budget: budgetNum,
           allowed_platforms: editForm.allowed_platforms,
           status: editForm.status,
+          image_url: editForm.image_url,
         }),
       });
 
@@ -106,6 +111,7 @@ export default function ManagerCampaignsPage() {
                   total_budget: budgetNum,
                   allowed_platforms: editForm.allowed_platforms,
                   status: editForm.status,
+                  image_url: editForm.image_url,
                 }
               : c
           )
@@ -531,6 +537,16 @@ export default function ManagerCampaignsPage() {
                     <span>Paused (Submissions paused)</span>
                   </button>
                 </div>
+              </div>
+
+              {/* Image Upload / Brand Logo */}
+              <div className="pt-2">
+                <ImageUpload
+                  value={editForm.image_url}
+                  onChange={(url) => setEditForm((prev) => ({ ...prev, image_url: url }))}
+                  label="Campaign Brand Logo / Creative Image"
+                  description="Upload a brand avatar from local storage or specify an image URL."
+                />
               </div>
 
               {/* Action buttons */}

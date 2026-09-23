@@ -7,7 +7,7 @@ import { ClipEarnLogo } from "@/components/ui/ClipEarnLogo";
 import {
   LayoutDashboard,
   Compass,
-  Video,
+  FileText,
   Bell,
   UserCheck,
   DollarSign,
@@ -15,13 +15,15 @@ import {
   BookOpen,
   Trophy,
   MessageSquare,
+  Zap,
   LogOut,
   Menu,
   X,
-  Sparkles,
+  Sun,
+  Moon,
+  HelpCircle,
   ExternalLink,
-  ChevronRight,
-  Shield,
+  MessageCircle,
 } from "lucide-react";
 
 export default function ClipperLayout({ children }: { children: React.ReactNode }) {
@@ -30,6 +32,8 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [lightMode, setLightMode] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -64,21 +68,24 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
   const personalNav = [
     { label: "Dashboard", href: "/clipper/dashboard", icon: LayoutDashboard },
     { label: "Browse Campaigns", href: "/clipper/campaigns", icon: Compass },
-    { label: "My Submissions", href: "/clipper/submissions", icon: Video },
+    { label: "My Submissions", href: "/clipper/submissions", icon: FileText },
     { label: "Notifications", href: "/clipper/notifications", icon: Bell, badge: unreadNotifications },
     { label: "Profile & Accounts", href: "/clipper/profile", icon: UserCheck },
     { label: "Earnings", href: "/clipper/earnings", icon: DollarSign },
     { label: "Referrals", href: "/clipper/referrals", icon: Share2 },
   ];
 
-  const communityNav = [
+  const allNav = [
     { label: "Guidelines", href: "/clipper/guidelines", icon: BookOpen },
     { label: "Leaderboard", href: "/clipper/leaderboard", icon: Trophy },
     { label: "ClipEarn Chat", href: "/clipper/chat", icon: MessageSquare },
+    { label: "ClipEarn Marketplace", href: "/clipper/marketplace", icon: Zap },
   ];
 
+  const userInitial = user?.username ? user.username.charAt(0).toUpperCase() : "A";
+
   return (
-    <div className="min-h-screen bg-[#070A0F] text-slate-100 flex flex-col md:flex-row">
+    <div className={`min-h-screen ${lightMode ? "bg-slate-900" : "bg-[#070A0F]"} text-slate-100 flex flex-col md:flex-row relative`}>
       {/* Mobile Topbar */}
       <div className="md:hidden flex items-center justify-between p-4 bg-[#0A0F1D] border-b border-slate-800 sticky top-0 z-40">
         <ClipEarnLogo size="sm" href="/clipper/dashboard" />
@@ -89,7 +96,7 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
           >
             <Bell className="w-5 h-5" />
             {unreadNotifications > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-brand-cyan text-black font-bold text-[10px] rounded-full flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#00DF82] text-black font-bold text-[10px] rounded-full flex items-center justify-center">
                 {unreadNotifications}
               </span>
             )}
@@ -113,41 +120,42 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
 
       {/* Sidebar Navigation */}
       <aside
-        className={`fixed md:sticky top-0 left-0 z-30 h-screen w-64 bg-[#0A0F1D] border-r border-slate-800/80 flex flex-col justify-between transition-transform duration-300 ${
+        className={`fixed md:sticky top-0 left-0 z-30 h-screen w-64 bg-[#0B0F17] border-r border-slate-800/80 flex flex-col justify-between transition-transform duration-300 ${
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
         <div className="p-5 overflow-y-auto">
-          <div className="pb-6 border-b border-slate-800/80">
+          {/* Logo */}
+          <div className="pb-5 border-b border-slate-800/60">
             <ClipEarnLogo size="md" href="/clipper/dashboard" />
           </div>
 
-          {/* Personal Group */}
-          <div className="mt-6">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3">
-              Personal
+          {/* PERSONAL Group */}
+          <div className="mt-5">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3">
+              PERSONAL
             </span>
             <div className="mt-2 space-y-1">
               {personalNav.map((item) => {
                 const Icon = item.icon;
-                const isActive = pathname === item.href;
+                const isActive = pathname === item.href || (item.href === "/clipper/campaigns" && pathname.startsWith("/clipper/campaigns"));
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                    className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                       isActive
-                        ? "bg-brand-cyan/15 text-brand-cyan border border-brand-cyan/30 shadow-[0_0_15px_-3px_rgba(0,242,254,0.15)]"
+                        ? "bg-[#00DF82] text-slate-950 font-bold shadow-md shadow-emerald-500/20"
                         : "text-slate-400 hover:text-white hover:bg-slate-900/80"
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <Icon className={`w-4 h-4 ${isActive ? "text-brand-cyan" : "text-slate-400"}`} />
+                      <Icon className={`w-4 h-4 ${isActive ? "text-slate-950 stroke-[2.2]" : "text-slate-400"}`} />
                       <span>{item.label}</span>
                     </div>
                     {item.badge && item.badge > 0 ? (
-                      <span className="px-2 py-0.5 rounded-full bg-brand-cyan text-black font-bold text-[10px]">
+                      <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${isActive ? "bg-slate-950 text-[#00DF82]" : "bg-[#00DF82] text-black"}`}>
                         {item.badge}
                       </span>
                     ) : null}
@@ -157,13 +165,13 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
             </div>
           </div>
 
-          {/* Community Group */}
-          <div className="mt-6">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3">
-              Community
+          {/* ALL Group */}
+          <div className="mt-5">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3">
+              ALL
             </span>
             <div className="mt-2 space-y-1">
-              {communityNav.map((item) => {
+              {allNav.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
                 return (
@@ -171,13 +179,13 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
                     key={item.href}
                     href={item.href}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                    className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                       isActive
-                        ? "bg-brand-cyan/15 text-brand-cyan border border-brand-cyan/30"
+                        ? "bg-[#00DF82] text-slate-950 font-bold shadow-md shadow-emerald-500/20"
                         : "text-slate-400 hover:text-white hover:bg-slate-900/80"
                     }`}
                   >
-                    <Icon className={`w-4 h-4 ${isActive ? "text-brand-cyan" : "text-slate-400"}`} />
+                    <Icon className={`w-4 h-4 ${isActive ? "text-slate-950 stroke-[2.2]" : "text-slate-400"}`} />
                     <span>{item.label}</span>
                   </Link>
                 );
@@ -186,34 +194,42 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
           </div>
         </div>
 
-        {/* User Card at bottom of sidebar */}
-        <div className="p-4 border-t border-slate-800/80 bg-[#080C17]">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img
-                src={
-                  user?.avatar_url ||
-                  `https://api.dicebear.com/7.x/bottts/svg?seed=${user?.username || "clipper"}`
-                }
-                alt="Avatar"
-                className="w-9 h-9 rounded-xl border border-slate-700 bg-slate-800 object-cover"
-              />
-              <div className="overflow-hidden">
-                <div className="text-xs font-bold text-white truncate max-w-[100px]">
-                  {user?.username || "Loading..."}
-                </div>
-                <span className="inline-block px-1.5 py-0.5 rounded bg-brand-cyan/10 border border-brand-cyan/30 text-[9px] font-bold text-brand-cyan uppercase tracking-wider">
-                  Clipper
-                </span>
-              </div>
+        {/* User Card at bottom of sidebar matching competitor */}
+        <div className="p-4 border-t border-slate-800/80 bg-[#080C14]">
+          <div className="flex items-center gap-3">
+            {/* Circular initial avatar in bright green circle */}
+            <div className="w-10 h-10 rounded-full bg-[#00DF82] text-slate-950 font-black text-sm flex items-center justify-center shrink-0 shadow-sm">
+              {userInitial}
             </div>
 
+            <div className="overflow-hidden flex-1 min-w-0">
+              <div className="text-xs font-bold text-white truncate">
+                {user?.username || "Anya"}
+              </div>
+              <span className="inline-block px-1.5 py-0.2 rounded bg-emerald-500/15 border border-emerald-500/30 text-[9px] font-bold text-[#00DF82] uppercase tracking-wider">
+                CLIPPER
+              </span>
+            </div>
+          </div>
+
+          {/* Action buttons matching competitor */}
+          <div className="mt-3 space-y-1.5">
             <button
-              onClick={handleLogout}
-              title="Sign Out"
-              className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-900 transition-colors"
+              type="button"
+              onClick={() => setLightMode(!lightMode)}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white text-xs font-semibold transition-colors"
             >
-              <LogOut className="w-4 h-4" />
+              {lightMode ? <Moon className="w-3.5 h-3.5 text-yellow-400" /> : <Sun className="w-3.5 h-3.5 text-yellow-400" />}
+              <span>{lightMode ? "Dark Mode" : "Light Mode"}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-red-500/10 border border-slate-800 hover:border-red-500/30 text-slate-400 hover:text-red-400 text-xs font-semibold transition-colors"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Logout</span>
             </button>
           </div>
         </div>
@@ -223,6 +239,96 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
       <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
         {children}
       </main>
+
+      {/* Floating "Need help?" Button matching competitor screenshot */}
+      <div className="fixed bottom-6 right-6 z-40">
+        <button
+          onClick={() => setHelpOpen(true)}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#00DF82] hover:bg-[#00c874] text-slate-950 font-bold text-xs sm:text-sm shadow-xl shadow-emerald-500/25 transition-all hover:scale-105 active:scale-95"
+        >
+          <MessageCircle className="w-4 h-4 fill-slate-950" />
+          <span>Need help?</span>
+        </button>
+      </div>
+
+      {/* Help Modal */}
+      {helpOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-[#0D131D] border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-[#00DF82]/10 text-[#00DF82]">
+                  <HelpCircle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">ClipEarn Support</h3>
+                  <p className="text-xs text-slate-400">Get assistance from managers & community</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setHelpOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <a
+                href="https://discord.gg/clipearn"
+                target="_blank"
+                rel="noreferrer"
+                className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-[#00DF82]/40 flex items-center justify-between transition-colors group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-[#5865F2]/20 flex items-center justify-center text-[#5865F2]">
+                    <MessageSquare className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-white block group-hover:text-[#00DF82]">
+                      Join Creator Discord
+                    </span>
+                    <span className="text-[11px] text-slate-400">
+                      Live 24/7 staff support & clipping tips
+                    </span>
+                  </div>
+                </div>
+                <ExternalLink className="w-4 h-4 text-slate-500 group-hover:text-white" />
+              </a>
+
+              <Link
+                href="/clipper/guidelines"
+                onClick={() => setHelpOpen(false)}
+                className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-[#00DF82]/40 flex items-center justify-between transition-colors group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center text-[#00DF82]">
+                    <BookOpen className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-white block group-hover:text-[#00DF82]">
+                      Clipping Guidelines & Rules
+                    </span>
+                    <span className="text-[11px] text-slate-400">
+                      Pacing, hashtags, and view eligibility
+                    </span>
+                  </div>
+                </div>
+                <ExternalLink className="w-4 h-4 text-slate-500 group-hover:text-white" />
+              </Link>
+            </div>
+
+            <div className="mt-5 pt-3 border-t border-slate-800 text-center">
+              <button
+                onClick={() => setHelpOpen(false)}
+                className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

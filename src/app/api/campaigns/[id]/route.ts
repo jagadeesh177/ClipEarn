@@ -94,6 +94,7 @@ export async function PATCH(
         ...(body.name && { name: body.name }),
         ...(body.brand_name && { brand_name: body.brand_name }),
         ...(body.description && { description: body.description }),
+        ...(body.image_url !== undefined && { image_url: body.image_url }),
         ...(body.status && { status: body.status }),
         ...(body.cpm && { cpm: new Prisma.Decimal(body.cpm) }),
         ...(body.total_budget && { total_budget: new Prisma.Decimal(body.total_budget) }),

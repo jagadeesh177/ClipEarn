@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   Loader2,
 } from "lucide-react";
+import { ImageUpload } from "@/components/ui/ImageUpload";
 
 export default function CreateCampaignPage() {
   const router = useRouter();
@@ -190,16 +191,12 @@ export default function CreateCampaignPage() {
             />
           </div>
 
-          <div>
-            <label className="block text-slate-300 font-semibold mb-1">Banner Image URL</label>
-            <input
-              type="url"
-              placeholder="https://images.unsplash.com/..."
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-brand-cyan"
-            />
-          </div>
+          <ImageUpload
+            value={imageUrl}
+            onChange={setImageUrl}
+            label="Campaign Brand Logo / Creative Image"
+            description="Upload a high-resolution logo or banner from your local computer, or paste an external URL."
+          />
         </div>
 
         {/* Financials & Payout Parameters */}
