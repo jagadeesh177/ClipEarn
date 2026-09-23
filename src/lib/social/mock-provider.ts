@@ -77,12 +77,16 @@ export class MockSocialProvider implements SocialProvider {
       hash |= 0;
     }
     const initialViews = Math.abs(hash % 50000) + 12000;
+    const initialLikes = Math.round(initialViews * (0.045 + (Math.abs(hash % 30) / 1000)));
+    const initialComments = Math.round(initialViews * (0.003 + (Math.abs(hash % 20) / 10000))) + 5;
 
     return {
       platform: this.platform,
       platform_post_id: postId,
       post_url: postUrl,
       current_views: initialViews,
+      likes: initialLikes,
+      comments: initialComments,
       is_available: true,
       is_private: false,
     };
@@ -99,5 +103,17 @@ export class MockSocialProvider implements SocialProvider {
     const base = Math.abs(hash % 100000) + 25000;
     const additional = Math.floor(Math.random() * 5000) + 1000;
     return base + additional;
+  }
+
+  async getVideoMetrics(platformPostId: string): Promise<{ views: number; likes: number; comments: number }> {
+    const views = await this.getVideoViews(platformPostId);
+    let hash = 0;
+    for (let i = 0; i < platformPostId.length; i++) {
+      hash = (hash << 5) - hash + platformPostId.charCodeAt(i);
+      hash |= 0;
+    }
+    const likes = Math.round(views * (0.045 + (Math.abs(hash % 30) / 1000)));
+    const comments = Math.round(views * (0.003 + (Math.abs(hash % 20) / 10000))) + 5;
+    return { views, likes, comments };
   }
 }

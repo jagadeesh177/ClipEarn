@@ -12,6 +12,9 @@ import {
   AlertCircle,
   Loader2,
   Video,
+  Eye,
+  Heart,
+  MessageSquare,
 } from "lucide-react";
 
 export default function ManagerSubmissionsReviewPage() {
@@ -178,7 +181,9 @@ export default function ManagerSubmissionsReviewPage() {
                   <th className="pb-3 pr-3">Campaign</th>
                   <th className="pb-3 pr-3">Platform &amp; Handle</th>
                   <th className="pb-3 pr-3">Video Link</th>
-                  <th className="pb-3 pr-3">Current Views</th>
+                  <th className="pb-3 pr-3">Views</th>
+                  <th className="pb-3 pr-3">Likes</th>
+                  <th className="pb-3 pr-3">Comments</th>
                   <th className="pb-3 pr-3">Submitted</th>
                   <th className="pb-3 pr-3">Status</th>
                   <th className="pb-3 text-right">Review Action</th>
@@ -238,8 +243,25 @@ export default function ManagerSubmissionsReviewPage() {
                         </a>
                       </td>
 
-                      <td className="py-4 pr-3 font-mono font-bold text-slate-200">
-                        {sub.current_views.toLocaleString()}
+                      <td className="py-4 pr-3 font-mono font-bold text-slate-200 whitespace-nowrap">
+                        <span className="flex items-center gap-1">
+                          <Eye className="w-3.5 h-3.5 text-slate-400" />
+                          {(sub.current_views || 0).toLocaleString()}
+                        </span>
+                      </td>
+
+                      <td className="py-4 pr-3 font-mono font-bold text-red-400 whitespace-nowrap">
+                        <span className="flex items-center gap-1">
+                          <Heart className="w-3.5 h-3.5 text-red-400" />
+                          {(sub.current_likes || 0).toLocaleString()}
+                        </span>
+                      </td>
+
+                      <td className="py-4 pr-3 font-mono font-bold text-blue-400 whitespace-nowrap">
+                        <span className="flex items-center gap-1">
+                          <MessageSquare className="w-3.5 h-3.5 text-blue-400" />
+                          {(sub.current_comments || 0).toLocaleString()}
+                        </span>
                       </td>
 
                       <td className="py-4 pr-3 text-xs text-slate-400 whitespace-nowrap">
@@ -349,24 +371,54 @@ export default function ManagerSubmissionsReviewPage() {
               </div>
             )}
 
-            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2 text-xs text-slate-300 my-4">
-              <div>
-                <strong>Clipper:</strong> @{selectedSubmission.clipper.username}
+            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-3 text-xs text-slate-300 my-4">
+              <div className="space-y-1.5">
+                <div>
+                  <strong>Clipper:</strong> @{selectedSubmission.clipper.username}
+                </div>
+                <div>
+                  <strong>Campaign:</strong> {selectedSubmission.campaign.name}
+                </div>
+                <div>
+                  <strong>Video URL:</strong>{" "}
+                  <a
+                    href={selectedSubmission.post_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-brand-cyan hover:underline inline-flex items-center gap-1 font-semibold"
+                  >
+                    <span>Open published clip</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
               </div>
-              <div>
-                <strong>Campaign:</strong> {selectedSubmission.campaign.name}
-              </div>
-              <div>
-                <strong>Video URL:</strong>{" "}
-                <a
-                  href={selectedSubmission.post_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-brand-cyan hover:underline inline-flex items-center gap-1 font-semibold"
-                >
-                  <span>Open published clip</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
+
+              {/* Engagement Metrics Summary */}
+              <div className="pt-2.5 border-t border-slate-800 grid grid-cols-3 gap-2 text-center">
+                <div className="p-2 rounded-lg bg-slate-800/60 border border-slate-700/50">
+                  <div className="text-[11px] text-slate-400 flex items-center justify-center gap-1">
+                    <Eye className="w-3 h-3 text-slate-400" /> Views
+                  </div>
+                  <div className="text-sm font-bold font-mono text-white mt-0.5">
+                    {(selectedSubmission.current_views || 0).toLocaleString()}
+                  </div>
+                </div>
+                <div className="p-2 rounded-lg bg-red-950/20 border border-red-900/30">
+                  <div className="text-[11px] text-red-300 flex items-center justify-center gap-1">
+                    <Heart className="w-3 h-3 text-red-400" /> Likes
+                  </div>
+                  <div className="text-sm font-bold font-mono text-red-400 mt-0.5">
+                    {(selectedSubmission.current_likes || 0).toLocaleString()}
+                  </div>
+                </div>
+                <div className="p-2 rounded-lg bg-blue-950/20 border border-blue-900/30">
+                  <div className="text-[11px] text-blue-300 flex items-center justify-center gap-1">
+                    <MessageSquare className="w-3 h-3 text-blue-400" /> Comments
+                  </div>
+                  <div className="text-sm font-bold font-mono text-blue-400 mt-0.5">
+                    {(selectedSubmission.current_comments || 0).toLocaleString()}
+                  </div>
+                </div>
               </div>
             </div>
 

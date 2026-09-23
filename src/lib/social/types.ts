@@ -25,8 +25,16 @@ export interface VideoMetadata {
   author_platform_user_id?: string;
   author_username?: string;
   current_views: number;
+  likes?: number;
+  comments?: number;
   is_available: boolean;
   is_private: boolean;
+}
+
+export interface VideoMetrics {
+  views: number;
+  likes: number;
+  comments: number;
 }
 
 export interface SocialProvider {
@@ -36,6 +44,7 @@ export interface SocialProvider {
   getProfile(platformUserId: string): Promise<{ username: string; profile_url: string; bio?: string }>;
   getVideo(postUrl: string): Promise<VideoMetadata>;
   getVideoViews(platformPostId: string): Promise<number>;
+  getVideoMetrics?(platformPostId: string, postUrl?: string): Promise<VideoMetrics>;
   refreshToken?(refreshToken: string): Promise<{ access_token: string; expires_at: Date }>;
   parsePostId(postUrl: string): string | null;
 }

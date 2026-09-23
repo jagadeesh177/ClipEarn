@@ -55,12 +55,21 @@ export async function syncSubmissionViews(submissionId: string): Promise<SyncRes
     };
   }
 
-  // Fetch current views via social provider
+  // Fetch current metrics (views, likes, comments) via social provider
   const provider = getSocialProvider(submission.platform);
   let latestViews: number;
+  let latestLikes = submission.current_likes || 0;
+  let latestComments = submission.current_comments || 0;
 
   try {
-    latestViews = await provider.getVideoViews(submission.platform_post_id);
+    if (provider.getVideoMetrics) {
+      const metrics = await provider.getVideoMetrics(submission.platform_post_id, submission.post_url);
+      latestViews = metrics.views;
+      latestLikes = metrics.likes ?? latestLikes;
+      latestComments = metrics.comments ?? latestComments;
+    } else {
+      latestViews = await provider.getVideoViews(submission.platform_post_id);
+    }
     if (isNaN(latestViews) || latestViews < 0) {
       throw new Error(`Invalid view count returned: ${latestViews}`);
     }
@@ -97,6 +106,8 @@ export async function syncSubmissionViews(submissionId: string): Promise<SyncRes
       data: {
         submission_id: submission.id,
         views: latestViews,
+        likes: latestLikes,
+        comments: latestComments,
         source: "PLATFORM_API",
       },
     });
@@ -202,6 +213,8 @@ export async function syncSubmissionViews(submissionId: string): Promise<SyncRes
       where: { id: submission.id },
       data: {
         current_views: latestViews,
+        current_likes: latestLikes,
+        current_comments: latestComments,
         eligible_views: newEligibleViews,
         current_earnings: new Prisma.Decimal(newCurrentEarnings),
         last_view_update: new Date(),

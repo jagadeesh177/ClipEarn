@@ -20,6 +20,9 @@ import {
   X,
   Shield,
   Loader2,
+  Eye,
+  Heart,
+  MessageSquare,
 } from "lucide-react";
 
 export default function ManagerDashboardPage() {
@@ -118,6 +121,8 @@ export default function ManagerDashboardPage() {
     pendingReviews: 0,
     approvedSubmissions: 0,
     totalViews: 0,
+    totalLikes: 0,
+    totalComments: 0,
     eligibleViews: 0,
     totalBudget: 0,
     usedBudget: 0,
@@ -223,6 +228,51 @@ export default function ManagerDashboardPage() {
           <span className="text-xs text-slate-400 mt-1 block">
             {data.eligibleViews.toLocaleString()} eligible
           </span>
+        </div>
+      </div>
+
+      {/* Content Engagement & Reach Across Platforms */}
+      <div className="space-y-4">
+        <h2 className="text-base font-bold text-white flex items-center gap-2">
+          <Eye className="w-5 h-5 text-brand-cyan" />
+          Clip Engagement & Reach Metrics
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div className="p-5 rounded-2xl bg-[#0F141F] border border-slate-800 hover:border-slate-700 transition-colors">
+            <span className="text-slate-400 text-xs flex items-center gap-1.5 font-semibold">
+              <Eye className="w-4 h-4 text-brand-cyan" /> Total Video Views
+            </span>
+            <div className="text-2xl font-black text-white mt-1">
+              {(data.totalViews || 0).toLocaleString()}
+            </div>
+            <span className="text-xs text-brand-cyan/80 mt-1 block">
+              {(data.eligibleViews || 0).toLocaleString()} verified eligible views
+            </span>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-[#0F141F] border border-slate-800 hover:border-slate-700 transition-colors">
+            <span className="text-slate-400 text-xs flex items-center gap-1.5 font-semibold">
+              <Heart className="w-4 h-4 text-red-400" /> Total Likes
+            </span>
+            <div className="text-2xl font-black text-red-400 mt-1">
+              {(data.totalLikes || 0).toLocaleString()}
+            </div>
+            <span className="text-xs text-slate-400 mt-1 block">
+              Total likes across all platforms
+            </span>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-[#0F141F] border border-slate-800 hover:border-slate-700 transition-colors">
+            <span className="text-slate-400 text-xs flex items-center gap-1.5 font-semibold">
+              <MessageSquare className="w-4 h-4 text-blue-400" /> Total Comments
+            </span>
+            <div className="text-2xl font-black text-blue-400 mt-1">
+              {(data.totalComments || 0).toLocaleString()}
+            </div>
+            <span className="text-xs text-slate-400 mt-1 block">
+              Audience conversations & comments
+            </span>
+          </div>
         </div>
       </div>
 

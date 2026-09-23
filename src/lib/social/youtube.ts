@@ -92,6 +92,8 @@ export class YouTubeProvider implements SocialProvider {
       }
 
       const views = parseInt(item.statistics?.viewCount || "0", 10);
+      const likes = parseInt(item.statistics?.likeCount || "0", 10);
+      const comments = parseInt(item.statistics?.commentCount || "0", 10);
       return {
         platform: Platform.YOUTUBE,
         platform_post_id: videoId,
@@ -99,6 +101,8 @@ export class YouTubeProvider implements SocialProvider {
         author_platform_user_id: item.snippet?.channelId,
         author_username: item.snippet?.channelTitle,
         current_views: views,
+        likes,
+        comments,
         is_available: true,
         is_private: false,
       };
@@ -108,9 +112,14 @@ export class YouTubeProvider implements SocialProvider {
   }
 
   async getVideoViews(platformPostId: string): Promise<number> {
+    const metrics = await this.getVideoMetrics(platformPostId);
+    return metrics.views;
+  }
+
+  async getVideoMetrics(platformPostId: string): Promise<{ views: number; likes: number; comments: number }> {
     const apiKey = process.env.GOOGLE_API_KEY;
     if (!apiKey) {
-      return this.mockFallback.getVideoViews(platformPostId);
+      return this.mockFallback.getVideoMetrics(platformPostId);
     }
 
     try {
@@ -118,10 +127,17 @@ export class YouTubeProvider implements SocialProvider {
         `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${platformPostId}&key=${apiKey}`
       );
       const data = await res.json();
-      const views = parseInt(data.items?.[0]?.statistics?.viewCount || "0", 10);
-      return views;
+      const stats = data.items?.[0]?.statistics;
+      if (!stats) {
+        return this.mockFallback.getVideoMetrics(platformPostId);
+      }
+      return {
+        views: parseInt(stats.viewCount || "0", 10),
+        likes: parseInt(stats.likeCount || "0", 10),
+        comments: parseInt(stats.commentCount || "0", 10),
+      };
     } catch {
-      return this.mockFallback.getVideoViews(platformPostId);
+      return this.mockFallback.getVideoMetrics(platformPostId);
     }
   }
 }

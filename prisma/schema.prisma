@@ -216,6 +216,8 @@ model Submission {
   appeal_reason         String?           @db.Text
   appealed_at           DateTime?
   current_views         Int               @default(0)
+  current_likes         Int               @default(0)
+  current_comments      Int               @default(0)
   eligible_views        Int               @default(0)
   paid_views            Int               @default(0)
   current_earnings      Decimal           @default(0.00) @db.Decimal(12, 2)
@@ -248,6 +250,8 @@ model ViewSnapshot {
   id            String      @id @default(uuid())
   submission_id String
   views         Int
+  likes         Int         @default(0)
+  comments      Int         @default(0)
   captured_at   DateTime    @default(now())
   source        String      @default("PLATFORM_API")
 

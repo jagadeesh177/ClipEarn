@@ -223,13 +223,19 @@ export async function POST(request: Request) {
       );
     }
 
-    // 7. Fetch Initial Video Metadata & Views
+    // 7. Fetch Initial Video Metadata (Views, Likes, Comments)
     let initialViews = 0;
+    let initialLikes = 0;
+    let initialComments = 0;
     try {
       const videoMeta = await provider.getVideo(trimmedUrl);
       initialViews = videoMeta.current_views || 0;
+      initialLikes = videoMeta.likes || 0;
+      initialComments = videoMeta.comments || 0;
     } catch {
       initialViews = 0;
+      initialLikes = 0;
+      initialComments = 0;
     }
 
     // 8. Create Submission & Baseline Snapshot in Transaction
@@ -244,6 +250,8 @@ export async function POST(request: Request) {
           platform_post_id: platformPostId,
           status: SubmissionStatus.PENDING,
           current_views: initialViews,
+          current_likes: initialLikes,
+          current_comments: initialComments,
           eligible_views: 0,
           current_earnings: 0,
           last_view_update: new Date(),
@@ -251,11 +259,13 @@ export async function POST(request: Request) {
       });
 
       // Baseline snapshot
-      if (initialViews > 0) {
+      if (initialViews > 0 || initialLikes > 0) {
         await tx.viewSnapshot.create({
           data: {
             submission_id: sub.id,
             views: initialViews,
+            likes: initialLikes,
+            comments: initialComments,
             source: "SUBMISSION_INITIAL",
           },
         });
