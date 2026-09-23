@@ -185,8 +185,8 @@ export default function CreateCampaignPage() {
               </label>
               <input
                 type="number"
-                step="0.10"
-                min="0.10"
+                step="any"
+                min="0.01"
                 required
                 value={cpm}
                 onChange={(e) => setCpm(e.target.value)}
@@ -200,8 +200,8 @@ export default function CreateCampaignPage() {
               </label>
               <input
                 type="number"
-                step="100"
-                min="100"
+                step="any"
+                min="1"
                 required
                 value={totalBudget}
                 onChange={(e) => setTotalBudget(e.target.value)}
@@ -215,8 +215,8 @@ export default function CreateCampaignPage() {
               </label>
               <input
                 type="number"
-                step="1000"
-                min="1000"
+                step="1"
+                min="1"
                 required
                 value={minViews}
                 onChange={(e) => setMinViews(e.target.value)}
@@ -389,9 +389,9 @@ export default function CreateCampaignPage() {
           <button
             type="submit"
             disabled={loading}
-            className="px-8 py-3 rounded-xl bg-gradient-to-r from-brand-cyan to-brand-emerald text-black font-black flex items-center gap-2 hover:opacity-95"
+            className="px-8 py-3 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-black flex items-center gap-2 transition-all shadow-lg shadow-brand-cyan/20"
           >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin text-black" /> : null}
+            {loading ? <Loader2 className="w-4 h-4 animate-spin text-slate-950" /> : null}
             <span>Publish Campaign</span>
           </button>
         </div>

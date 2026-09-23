@@ -121,7 +121,7 @@ export default function BrowseCampaignsPage() {
   const handleDiscordClick = (camp: any, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    window.open("https://discord.gg/clipearn", "_blank");
+    window.open("https://discord.gg/fWDVEt9GVB", "_blank");
   };
 
   return (

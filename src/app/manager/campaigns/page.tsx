@@ -86,6 +86,11 @@ export default function ManagerCampaignsPage() {
       alert("Please enter a valid budget amount (e.g. 15000).");
       return;
     }
+    const accrued = Number(editingCampaign.used_budget) || 0;
+    if (budgetNum < accrued) {
+      alert(`Budget cannot be lower than the already accrued spend of $${accrued.toFixed(2)}.`);
+      return;
+    }
 
     try {
       setSavingEdit(true);
@@ -203,7 +208,7 @@ export default function ManagerCampaignsPage() {
 
         <Link
           href="/manager/campaigns/create"
-          className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand-cyan to-brand-emerald text-black font-black text-xs transition-opacity hover:opacity-95 flex items-center gap-2 self-start sm:self-auto"
+          className="px-5 py-2.5 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-black text-xs transition-opacity hover:opacity-95 flex items-center gap-2 self-start sm:self-auto shadow-lg shadow-brand-cyan/20"
         >
           <Plus className="w-4 h-4" />
           <span>Launch New Campaign</span>
@@ -431,8 +436,8 @@ export default function ManagerCampaignsPage() {
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 font-bold">$</span>
                   <input
                     type="number"
-                    step="0.05"
-                    min="0.10"
+                    step="any"
+                    min="0.01"
                     required
                     value={editForm.cpm}
                     onChange={(e) => setEditForm({ ...editForm, cpm: e.target.value })}
@@ -454,8 +459,8 @@ export default function ManagerCampaignsPage() {
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 font-bold">$</span>
                   <input
                     type="number"
-                    step="100"
-                    min={editingCampaign.used_budget || 0}
+                    step="any"
+                    min="0.01"
                     required
                     value={editForm.total_budget}
                     onChange={(e) => setEditForm({ ...editForm, total_budget: e.target.value })}
@@ -516,11 +521,11 @@ export default function ManagerCampaignsPage() {
                     onClick={() => setEditForm({ ...editForm, status: "ACTIVE" })}
                     className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                       editForm.status === "ACTIVE"
-                        ? "bg-brand-emerald/20 text-brand-emerald border-brand-emerald/40"
+                        ? "bg-brand-cyan/20 text-brand-cyan border-brand-cyan/40"
                         : "bg-slate-900 text-slate-400 border-slate-800 hover:text-white"
                     }`}
                   >
-                    <span className="w-2 h-2 rounded-full bg-brand-emerald" />
+                    <span className="w-2 h-2 rounded-full bg-brand-cyan" />
                     <span>Active (Accepting clips)</span>
                   </button>
 
@@ -562,9 +567,9 @@ export default function ManagerCampaignsPage() {
                 <button
                   type="submit"
                   disabled={savingEdit}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand-cyan to-brand-emerald text-black font-bold text-xs transition-all hover:opacity-90 flex items-center gap-2 shadow-lg shadow-brand-cyan/20"
+                  className="px-5 py-2.5 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-bold text-xs transition-all flex items-center gap-2 shadow-lg shadow-brand-cyan/20"
                 >
-                  {savingEdit ? <Loader2 className="w-4 h-4 animate-spin text-black" /> : null}
+                  {savingEdit ? <Loader2 className="w-4 h-4 animate-spin text-slate-950" /> : null}
                   <span>{savingEdit ? "Saving..." : "Save Parameters"}</span>
                 </button>
               </div>

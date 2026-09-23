@@ -275,7 +275,7 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
 
             <div className="space-y-3 text-xs">
               <a
-                href="https://discord.gg/clipearn"
+                href="https://discord.gg/fWDVEt9GVB"
                 target="_blank"
                 rel="noreferrer"
                 className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-brand-cyan/40 flex items-center justify-between transition-colors group"
