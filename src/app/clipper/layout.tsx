@@ -260,6 +260,36 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
         </div>
       </aside>
 
+      {/* Floating Top-Right Theme Toggle for Desktop */}
+      <div className="fixed top-5 right-6 z-40 hidden md:flex items-center gap-1.5 p-1 bg-[#0F141F]/90 backdrop-blur-md rounded-xl border border-slate-800 shadow-xl">
+        <button
+          type="button"
+          onClick={() => toggleTheme("dark")}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            theme === "dark"
+              ? "bg-slate-800 text-brand-cyan shadow-sm"
+              : "text-slate-400 hover:text-white"
+          }`}
+          title="Switch to Black mode"
+        >
+          <Moon className="w-3.5 h-3.5" />
+          <span>Black</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => toggleTheme("light")}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            theme === "light"
+              ? "bg-white text-slate-950 shadow-sm"
+              : "text-slate-400 hover:text-white"
+          }`}
+          title="Switch to White mode"
+        >
+          <Sun className="w-3.5 h-3.5 text-amber-500" />
+          <span>White</span>
+        </button>
+      </div>
+
       {/* Main Content Area with padding at bottom for floating elements */}
       <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 pb-28 max-w-7xl mx-auto w-full">
         {children}

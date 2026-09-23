@@ -536,6 +536,28 @@ export default function CampaignDetailsPage() {
                   </div>
                   <div className="text-[11px] font-semibold text-slate-400">Approved</div>
                 </div>
+
+                {/* Payout Eligibility Status Card */}
+                {myStats && myStats.minimumViewsForPayout > 0 && (
+                  <div className="col-span-2 sm:col-span-4 p-4 rounded-2xl bg-[#080C14] border border-slate-800/80 space-y-2 text-left">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-400 font-semibold">Payout Eligibility Progress</span>
+                      <span className="font-bold text-brand-cyan">
+                        {myStats.payoutProgressText}
+                      </span>
+                    </div>
+                    <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-brand-cyan rounded-full transition-all duration-500"
+                        style={{ width: `${myStats.progressPercent || 0}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between items-center text-[11px] text-slate-500">
+                      <span>{myStats.payoutFractionText}</span>
+                      <span>{myStats.progressPercent || 0}% complete</span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

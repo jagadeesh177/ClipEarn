@@ -14,6 +14,7 @@ import {
   Loader2,
   RefreshCw,
 } from "lucide-react";
+import { clientCache } from "@/lib/clientCache";
 
 export default function ProfileAndAccountsPage() {
   const [profile, setProfile] = useState<any>(null);
@@ -107,7 +108,7 @@ export default function ProfileAndAccountsPage() {
   };
 
   const handleDisconnect = async (accountId: string) => {
-    if (!confirm("Are you sure you want to permanently delete this social media account? It will be completely removed from your profile and the database.")) return;
+    if (!confirm("Are you sure you want to delete this social account? Only the social profile will be removed. All your submitted clips, views, and earnings will remain 100% intact on the website.")) return;
 
     // Optimistically remove from state so it immediately disappears from UI
     setAccounts((prev) => prev.filter((a) => a.id !== accountId));
@@ -117,6 +118,7 @@ export default function ProfileAndAccountsPage() {
         method: "POST",
       });
       if (res.ok) {
+        clientCache.clear("clipper_user_profile");
         loadData();
       } else {
         const data = await res.json();

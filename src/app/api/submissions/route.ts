@@ -40,9 +40,31 @@ export async function GET(request: Request) {
           orderBy: { captured_at: "desc" },
           take: 5,
         },
+        user: {
+          select: {
+            username: true,
+          },
+        },
       },
       orderBy: { created_at: "desc" },
     });
+
+    const extractHandle = (url: string, fallback: string) => {
+      try {
+        const parsed = new URL(url);
+        if (parsed.hostname.includes("tiktok.com")) {
+          const m = parsed.pathname.match(/@([^/?#]+)/);
+          if (m) return m[1];
+        }
+        if (parsed.hostname.includes("instagram.com")) {
+          const parts = parsed.pathname.split("/").filter(Boolean);
+          if (parts.length > 0 && !["p", "reel", "stories", "tv"].includes(parts[0])) {
+            return parts[0].replace(/^@/, "");
+          }
+        }
+      } catch {}
+      return fallback;
+    };
 
     const formatted = submissions.map((s) => ({
       id: s.id,
@@ -53,7 +75,7 @@ export async function GET(request: Request) {
       platform: s.platform,
       post_url: s.post_url,
       platform_post_id: s.platform_post_id,
-      account_username: s.social_account?.username || "unlinked",
+      account_username: s.social_account?.username || extractHandle(s.post_url, s.user?.username || "clipper"),
       status: s.status,
       current_views: s.current_views,
       eligible_views: s.eligible_views,

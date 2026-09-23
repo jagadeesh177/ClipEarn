@@ -182,3 +182,20 @@ html.light .bg-brand-cyan\/20 {
   background-color: rgba(6, 182, 212, 0.12) !important;
 }
 
+/* Light mode table & divider polish */
+html.light thead,
+html.light .bg-\[\#080C14\] {
+  background-color: #F8FAFC !important;
+}
+
+html.light table tbody tr:hover {
+  background-color: #F1F5F9 !important;
+}
+
+html.light .divide-slate-800,
+html.light .divide-slate-800\/80,
+html.light .divide-slate-800\/60 {
+  border-color: #E2E8F0 !important;
+}
+
+
