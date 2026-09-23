@@ -12,6 +12,7 @@ export interface SocialAccountData {
 
 export interface VerificationResult {
   is_verified: boolean;
+  is_login_wall?: boolean;
   bio_text?: string;
   verification_code_found?: boolean;
   error?: string;

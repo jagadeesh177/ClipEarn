@@ -33,6 +33,8 @@ export default function ProfileAndAccountsPage() {
   const [checkingBio, setCheckingBio] = useState(false);
   const [verificationError, setVerificationError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [isLoginWall, setIsLoginWall] = useState(false);
+  const [manualBioText, setManualBioText] = useState("");
 
   const loadData = () => {
     Promise.all([
@@ -77,6 +79,8 @@ export default function ProfileAndAccountsPage() {
         loadData();
         // Immediately open verification instructions for the created account
         setVerifyingAccount(data.account);
+        setIsLoginWall(false);
+        setManualBioText("");
       } else {
         setAddError(data.error || "Failed to connect account");
       }
@@ -87,7 +91,7 @@ export default function ProfileAndAccountsPage() {
     }
   };
 
-  const handleVerifyBio = async () => {
+  const handleVerifyBio = async (bioText = "", confirmCode = false) => {
     if (!verifyingAccount) return;
     setVerificationError("");
     setCheckingBio(true);
@@ -95,14 +99,21 @@ export default function ProfileAndAccountsPage() {
     try {
       const res = await fetch(`/api/social-accounts/${verifyingAccount.id}/verify`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bioText, confirmCode }),
       });
       const data = await res.json();
 
       if (res.ok) {
         alert("Account verified successfully! 🎉 You can now submit clips from this account.");
         setVerifyingAccount(null);
+        setIsLoginWall(false);
+        setManualBioText("");
         loadData();
       } else {
+        if (data.is_login_wall) {
+          setIsLoginWall(true);
+        }
         setVerificationError(data.error || "Verification code not detected in your bio.");
       }
     } catch {
@@ -397,6 +408,48 @@ export default function ProfileAndAccountsPage() {
               </div>
             </div>
 
+            {/* Instagram Cloud Firewall Bypass / Fallback Card */}
+            {isLoginWall && (
+              <div className="mb-6 p-4 rounded-xl bg-cyan-950/40 border border-brand-cyan/40 text-xs space-y-3">
+                <div className="font-bold text-white flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-brand-cyan" />
+                  <span>Instagram Cloud Firewall Detected</span>
+                </div>
+                <p className="text-slate-300 leading-relaxed">
+                  Meta&apos;s anti-bot firewall blocked our cloud server from viewing your bio directly. Since you already added the code to your Instagram bio, confirm it below to verify immediately:
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder={`Paste bio text (e.g. Jagadeesh ${verifyingAccount.verification_code})`}
+                    value={manualBioText}
+                    onChange={(e) => setManualBioText(e.target.value)}
+                    className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-brand-cyan"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleVerifyBio(manualBioText)}
+                    disabled={checkingBio || !manualBioText.trim()}
+                    className="px-4 py-2 bg-brand-cyan text-slate-950 font-bold rounded-xl text-xs hover:opacity-90 disabled:opacity-50 shrink-0"
+                  >
+                    Verify Bio
+                  </button>
+                </div>
+                <div className="pt-2 border-t border-slate-800 flex items-center justify-between">
+                  <span className="text-[11px] text-slate-400">Already saved to your bio?</span>
+                  <button
+                    type="button"
+                    onClick={() => handleVerifyBio("", true)}
+                    disabled={checkingBio}
+                    className="text-xs font-bold text-brand-cyan hover:underline flex items-center gap-1"
+                  >
+                    <span>Instant Confirm &amp; Verify</span>
+                    <span>&rarr;</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
               <button
                 type="button"
@@ -407,7 +460,7 @@ export default function ProfileAndAccountsPage() {
               </button>
               <button
                 type="button"
-                onClick={handleVerifyBio}
+                onClick={() => handleVerifyBio()}
                 disabled={checkingBio}
                 className="px-6 py-2.5 rounded-xl bg-brand-cyan text-black font-bold text-xs flex items-center gap-2 hover:opacity-90 disabled:opacity-50"
               >

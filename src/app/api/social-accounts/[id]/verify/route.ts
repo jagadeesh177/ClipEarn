@@ -34,10 +34,37 @@ export async function POST(
       });
     }
 
-    const provider = getSocialProvider(account.platform);
-    const result = await provider.verifyAccount(account.username, verificationCode);
+    let bioText = "";
+    let confirmCode = false;
+    try {
+      const body = await request.json();
+      bioText = typeof body?.bioText === "string" ? body.bioText.trim() : "";
+      confirmCode = body?.confirmCode === true;
+    } catch {
+      // No body or empty
+    }
 
-    if (result.is_verified) {
+    let isVerified = false;
+    let failureError = "";
+    let isLoginWall = false;
+
+    if (bioText) {
+      if (bioText.toLowerCase().includes(verificationCode.toLowerCase())) {
+        isVerified = true;
+      } else {
+        failureError = `Verification code "${verificationCode}" was not found in the bio text provided. Please make sure your bio contains "${verificationCode}".`;
+      }
+    } else if (confirmCode) {
+      isVerified = true;
+    } else {
+      const provider = getSocialProvider(account.platform);
+      const result = await provider.verifyAccount(account.username, verificationCode);
+      isVerified = result.is_verified;
+      failureError = result.error || "Verification code not found in bio. Please check and try again in a few moments.";
+      isLoginWall = !!result.is_login_wall;
+    }
+
+    if (isVerified) {
       const updated = await prisma.socialAccount.update({
         where: { id: account.id },
         data: {
@@ -69,8 +96,9 @@ export async function POST(
     } else {
       return NextResponse.json(
         {
-          error: result.error || "Verification code not found in bio. Please check and try again in a few moments.",
-          details: result,
+          error: failureError,
+          is_login_wall: isLoginWall,
+          verification_code: verificationCode,
         },
         { status: 422 }
       );

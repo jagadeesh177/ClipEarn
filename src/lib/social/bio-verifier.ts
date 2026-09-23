@@ -41,6 +41,7 @@ async function checkInstagramBio(username: string, verificationCode: string): Pr
   ];
 
   let extractedBio = "";
+  let hitLoginWall = false;
 
   for (const ua of userAgents) {
     try {
@@ -105,7 +106,10 @@ async function checkInstagramBio(username: string, verificationCode: string): Pr
       }
 
       // Check if code is found in the extracted bio OR anywhere in the raw page html
-      if (extractedBio.toLowerCase().includes(targetCode) || html.toLowerCase().includes(targetCode)) {
+      if (
+        (extractedBio && extractedBio.toLowerCase().includes(targetCode)) ||
+        html.toLowerCase().includes(targetCode)
+      ) {
         return {
           is_verified: true,
           bio_text: extractedBio || `Found verification code ${verificationCode}`,
@@ -113,11 +117,35 @@ async function checkInstagramBio(username: string, verificationCode: string): Pr
         };
       }
 
-      // If we got a valid response and extracted bio, break
+      // Check if Instagram served a login wall / sign-in redirect
+      const isLoginWall =
+        html.includes("Welcome back to Instagram") ||
+        html.includes("Sign in to check out") ||
+        html.includes("Log into Instagram") ||
+        extractedBio.includes("Welcome back to Instagram") ||
+        extractedBio.includes("Sign in to check out");
+
+      if (isLoginWall) {
+        hitLoginWall = true;
+        extractedBio = ""; // Discard login wall text - not the user's bio!
+        continue; // Try next user agent
+      }
+
+      // If we got a valid, non-login response and extracted bio, break
       if (extractedBio) break;
     } catch {
       // Try next user agent
     }
+  }
+
+  if (hitLoginWall && !extractedBio) {
+    return {
+      is_verified: false,
+      is_login_wall: true,
+      bio_text: undefined,
+      verification_code_found: false,
+      error: `Instagram's cloud firewall blocked our server from reading @${cleanUsername}'s bio directly. Please paste your bio text below or confirm your code to verify ownership immediately.`,
+    };
   }
 
   const cleanBioPreview = extractedBio
