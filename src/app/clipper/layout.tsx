@@ -240,7 +240,7 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
             <span className="text-xs font-semibold text-slate-400 px-3 tracking-normal">
               Clipper Workspace
             </span>
-            <div className="mt-2 space-y-1">
+            <div className="mt-2.5 space-y-1.5">
               {personalNav.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href || (item.href === "/clipper/campaigns" && pathname.startsWith("/clipper/campaigns"));
@@ -269,6 +269,40 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
                   </Link>
                 );
               })}
+            </div>
+          </div>
+
+          {/* Resources & Support Group to balance sidebar vertical rhythm */}
+          <div className="mt-6 pt-5 border-t border-slate-800/60">
+            <span className="text-xs font-semibold text-slate-400 px-3 tracking-normal">
+              Help & Resources
+            </span>
+            <div className="mt-2.5 space-y-1.5">
+              <Link
+                href="/clipper/guidelines"
+                prefetch={true}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  pathname === "/clipper/guidelines"
+                    ? "bg-brand-cyan/10 text-brand-cyan border border-brand-cyan/30 font-bold"
+                    : "text-slate-400 hover:text-white hover:bg-slate-900/80 border border-transparent"
+                }`}
+              >
+                <BookOpen className="w-4 h-4 text-slate-400" />
+                <span>Clipping Rules</span>
+              </Link>
+              <a
+                href="https://discord.gg/fWDVEt9GVB"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-900/80 border border-transparent transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  <MessageSquare className="w-4 h-4 text-slate-400" />
+                  <span>Discord Community</span>
+                </div>
+                <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
+              </a>
             </div>
           </div>
         </div>

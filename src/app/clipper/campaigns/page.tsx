@@ -238,24 +238,26 @@ export default function BrowseCampaignsPage() {
             return (
               <div
                 key={camp.id}
-                className="rounded-2xl bg-[#0D131D] border border-slate-800/80 hover:border-slate-700/80 transition-all p-5 flex flex-col justify-between group shadow-lg"
+                className="rounded-2xl bg-[#0D131D] border border-slate-800/80 hover:border-slate-700/80 transition-all p-5 flex flex-col justify-between h-full group shadow-lg"
               >
-                <div>
+                <div className="flex-1 flex flex-col">
                   {/* Top Row: Brand Logo, Title & Active tag, and Top-Right Avg Review tag */}
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-start gap-3 min-w-0 flex-1">
                       {/* Brand Logo / Avatar Circle with Graceful Fallback */}
                       <CampaignAvatar imageUrl={camp.image_url} name={camp.brand_name || camp.name} />
 
-                      {/* Title & Status */}
+                      {/* Title & Status with normalized height */}
                       <div className="min-w-0 flex-1">
-                        <Link
-                          href={`/clipper/campaigns/${camp.id}`}
-                          className="font-bold text-white text-sm sm:text-base hover:text-brand-cyan transition-colors line-clamp-2 leading-snug block"
-                          title={camp.name}
-                        >
-                          {camp.name}
-                        </Link>
+                        <div className="min-h-[2.5rem] flex items-center">
+                          <Link
+                            href={`/clipper/campaigns/${camp.id}`}
+                            className="font-bold text-white text-sm sm:text-base hover:text-brand-cyan transition-colors line-clamp-2 leading-snug block"
+                            title={camp.name}
+                          >
+                            {camp.name}
+                          </Link>
+                        </div>
                         <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-brand-cyan/15 text-brand-cyan border border-brand-cyan/30 uppercase tracking-wider inline-block mt-1">
                           {camp.status || "ACTIVE"}
                         </span>
@@ -269,7 +271,7 @@ export default function BrowseCampaignsPage() {
                     </div>
                   </div>
 
-                  {/* Middle Specs Row: CPM or RETAINER badge & Social platform icons */}
+                  {/* Middle Specs Row: CPM or RETAINER badge & Grouped social platform icons */}
                   <div className="flex items-center justify-between mt-4">
                     {/* Left: CPM / Retainer Chip */}
                     {isRetainer ? (
@@ -282,8 +284,11 @@ export default function BrowseCampaignsPage() {
                       </span>
                     )}
 
-                    {/* Right: Allowed Platform Icons */}
-                    <div className="flex items-center gap-2">
+                    {/* Right: Grouped Allowed Platform Icons in Pill Container */}
+                    <div
+                      className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800"
+                      aria-label="Supported platforms"
+                    >
                       {platforms.includes("INSTAGRAM") && (
                         <div title="Instagram Reels allowed" className="text-pink-400">
                           <InstagramIcon className="w-4 h-4" />
@@ -302,7 +307,7 @@ export default function BrowseCampaignsPage() {
                     </div>
                   </div>
 
-                  {/* Dual Progress Bars */}
+                  {/* Dual Progress Bars with enhanced 8px height and high-contrast track */}
                   <div className="mt-5 space-y-3.5">
                     {/* Progress Bar 1: Budget Used */}
                     <div>
@@ -312,7 +317,14 @@ export default function BrowseCampaignsPage() {
                         </span>
                         <span className="text-white font-bold">{budgetPercent}%</span>
                       </div>
-                      <div className="w-full h-1.5 bg-slate-800/90 rounded-full overflow-hidden mt-1.5">
+                      <div
+                        role="progressbar"
+                        aria-valuenow={budgetPercent}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-label="Budget used percentage"
+                        className="w-full h-2 bg-slate-900 border border-slate-700/60 rounded-full overflow-hidden mt-1.5"
+                      >
                         <div
                           className="h-full bg-brand-cyan rounded-full transition-all duration-500"
                           style={{ width: `${budgetPercent}%` }}
@@ -329,7 +341,14 @@ export default function BrowseCampaignsPage() {
                           </span>
                           <span className="text-white font-bold">{viewsPercent}%</span>
                         </div>
-                        <div className="w-full h-1.5 bg-slate-800/90 rounded-full overflow-hidden mt-1.5">
+                        <div
+                          role="progressbar"
+                          aria-valuenow={viewsPercent}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                          aria-label="Views progress percentage"
+                          className="w-full h-2 bg-slate-900 border border-slate-700/60 rounded-full overflow-hidden mt-1.5"
+                        >
                           <div
                             className="h-full bg-blue-500 rounded-full transition-all duration-500"
                             style={{ width: `${viewsPercent}%` }}
@@ -340,13 +359,13 @@ export default function BrowseCampaignsPage() {
                   </div>
                 </div>
 
-                {/* Bottom Action Row: Standardized 40px Height Discord + Join Campaign CTA */}
+                {/* Bottom Action Row: Standardized 40px Height Discord + Join Campaign CTA pinned to bottom */}
                 <div className="mt-5 pt-4 border-t border-slate-800/60 flex items-center gap-2.5">
                   {/* Discord Button */}
                   <button
                     type="button"
                     onClick={(e) => handleDiscordClick(camp, e)}
-                    className="h-10 px-3.5 rounded-xl bg-[#141C2B] hover:bg-[#1A253A] border border-slate-700/80 text-slate-200 hover:text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shrink-0"
+                    className="h-10 px-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 hover:text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shrink-0"
                     title="Join Campaign Community on Discord"
                   >
                     <DiscordIcon className="w-4 h-4 text-[#5865F2]" />
