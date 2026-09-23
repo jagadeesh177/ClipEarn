@@ -113,6 +113,8 @@ model User {
   fraud_flags           FraudFlag[]
   campaigns_created     Campaign[]            @relation("CampaignsCreated")
   submissions_reviewed  Submission[]          @relation("ReviewedBy")
+  created_access_codes  CampaignAccessCode[]  @relation("CreatedAccessCodes")
+  redeemed_access_codes CampaignAccessCode[]  @relation("RedeemedAccessCodes")
 
   @@index([discord_id])
   @@index([role])
@@ -173,6 +175,7 @@ model Campaign {
   memberships               CampaignMembership[]
   submissions               Submission[]
   earnings_ledger           EarningsLedger[]
+  access_codes              CampaignAccessCode[]
 
   @@index([status])
   @@index([created_by])
@@ -368,4 +371,25 @@ model FraudFlag {
   @@index([submission_id])
   @@index([status])
   @@map("fraud_flags")
+}
+
+model CampaignAccessCode {
+  id            String    @id @default(uuid())
+  campaign_id   String
+  code          String    @unique
+  status        String    @default("ACTIVE")
+  created_by    String
+  redeemed_by   String?
+  redeemed_at   DateTime?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  campaign      Campaign  @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
+  creator       User      @relation("CreatedAccessCodes", fields: [created_by], references: [id], onDelete: Cascade)
+  manager       User?     @relation("RedeemedAccessCodes", fields: [redeemed_by], references: [id], onDelete: SetNull)
+
+  @@index([campaign_id])
+  @@index([code])
+  @@index([redeemed_by])
+  @@map("campaign_access_codes")
 }

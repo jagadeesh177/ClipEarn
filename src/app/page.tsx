@@ -95,7 +95,6 @@ export default function LandingPage() {
             <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-400">
               <a href="#how-it-works" className="hover:text-white transition-colors">How It Works</a>
               <a href="#campaigns" className="hover:text-white transition-colors">Campaigns</a>
-              <a href="#brands" className="hover:text-white transition-colors">For Brands</a>
               <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
             </nav>
           </div>
@@ -316,104 +315,6 @@ export default function LandingPage() {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* For Brands Section */}
-      <section id="brands" className="py-24 bg-[#0A0F1D]/80 border-t border-slate-800 scroll-mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <span className="text-xs font-bold text-brand-emerald uppercase tracking-widest">
-                Growth for Modern Brands
-              </span>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-white mt-2 leading-tight">
-                Turn Millions of Views Into Viral Customer Acquisition
-              </h2>
-              <p className="mt-6 text-base text-slate-300 leading-relaxed">
-                Traditional influencer marketing is overpriced and unmeasurable. With ClipEarn, you set your exact CPM, define strict brand guidelines, and unleash thousands of hungry UGC clippers across TikTok, YouTube Shorts, and Instagram Reels.
-              </p>
-
-              <div className="mt-8 space-y-4">
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-brand-emerald mt-0.5 shrink-0" />
-                  <div>
-                    <h3 className="text-sm font-bold text-white">Pay Only for Verified Eligible Views</h3>
-                    <p className="text-xs text-slate-400">No upfront waste. Budgets are deducted purely on verified views.</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-brand-emerald mt-0.5 shrink-0" />
-                  <div>
-                    <h3 className="text-sm font-bold text-white">Manager Vetted Content</h3>
-                    <p className="text-xs text-slate-400">Every clip is approved by human campaign managers before it can earn.</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-brand-emerald mt-0.5 shrink-0" />
-                  <div>
-                    <h3 className="text-sm font-bold text-white">Comprehensive CSV & Real-time Analytics</h3>
-                    <p className="text-xs text-slate-400">Direct export of all clip URLs, clipper usernames, and engagement curves.</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-8">
-                <button
-                  onClick={() => setBrandModalOpen(true)}
-                  className="px-6 py-3 rounded-xl bg-brand-emerald text-black font-bold text-sm hover:opacity-90 transition-opacity"
-                >
-                  Contact ClipEarn Partnerships
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6 sm:p-8 rounded-2xl bg-[#0B0F17] border border-slate-800 shadow-xl relative overflow-hidden">
-              <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-800/80">
-                <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-slate-700" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-slate-700" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-slate-700" />
-                  <span className="text-[11px] font-mono text-slate-400 ml-2">Campaign Console • Steve Wynn Media</span>
-                </div>
-                <div className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#1cf7fd]/10 text-[#1cf7fd] border border-[#1cf7fd]/20">
-                  LIVE ESCROW
-                </div>
-              </div>
-
-              <div className="space-y-4 text-xs">
-                <div className="p-4 rounded-xl bg-[#070A0F] border border-slate-800/90 flex justify-between items-center gap-4">
-                  <div className="space-y-0.5">
-                    <div className="text-slate-400 font-medium">Campaign CPM</div>
-                    <div className="text-base font-bold text-white font-mono">$1.00 per 1,000 views</div>
-                  </div>
-                  <div className="px-3 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-[11px] tracking-wide shrink-0">
-                    ACTIVE
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-xl bg-[#070A0F] border border-slate-800/90 grid grid-cols-2 gap-4">
-                  <div className="space-y-0.5">
-                    <div className="text-slate-400 font-medium">Total Views Tracked</div>
-                    <div className="text-lg font-black text-[#1cf7fd] font-mono">363,523</div>
-                  </div>
-                  <div className="space-y-0.5">
-                    <div className="text-slate-400 font-medium">Budget Consumed</div>
-                    <div className="text-lg font-black text-white font-mono">$122.02 / $10,000</div>
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-xl bg-[#070A0F]/80 border border-slate-800/80 text-slate-400">
-                  <p className="italic leading-relaxed">
-                    "ClipEarn drove over 20M views for our podcast launch in 30 days through a distributed network of active clippers."
-                  </p>
-                  <div className="mt-2.5 text-slate-200 font-semibold text-[11px]">— Growth Lead, Steve Wynn Media</div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </section>

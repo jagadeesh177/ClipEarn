@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser, requireRole } from "@/lib/auth";
 import { UserRole, Prisma, SubmissionStatus } from "@prisma/client";
 import { logAuditEvent } from "@/lib/audit";
+import { hasManagerCampaignAccess } from "@/lib/campaignAccess";
 
 export async function GET(
   request: Request,
@@ -10,6 +11,16 @@ export async function GET(
 ) {
   try {
     const user = await getSessionUser();
+
+    if (user?.role === UserRole.MANAGER) {
+      const hasAccess = await hasManagerCampaignAccess(user.id, params.id, user.role);
+      if (!hasAccess) {
+        return NextResponse.json(
+          { error: "Access denied. You do not have permission to access this campaign." },
+          { status: 403 }
+        );
+      }
+    }
     const campaign = await prisma.campaign.findUnique({
       where: { id: params.id },
       include: {
@@ -99,6 +110,16 @@ export async function PATCH(
       return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
     }
 
+    if (user.role === UserRole.MANAGER) {
+      const hasAccess = await hasManagerCampaignAccess(user.id, params.id, user.role);
+      if (!hasAccess) {
+        return NextResponse.json(
+          { error: "Access denied. You do not have permission to modify this campaign." },
+          { status: 403 }
+        );
+      }
+    }
+
     const updated = await prisma.campaign.update({
       where: { id: params.id },
       data: {
@@ -143,6 +164,16 @@ export async function DELETE(
 
     if (!campaign) {
       return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
+    }
+
+    if (user.role === UserRole.MANAGER) {
+      const hasAccess = await hasManagerCampaignAccess(user.id, params.id, user.role);
+      if (!hasAccess) {
+        return NextResponse.json(
+          { error: "Access denied. You do not have permission to delete this campaign." },
+          { status: 403 }
+        );
+      }
     }
 
     await prisma.campaign.delete({

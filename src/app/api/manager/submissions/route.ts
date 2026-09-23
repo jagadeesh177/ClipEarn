@@ -5,7 +5,7 @@ import { UserRole, SubmissionStatus, Platform, Prisma } from "@prisma/client";
 
 export async function GET(request: Request) {
   try {
-    await requireRole([UserRole.MANAGER, UserRole.ADMIN]);
+    const user = await requireRole([UserRole.MANAGER, UserRole.ADMIN]);
     const { searchParams } = new URL(request.url);
 
     const campaignId = searchParams.get("campaign_id");
@@ -28,6 +28,18 @@ export async function GET(request: Request) {
               { post_url: { contains: search, mode: "insensitive" } },
               { platform_post_id: { contains: search, mode: "insensitive" } },
             ],
+          }
+        : {}),
+      ...(user.role === UserRole.MANAGER
+        ? {
+            campaign: {
+              access_codes: {
+                some: {
+                  redeemed_by: user.id,
+                  status: "REDEEMED",
+                },
+              },
+            },
           }
         : {}),
     };

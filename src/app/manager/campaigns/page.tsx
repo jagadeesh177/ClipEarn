@@ -18,10 +18,15 @@ import {
   TrendingUp,
   Trash2,
   Loader2,
+  Key,
+  Copy,
+  Check,
+  X,
 } from "lucide-react";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 
 export default function ManagerCampaignsPage() {
+  const [currentUser, setCurrentUser] = useState<any | null>(null);
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -42,6 +47,20 @@ export default function ManagerCampaignsPage() {
     image_url: "",
   });
   const [savingEdit, setSavingEdit] = useState(false);
+
+  // Access Code Management States
+  const [accessCodeCampaign, setAccessCodeCampaign] = useState<any | null>(null);
+  const [accessCodesList, setAccessCodesList] = useState<any[]>([]);
+  const [generatingCode, setGeneratingCode] = useState(false);
+  const [justGeneratedCode, setJustGeneratedCode] = useState<string | null>(null);
+  const [copiedCode, setCopiedCode] = useState(false);
+
+  // Manager Access Code Redemption States
+  const [redeemModalOpen, setRedeemModalOpen] = useState(false);
+  const [accessCodeInput, setAccessCodeInput] = useState("");
+  const [redeemingCode, setRedeemingCode] = useState(false);
+  const [redeemError, setRedeemError] = useState<string | null>(null);
+  const [redeemSuccess, setRedeemSuccess] = useState<string | null>(null);
 
   const handleOpenEdit = (camp: any) => {
     setEditingCampaign(camp);
@@ -146,7 +165,88 @@ export default function ManagerCampaignsPage() {
 
   useEffect(() => {
     loadCampaigns();
+    if (typeof window !== "undefined" && window.location.search.includes("redeem=true")) {
+      setRedeemModalOpen(true);
+    }
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.authenticated) {
+          setCurrentUser(data.user);
+        }
+      })
+      .catch(() => {});
   }, []);
+
+  const handleOpenAccessCodes = async (camp: any) => {
+    setAccessCodeCampaign(camp);
+    setJustGeneratedCode(null);
+    setCopiedCode(false);
+    try {
+      const res = await fetch(`/api/campaigns/${camp.id}/access-codes`);
+      const data = await res.json();
+      if (res.ok && data.data) {
+        setAccessCodesList(data.data);
+      } else {
+        setAccessCodesList([]);
+      }
+    } catch {
+      setAccessCodesList([]);
+    }
+  };
+
+  const handleGenerateCode = async () => {
+    if (!accessCodeCampaign) return;
+    try {
+      setGeneratingCode(true);
+      const res = await fetch(`/api/campaigns/${accessCodeCampaign.id}/access-codes`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (res.ok && data.code) {
+        setJustGeneratedCode(data.code);
+        setAccessCodesList((prev) => [data.accessCode, ...prev]);
+        loadCampaigns();
+      } else {
+        alert(data.error || "Failed to generate access code");
+      }
+    } catch {
+      alert("Network error generating access code");
+    } finally {
+      setGeneratingCode(false);
+    }
+  };
+
+  const handleRedeemCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!accessCodeInput.trim()) return;
+    setRedeemingCode(true);
+    setRedeemError(null);
+    setRedeemSuccess(null);
+    try {
+      const res = await fetch("/api/manager/access-code/redeem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: accessCodeInput.trim() }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setRedeemSuccess(data.message || "Campaign access granted successfully!");
+        setAccessCodeInput("");
+        loadCampaigns();
+        setTimeout(() => {
+          setRedeemModalOpen(false);
+          setRedeemSuccess(null);
+        }, 1500);
+      } else {
+        setRedeemError(data.error || "Invalid or expired campaign access code.");
+      }
+    } catch {
+      setRedeemError("Network error redeeming access code.");
+    } finally {
+      setRedeemingCode(false);
+    }
+  };
 
   const handleToggleStatus = async (campaignId: string, currentStatus: string) => {
     const nextStatus = currentStatus === "ACTIVE" ? "PAUSED" : "ACTIVE";
@@ -206,13 +306,32 @@ export default function ManagerCampaignsPage() {
           </p>
         </div>
 
-        <Link
-          href="/manager/campaigns/create"
-          className="px-5 py-2.5 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-black text-xs transition-opacity hover:opacity-95 flex items-center gap-2 self-start sm:self-auto shadow-lg shadow-brand-cyan/20"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Launch New Campaign</span>
-        </Link>
+        <div className="flex flex-wrap items-center gap-3">
+          {currentUser?.role === "MANAGER" && (
+            <button
+              type="button"
+              onClick={() => {
+                setRedeemModalOpen(true);
+                setRedeemError(null);
+                setRedeemSuccess(null);
+              }}
+              className="px-4 py-2.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 hover:text-white border border-purple-500/40 text-xs font-bold transition-all flex items-center gap-2 shadow-sm"
+            >
+              <Key className="w-4 h-4 text-purple-400" />
+              <span>Enter Campaign Access Code</span>
+            </button>
+          )}
+
+          {currentUser?.role === "ADMIN" && (
+            <Link
+              href="/manager/campaigns/create"
+              className="px-5 py-2.5 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-black text-xs transition-opacity hover:opacity-95 flex items-center gap-2 self-start sm:self-auto shadow-lg shadow-brand-cyan/20"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Launch New Campaign</span>
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* Campaigns Table */}
@@ -224,8 +343,34 @@ export default function ManagerCampaignsPage() {
             ))}
           </div>
         ) : campaigns.length === 0 ? (
-          <div className="py-12 text-center text-slate-500 text-xs">
-            No campaigns found. Create your first campaign above.
+          <div className="py-16 text-center space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 mx-auto">
+              <Key className="w-6 h-6 text-purple-400" />
+            </div>
+            <div className="text-slate-300 font-bold text-sm">
+              {currentUser?.role === "MANAGER"
+                ? "No Accessible Campaigns"
+                : "No Campaigns Found"}
+            </div>
+            <p className="text-slate-500 text-xs max-w-md mx-auto leading-relaxed">
+              {currentUser?.role === "MANAGER"
+                ? "You do not have direct access to any campaigns yet. Contact an administrator to receive a Campaign Manager access code, or click below to enter your code."
+                : "No campaigns launched yet. Click Launch New Campaign above to create one."}
+            </p>
+            {currentUser?.role === "MANAGER" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setRedeemModalOpen(true);
+                  setRedeemError(null);
+                  setRedeemSuccess(null);
+                }}
+                className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition-all shadow-md shadow-purple-600/30"
+              >
+                <Key className="w-4 h-4" />
+                <span>Enter Campaign Access Code</span>
+              </button>
+            )}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -336,6 +481,19 @@ export default function ManagerCampaignsPage() {
 
                       <td className="py-4 text-right">
                         <div className="flex items-center justify-end gap-2.5 sm:gap-3">
+                          {/* Generate Manager Access Code (Admin Only) */}
+                          {currentUser?.role === "ADMIN" && (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenAccessCodes(camp)}
+                              title="Generate Manager Access Code"
+                              aria-label={`Generate Manager Access Code for ${camp.name}`}
+                              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 hover:text-purple-200 border border-purple-500/30 hover:border-purple-500/50 transition-colors flex items-center justify-center shrink-0"
+                            >
+                              <Key className="w-4 h-4 text-purple-400" />
+                            </button>
+                          )}
+
                           {/* Edit Parameters (CPM, Budget, Platforms) */}
                           <button
                             type="button"
@@ -617,6 +775,236 @@ export default function ManagerCampaignsPage() {
                 <span>{deleting ? "Deleting..." : "Permanently Delete"}</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Access Codes Modal */}
+      {accessCodeCampaign && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-[#0F141F] border border-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl relative space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                  <Key className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-white">Manager Access Codes</h2>
+                  <p className="text-xs text-slate-400">{accessCodeCampaign.name} &bull; {accessCodeCampaign.brand_name}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAccessCodeCampaign(null)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-[#080C14] border border-slate-800">
+              <div>
+                <span className="text-xs font-semibold text-slate-200 block">Generate Manager Access Code</span>
+                <p className="text-[11px] text-slate-400 mt-0.5">Generate a secure code for the intended Campaign Manager.</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleGenerateCode}
+                disabled={generatingCode}
+                className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-purple-600/30 shrink-0"
+              >
+                {generatingCode ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Key className="w-4 h-4" />
+                )}
+                <span>Generate Manager Access Code</span>
+              </button>
+            </div>
+
+            {/* Just Generated Code Banner */}
+            {justGeneratedCode && (
+              <div className="p-4 rounded-xl bg-purple-500/10 border border-purple-500/40 text-purple-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-purple-300 uppercase tracking-wider">New Code Generated:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(justGeneratedCode);
+                      setCopiedCode(true);
+                      setTimeout(() => setCopiedCode(false), 2000);
+                    }}
+                    className="text-xs font-bold px-3 py-1 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 text-purple-300 flex items-center gap-1.5 transition-all"
+                  >
+                    {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedCode ? "Copied!" : "Copy Code"}</span>
+                  </button>
+                </div>
+                <div className="font-mono font-black text-xl text-white tracking-widest bg-black/40 px-3 py-2 rounded-lg border border-purple-500/30 text-center select-all">
+                  {justGeneratedCode}
+                </div>
+                <p className="text-[11px] text-purple-300/80">
+                  Share this code with the Campaign Manager. Once entered, they will receive access to manage this campaign.
+                </p>
+              </div>
+            )}
+
+            {/* Codes History */}
+            <div className="space-y-2">
+              <span className="text-xs font-bold text-slate-300 block">Existing Codes &amp; Manager Redemptions</span>
+              <div className="max-h-56 overflow-y-auto space-y-2 pr-1">
+                {accessCodesList.length === 0 ? (
+                  <div className="p-4 text-center text-xs text-slate-500 rounded-xl bg-[#080C14] border border-slate-800/80">
+                    No access codes generated yet for this campaign.
+                  </div>
+                ) : (
+                  accessCodesList.map((ac: any) => (
+                    <div
+                      key={ac.id}
+                      className="p-3 rounded-xl bg-[#080C14] border border-slate-800 flex items-center justify-between text-xs"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-white text-sm">{ac.code}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(ac.code);
+                              alert(`Copied ${ac.code} to clipboard!`);
+                            }}
+                            title="Copy code"
+                            className="text-slate-400 hover:text-white"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                          {ac.status === "REDEEMED" ? (
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold">
+                              Redeemed
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-[10px] font-bold">
+                              Active (Unclaimed)
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-slate-400">
+                          Created {new Date(ac.created_at).toLocaleDateString()}
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        {ac.status === "REDEEMED" && ac.manager ? (
+                          <div>
+                            <span className="text-white font-bold block">{ac.manager.username}</span>
+                            <span className="text-[10px] text-slate-400 block">{ac.manager.email}</span>
+                            <span className="text-[10px] text-slate-500 block">
+                              Redeemed {new Date(ac.redeemed_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-slate-500 italic text-[11px]">Unclaimed</span>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-3 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setAccessCodeCampaign(null)}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manager Redeem Code Modal */}
+      {redeemModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-[#0F141F] border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                  <Key className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-white">Enter Campaign Access Code</h2>
+                  <p className="text-xs text-slate-400">Redeem an administrator-issued access code</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setRedeemModalOpen(false);
+                  setRedeemError(null);
+                  setRedeemSuccess(null);
+                }}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleRedeemCode} className="space-y-4">
+              {redeemError && (
+                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{redeemError}</span>
+                </div>
+              )}
+
+              {redeemSuccess && (
+                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <span>{redeemSuccess}</span>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Campaign Access Code
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={accessCodeInput}
+                  onChange={(e) => setAccessCodeInput(e.target.value.toUpperCase())}
+                  placeholder="e.g. CE-MGR-7K4P9X"
+                  className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 focus:border-purple-500 text-white font-mono text-sm tracking-wider uppercase placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                />
+                <p className="text-[11px] text-slate-500 mt-1.5">
+                  Enter the unique access code provided by your campaign administrator.
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRedeemModalOpen(false);
+                    setRedeemError(null);
+                    setRedeemSuccess(null);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={redeemingCode || !accessCodeInput.trim()}
+                  className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-2 shadow-md shadow-purple-600/30"
+                >
+                  {redeemingCode ? <Loader2 className="w-4 h-4 animate-spin" /> : <Key className="w-4 h-4" />}
+                  <span>Claim Campaign Access</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

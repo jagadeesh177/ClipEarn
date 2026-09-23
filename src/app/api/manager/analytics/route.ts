@@ -5,7 +5,12 @@ import { UserRole, SubmissionStatus, CampaignStatus, PayoutStatus } from "@prism
 
 export async function GET() {
   try {
-    await requireRole([UserRole.MANAGER, UserRole.ADMIN]);
+    const user = await requireRole([UserRole.MANAGER, UserRole.ADMIN]);
+
+    const campaignFilter =
+      user.role === UserRole.MANAGER
+        ? { access_codes: { some: { redeemed_by: user.id, status: "REDEEMED" } } }
+        : {};
 
     const [
       activeCampaignsCount,
@@ -16,10 +21,11 @@ export async function GET() {
       ledgerAggregate,
       recentSnapshots,
     ] = await Promise.all([
-      prisma.campaign.count({ where: { status: CampaignStatus.ACTIVE } }),
+      prisma.campaign.count({ where: { status: CampaignStatus.ACTIVE, ...campaignFilter } }),
       prisma.user.count({ where: { role: UserRole.CLIPPER } }),
       prisma.submission.groupBy({
         by: ["status"],
+        where: user.role === UserRole.MANAGER ? { campaign: campaignFilter } : undefined,
         _count: true,
         _sum: {
           current_views: true,
@@ -33,6 +39,7 @@ export async function GET() {
         _sum: { amount: true },
       }),
       prisma.campaign.aggregate({
+        where: campaignFilter,
         _sum: {
           total_budget: true,
           used_budget: true,

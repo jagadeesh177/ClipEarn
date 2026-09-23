@@ -1,119 +1,69 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
-import {
-  BookOpen,
-  CheckCircle2,
-  XCircle,
-  ShieldCheck,
-  AlertTriangle,
-  HelpCircle,
-  DollarSign,
-  Video,
-  Clock,
-} from "lucide-react";
+import { Video, CheckCircle2, XCircle } from "lucide-react";
 
 export default function GuidelinesPage() {
-  const sections = [
-    {
-      title: "1. How ClipEarn Works",
-      icon: Video,
-      content:
-        "ClipEarn connects premier brands with short-form video clippers and clip channels. Brands sponsor dedicated campaigns with established CPM rates (e.g. $1.00 CPM = $1.00 per 1,000 views). Clippers produce clips, publish them to TikTok, Instagram Reels, or YouTube Shorts, and earn cash for verified views.",
-    },
-    {
-      title: "2. Connecting & Verifying Social Accounts",
-      icon: ShieldCheck,
-      content:
-        "To ensure clippers only submit content from channels they legitimately own, you must verify your social account before submitting. We generate a unique verification code (e.g. clipearn-81fa2b). Add this code to your social media bio, wait ~20 seconds, and click Verify. Unverified channels cannot submit clips.",
-    },
-    {
-      title: "3. Submission & Human Manager Review",
-      icon: Clock,
-      content:
-        "Immediately after submitting a video link, its status is set to PENDING. A human campaign manager evaluates your clip to ensure all brand requirements (hashtags, minimum video duration, clean audio, no prohibited content) are satisfied. Only APPROVED submissions begin tracking views and generating earnings.",
-    },
-    {
-      title: "4. View Tracking & Eligibility Modes",
-      icon: BookOpen,
-      content:
-        "Every 8 hours, our background workers query the platform APIs to snapshot current video views. Campaigns define view eligibility: 'From Submission' (views accrued after your submission snapshot), 'From Approval' (views accrued after manager approval), or 'Lifetime' (total lifetime views).",
-    },
-    {
-      title: "5. Financial Ledger & Earnings Formula",
-      icon: DollarSign,
-      content:
-        "Earnings are computed strictly server-side: (Eligible Views / 1,000) × Campaign CPM. Every earnings event is written to an immutable database ledger with exact decimal precision to prevent any floating-point discrepancies. Historical earnings rates are permanently locked even if a campaign later adjusts future CPM rates.",
-    },
-    {
-      title: "6. Anti-Fraud & Prohibited Behavior",
-      icon: AlertTriangle,
-      content:
-        "ClipEarn maintains strict anti-fraud safeguards. We prohibit: duplicate submissions of the same video, purchasing artificial bot views, sub-licensing other clippers' accounts, submitting deleted or private videos, and cross-submitting identical clips across conflicting campaigns. Suspicious activity generates fraud flags for administrative investigation.",
-    },
+  const allowedRules = [
+    "Keep all communication respectful when interacting with ClipEarn managers, admins, and other clippers.",
+    "Only connect and submit content through social media accounts that you personally own and control.",
+    "Every submitted clip goes through a review process before it becomes eligible for earnings.",
+    "Submit quality edits only. Spam posting, extremely low-effort clips, or repetitive content may be rejected.",
+    "Your submitted videos must remain public and accessible while their views are being tracked.",
+    "For questions or issues regarding a campaign, use the available ClipEarn support channel to contact the campaign team.",
+  ];
+
+  const prohibitedRules = [
+    "Artificial views, bots, fake engagement, or other forms of manipulation can result in a permanent ban.",
+    "Suspicious or abnormal engagement patterns may cause a clip to be rejected and flagged for review.",
+    "If a social media account or submitted video becomes unavailable, restricted, or banned, the associated views may become ineligible for payment.",
+    "A clip may be reviewed again after approval as part of the campaign's final review process.",
+    "If a clip is rejected, the rejection reason will be shown when available, and the campaign review decision will be final.",
   ];
 
   return (
-    <div className="space-y-8 animate-fadeIn max-w-4xl">
-      {/* Header */}
-      <div className="pb-4 border-b border-slate-800/80">
-        <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-2.5">
-          <BookOpen className="w-7 h-7 text-brand-cyan" />
-          ClipEarn Clipper Guidelines & Rules
-        </h1>
-        <p className="text-sm text-slate-400 mt-1">
-          Everything you need to know about qualifying clips, view calculations, and getting paid.
-        </p>
-      </div>
-
-      {/* Rules Grid */}
-      <div className="space-y-6">
-        {sections.map((sec, idx) => {
-          const Icon = sec.icon;
-          return (
-            <div
-              key={idx}
-              className="p-6 rounded-2xl bg-[#0F141F] border border-slate-800 space-y-3"
-            >
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <Icon className="w-5 h-5 text-brand-cyan shrink-0" />
-                <span>{sec.title}</span>
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed pl-7">
-                {sec.content}
-              </p>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Checklist Summary */}
-      <div className="p-6 rounded-2xl bg-[#0A0F1D] border border-slate-800 grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <h3 className="text-sm font-bold text-brand-emerald flex items-center gap-2 mb-3">
-            <CheckCircle2 className="w-4 h-4" />
-            DO (Ensures Quick Approval):
-          </h3>
-          <ul className="text-xs text-slate-300 space-y-2">
-            <li>&bull; Include all required campaign hashtags and mentions.</li>
-            <li>&bull; Produce crisp 1080x1920 vertical video with animated subtitles.</li>
-            <li>&bull; Submit from your verified connected channel only.</li>
-            <li>&bull; Ensure the clip is public and viewable worldwide.</li>
-          </ul>
+    <div className="max-w-5xl mx-auto py-2 sm:py-6 space-y-6 sm:space-y-8 animate-fadeIn">
+      {/* Section Header */}
+      <div className="flex items-center gap-3.5 sm:gap-4">
+        <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-purple-600/15 border border-purple-500/30 flex items-center justify-center text-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.25)] shrink-0">
+          <Video className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400 stroke-[1.8]" />
         </div>
-
         <div>
-          <h3 className="text-sm font-bold text-red-400 flex items-center gap-2 mb-3">
-            <XCircle className="w-4 h-4" />
-            DON'T (Leads to Rejection):
-          </h3>
-          <ul className="text-xs text-slate-300 space-y-2">
-            <li>&bull; Do not use robotic spam text-to-speech with stolen footage.</li>
-            <li>&bull; Do not submit videos shorter than the campaign minimum.</li>
-            <li>&bull; Do not submit duplicate links across multiple campaigns.</li>
-            <li>&bull; Do not buy bot views or fake engagement.</li>
-          </ul>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+            ClipEarn Rules
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
+            Rules every clipper must follow
+          </p>
+        </div>
+      </div>
+
+      {/* Rules Container Card */}
+      <div className="rounded-2xl sm:rounded-3xl bg-[#0B0F19] border border-slate-800/90 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)] p-6 sm:p-8 lg:p-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 lg:gap-12">
+          {/* Left Column = Accepted / Required Behavior */}
+          <div className="space-y-5 sm:space-y-6">
+            {allowedRules.map((rule, idx) => (
+              <div key={idx} className="flex items-start gap-3.5">
+                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 stroke-[1.75] mt-0.5" />
+                <p className="text-sm sm:text-[15px] text-slate-300 leading-relaxed font-normal">
+                  {rule}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Right Column = Prohibited / Rejection Behavior */}
+          <div className="space-y-5 sm:space-y-6">
+            {prohibitedRules.map((rule, idx) => (
+              <div key={idx} className="flex items-start gap-3.5">
+                <XCircle className="w-5 h-5 text-red-400 shrink-0 stroke-[1.75] mt-0.5" />
+                <p className="text-sm sm:text-[15px] text-slate-300 leading-relaxed font-normal">
+                  {rule}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
 import { UserRole } from "@prisma/client";
+import { hasManagerCampaignAccess } from "@/lib/campaignAccess";
 import * as XLSX from "xlsx";
 
 export async function GET(
@@ -9,7 +10,17 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    await requireRole([UserRole.MANAGER, UserRole.ADMIN]);
+    const user = await requireRole([UserRole.MANAGER, UserRole.ADMIN]);
+
+    if (user.role === UserRole.MANAGER) {
+      const hasAccess = await hasManagerCampaignAccess(user.id, params.id, user.role);
+      if (!hasAccess) {
+        return NextResponse.json(
+          { error: "Access denied. You do not have permission to export this campaign." },
+          { status: 403 }
+        );
+      }
+    }
 
     const campaign = await prisma.campaign.findUnique({
       where: { id: params.id },

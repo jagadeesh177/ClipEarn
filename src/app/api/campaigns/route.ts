@@ -28,6 +28,16 @@ export async function GET(request: Request) {
           }
         : {}),
       ...(platform ? { allowed_platforms: { has: platform } } : {}),
+      ...(user?.role === UserRole.MANAGER
+        ? {
+            access_codes: {
+              some: {
+                redeemed_by: user.id,
+                status: "REDEEMED",
+              },
+            },
+          }
+        : {}),
     };
 
     const [total, campaigns] = await Promise.all([
@@ -39,6 +49,14 @@ export async function GET(request: Request) {
         orderBy: { created_at: "desc" },
         include: {
           memberships: user ? { where: { user_id: user.id } } : false,
+          access_codes: user?.role === UserRole.ADMIN ? {
+            include: {
+              manager: {
+                select: { id: true, username: true, email: true },
+              },
+            },
+            orderBy: { created_at: "desc" },
+          } : false,
           _count: {
             select: {
               memberships: true,
@@ -94,6 +112,7 @@ export async function GET(request: Request) {
         is_joined: isJoined,
         requirements: c.requirements,
         created_at: c.created_at,
+        access_codes: user?.role === UserRole.ADMIN ? (c as any).access_codes : undefined,
       };
     });
 
