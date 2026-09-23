@@ -89,6 +89,8 @@ export async function GET(request: Request) {
       eligible_views: s.eligible_views,
       current_earnings: Number(s.current_earnings),
       rejection_reason: s.rejection_reason,
+      appeal_reason: s.appeal_reason,
+      appealed_at: s.appealed_at,
       submitted_at: s.submitted_at,
       reviewed_at: s.reviewed_at,
       reviewer_username: s.reviewer?.username,

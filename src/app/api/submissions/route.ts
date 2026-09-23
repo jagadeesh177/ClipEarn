@@ -59,6 +59,8 @@ export async function GET(request: Request) {
       eligible_views: s.eligible_views,
       current_earnings: Number(s.current_earnings),
       rejection_reason: s.rejection_reason,
+      appeal_reason: s.appeal_reason,
+      appealed_at: s.appealed_at,
       submitted_at: s.submitted_at,
       reviewed_at: s.reviewed_at,
       last_view_update: s.last_view_update,
@@ -79,11 +81,21 @@ export async function POST(request: Request) {
     const user = await requireAuth();
     const { campaign_id, social_account_id, post_url } = await request.json();
 
-    if (!campaign_id || !social_account_id || !post_url) {
-      return NextResponse.json({ error: "Campaign, social account, and video URL are required." }, { status: 400 });
+    if (!campaign_id || !post_url || !post_url.trim()) {
+      return NextResponse.json({ error: "Campaign and video URL are required." }, { status: 400 });
     }
 
-    // 1. Check Campaign
+    const trimmedUrl = post_url.trim();
+
+    // 1. Detect Platform from URL
+    const detectedPlatform = detectPlatformFromUrl(trimmedUrl);
+    if (!detectedPlatform) {
+      return NextResponse.json({
+        error: "Invalid video URL. Please provide a valid TikTok, Instagram Reel, or YouTube Shorts link."
+      }, { status: 400 });
+    }
+
+    // 2. Check Campaign
     const campaign = await prisma.campaign.findUnique({
       where: { id: campaign_id },
     });
@@ -96,8 +108,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "This campaign is no longer accepting submissions." }, { status: 400 });
     }
 
-    // 2. Check Membership
-    const membership = await prisma.campaignMembership.findUnique({
+    if (!campaign.allowed_platforms.includes(detectedPlatform)) {
+      return NextResponse.json(
+        { error: `The ${detectedPlatform} platform is not permitted for this campaign. Allowed: ${campaign.allowed_platforms.join(", ")}.` },
+        { status: 400 }
+      );
+    }
+
+    // 3. Auto-join campaign membership if needed
+    let membership = await prisma.campaignMembership.findUnique({
       where: {
         campaign_id_user_id: {
           campaign_id,
@@ -107,48 +126,52 @@ export async function POST(request: Request) {
     });
 
     if (!membership) {
-      return NextResponse.json({ error: "You must join this campaign before submitting clips." }, { status: 403 });
+      membership = await prisma.campaignMembership.create({
+        data: {
+          campaign_id,
+          user_id: user.id,
+        },
+      });
     }
 
-    // 3. Check Connected Social Account & Verification
-    const account = await prisma.socialAccount.findUnique({
-      where: { id: social_account_id },
-    });
+    // 4. Auto-bind to Verified Social Account for detectedPlatform
+    let account = null;
+    if (social_account_id) {
+      account = await prisma.socialAccount.findUnique({
+        where: { id: social_account_id },
+      });
+    }
 
-    if (!account || account.user_id !== user.id) {
-      return NextResponse.json({ error: "Social account not found." }, { status: 404 });
+    // If no social_account_id passed or account doesn't match detectedPlatform, find verified account
+    if (!account || account.platform !== detectedPlatform || account.user_id !== user.id) {
+      account = await prisma.socialAccount.findFirst({
+        where: {
+          user_id: user.id,
+          platform: detectedPlatform,
+          verification_status: VerificationStatus.VERIFIED,
+        },
+      });
+    }
+
+    if (!account) {
+      return NextResponse.json(
+        {
+          error: `No verified ${detectedPlatform} account found. Please connect and verify your ${detectedPlatform} handle with your bio code in Profile & Accounts first.`
+        },
+        { status: 400 }
+      );
     }
 
     if (account.verification_status !== VerificationStatus.VERIFIED) {
       return NextResponse.json(
-        { error: "You must verify your social account before submitting content." },
-        { status: 400 }
-      );
-    }
-
-    // 4. Detect Platform from URL & Validate Platform Allowed
-    const detectedPlatform = detectPlatformFromUrl(post_url);
-    if (!detectedPlatform) {
-      return NextResponse.json({ error: "Invalid video URL. Please provide an Instagram, TikTok, or YouTube link." }, { status: 400 });
-    }
-
-    if (detectedPlatform !== account.platform) {
-      return NextResponse.json(
-        { error: `The submitted link is for ${detectedPlatform}, but you selected a ${account.platform} account.` },
-        { status: 400 }
-      );
-    }
-
-    if (!campaign.allowed_platforms.includes(detectedPlatform)) {
-      return NextResponse.json(
-        { error: `The ${detectedPlatform} platform is not permitted for this campaign.` },
+        { error: `Your ${detectedPlatform} account (@${account.username}) is not verified yet. Please add your bio code in Profile & Accounts.` },
         { status: 400 }
       );
     }
 
     // 5. Parse Platform Post ID
     const provider = getSocialProvider(detectedPlatform);
-    const platformPostId = provider.parsePostId(post_url);
+    const platformPostId = provider.parsePostId(trimmedUrl);
 
     if (!platformPostId) {
       return NextResponse.json({ error: "Could not extract video identifier from the provided URL." }, { status: 400 });
@@ -181,7 +204,7 @@ export async function POST(request: Request) {
     // 7. Fetch Initial Video Metadata & Views
     let initialViews = 0;
     try {
-      const videoMeta = await provider.getVideo(post_url);
+      const videoMeta = await provider.getVideo(trimmedUrl);
       initialViews = videoMeta.current_views || 0;
     } catch {
       initialViews = 0;
@@ -195,7 +218,7 @@ export async function POST(request: Request) {
           user_id: user.id,
           social_account_id: account.id,
           platform: detectedPlatform,
-          post_url,
+          post_url: trimmedUrl,
           platform_post_id: platformPostId,
           status: SubmissionStatus.PENDING,
           current_views: initialViews,

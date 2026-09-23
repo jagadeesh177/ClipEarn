@@ -123,21 +123,23 @@ export default function ManagerSubmissionsReviewPage() {
         </div>
 
         <div className="flex items-center gap-1.5 p-1 bg-[#0F141F] border border-slate-800 rounded-xl text-xs font-semibold overflow-x-auto">
-          {["PENDING", "APPROVED", "REJECTED", "ALL"].map((st) => (
+          {[
+            { id: "PENDING", label: "Pending Queue" },
+            { id: "APPEALED", label: "Appeals Queue" },
+            { id: "APPROVED", label: "Approved" },
+            { id: "REJECTED", label: "Rejected" },
+            { id: "ALL", label: "All Submissions" },
+          ].map((st) => (
             <button
-              key={st}
-              onClick={() => setStatusFilter(st)}
+              key={st.id}
+              onClick={() => setStatusFilter(st.id)}
               className={`px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
-                statusFilter === st
+                statusFilter === st.id
                   ? "bg-brand-cyan text-black"
                   : "text-slate-400 hover:text-white"
               }`}
             >
-              {st === "PENDING"
-                ? "Pending Queue"
-                : st === "ALL"
-                ? "All Submissions"
-                : st}
+              {st.label}
             </button>
           ))}
         </div>
@@ -235,6 +237,12 @@ export default function ManagerSubmissionsReviewPage() {
                           PENDING
                         </span>
                       )}
+                      {sub.status === "APPEALED" && (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center gap-1 w-fit">
+                          <Clock className="w-3 h-3 text-purple-400" />
+                          APPEALED
+                        </span>
+                      )}
                       {sub.status === "REJECTED" && (
                         <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-500/15 text-red-400 border border-red-500/30">
                           REJECTED
@@ -243,17 +251,17 @@ export default function ManagerSubmissionsReviewPage() {
                     </td>
 
                     <td className="py-4 text-right">
-                      {sub.status === "PENDING" ? (
+                      {sub.status === "PENDING" || sub.status === "APPEALED" ? (
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => {
                               setSelectedSubmission(sub);
                               setActionType("APPROVE");
                             }}
-                            className="px-3 py-1.5 rounded-lg bg-brand-emerald hover:bg-brand-emerald/90 text-black font-bold text-xs flex items-center gap-1 shadow-sm"
+                            className="px-3 py-1.5 rounded-lg bg-brand-emerald hover:bg-brand-emerald/90 text-black font-bold text-xs flex items-center gap-1 shadow-sm transition-all"
                           >
                             <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>Approve</span>
+                            <span>{sub.status === "APPEALED" ? "Approve Appeal" : "Approve"}</span>
                           </button>
 
                           <button
@@ -261,10 +269,10 @@ export default function ManagerSubmissionsReviewPage() {
                               setSelectedSubmission(sub);
                               setActionType("REJECT");
                             }}
-                            className="px-3 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/40 font-bold text-xs flex items-center gap-1"
+                            className="px-3 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/40 font-bold text-xs flex items-center gap-1 transition-all"
                           >
                             <XCircle className="w-3.5 h-3.5" />
-                            <span>Reject</span>
+                            <span>{sub.status === "APPEALED" ? "Reject Appeal" : "Reject"}</span>
                           </button>
                         </div>
                       ) : (
@@ -284,20 +292,41 @@ export default function ManagerSubmissionsReviewPage() {
       {/* Review Confirmation / Reason Modal */}
       {selectedSubmission && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-[#0F141F] border border-slate-800 rounded-2xl max-w-lg w-full p-6 relative">
+          <div className="bg-[#0F141F] border border-slate-800 rounded-2xl max-w-lg w-full p-6 relative shadow-2xl">
             <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
               {actionType === "APPROVE" ? (
                 <>
                   <CheckCircle2 className="w-5 h-5 text-brand-emerald" />
-                  Approve Clip Submission
+                  {selectedSubmission.status === "APPEALED" ? "Approve Clipper Appeal" : "Approve Clip Submission"}
                 </>
               ) : (
                 <>
                   <XCircle className="w-5 h-5 text-red-400" />
-                  Reject Clip Submission
+                  {selectedSubmission.status === "APPEALED" ? "Deny Clipper Appeal" : "Reject Clip Submission"}
                 </>
               )}
             </h3>
+
+            {/* Appeal Context Banner if Appealed */}
+            {selectedSubmission.status === "APPEALED" && (
+              <div className="p-3.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-xs space-y-2.5 my-3">
+                <div className="flex items-center gap-1.5 text-purple-300 font-bold">
+                  <Clock className="w-4 h-4 text-purple-400" />
+                  <span>Clipper Appeal Re-Evaluation</span>
+                </div>
+
+                <div className="space-y-1 text-slate-300 pl-5 text-[11px]">
+                  <div>
+                    <span className="text-red-400 font-bold block">Previous Rejection Reason:</span>
+                    <span>{selectedSubmission.rejection_reason || "Campaign requirement not followed"}</span>
+                  </div>
+                  <div className="pt-1 border-t border-purple-500/20">
+                    <span className="text-purple-300 font-bold block">Clipper's Appeal Explanation:</span>
+                    <span className="text-white italic">"{selectedSubmission.appeal_reason}"</span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2 text-xs text-slate-300 my-4">
               <div>
@@ -312,7 +341,7 @@ export default function ManagerSubmissionsReviewPage() {
                   href={selectedSubmission.post_url}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-brand-cyan hover:underline inline-flex items-center gap-1"
+                  className="text-brand-cyan hover:underline inline-flex items-center gap-1 font-semibold"
                 >
                   <span>Open published clip</span>
                   <ExternalLink className="w-3 h-3" />
@@ -340,21 +369,46 @@ export default function ManagerSubmissionsReviewPage() {
                     </select>
                   </div>
 
+                  {/* Preset quick-select chips */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {rejectionOptions.slice(0, 5).map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => {
+                          setRejectionReason(opt);
+                          setCustomReason("");
+                        }}
+                        className={`px-2 py-1 rounded-lg text-[10px] border transition-colors ${
+                          rejectionReason === opt
+                            ? "bg-red-500/20 text-red-300 border-red-500/50"
+                            : "bg-slate-900 text-slate-400 border-slate-800 hover:text-white"
+                        }`}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+
                   {rejectionReason === "Other" && (
                     <div>
                       <label className="block text-slate-300 font-semibold mb-1">
-                        Specific Explanation
+                        Specific Explanation (Required)
                       </label>
                       <textarea
                         required
                         rows={3}
-                        placeholder="Detail the exact reason for rejection..."
+                        placeholder="Detail the exact reason for rejection so the creator knows what to fix..."
                         value={customReason}
                         onChange={(e) => setCustomReason(e.target.value)}
                         className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-red-400"
                       />
                     </div>
                   )}
+
+                  <p className="text-[11px] text-slate-500">
+                    This reason is immediately sent to the creator's notification inbox and dashboard so they know why the clip was rejected.
+                  </p>
                 </div>
               )}
 
@@ -382,7 +436,9 @@ export default function ManagerSubmissionsReviewPage() {
                   }`}
                 >
                   {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                  <span>Confirm {actionType === "APPROVE" ? "Approval" : "Rejection"}</span>
+                  <span>
+                    Confirm {actionType === "APPROVE" ? (selectedSubmission.status === "APPEALED" ? "Appeal Approval" : "Approval") : (selectedSubmission.status === "APPEALED" ? "Appeal Rejection" : "Rejection")}
+                  </span>
                 </button>
               </div>
             </form>

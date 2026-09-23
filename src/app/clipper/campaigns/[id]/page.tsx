@@ -33,13 +33,27 @@ export default function CampaignDetailsPage() {
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Submit clip modal state
-  const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
-  const [selectedAccountId, setSelectedAccountId] = useState("");
+  // Submit clip state
   const [postUrl, setPostUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState(false);
+
+  const detectedPlatform = React.useMemo(() => {
+    const url = postUrl.trim().toLowerCase();
+    if (!url) return null;
+    if (url.includes("tiktok.com")) return "TIKTOK";
+    if (url.includes("instagram.com")) return "INSTAGRAM";
+    if (url.includes("youtube.com") || url.includes("youtu.be")) return "YOUTUBE";
+    return null;
+  }, [postUrl]);
+
+  const matchedAccount = React.useMemo(() => {
+    if (!detectedPlatform) return null;
+    return socialAccounts.find(
+      (a) => a.platform === detectedPlatform && a.verification_status === "VERIFIED"
+    );
+  }, [detectedPlatform, socialAccounts]);
 
   const loadData = () => {
     Promise.all([
@@ -55,7 +69,6 @@ export default function CampaignDetailsPage() {
         if (socialRes.data) {
           const verified = socialRes.data.filter((a: any) => a.verification_status === "VERIFIED");
           setSocialAccounts(verified);
-          if (verified.length > 0) setSelectedAccountId(verified[0].id);
         }
         setLoading(false);
       })
@@ -81,6 +94,15 @@ export default function CampaignDetailsPage() {
     }
   };
 
+  const scrollToSubmit = () => {
+    const el = document.getElementById("instant-submit-section");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+      const input = el.querySelector("input");
+      if (input) input.focus();
+    }
+  };
+
   const handleSubmitClip = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError("");
@@ -92,7 +114,6 @@ export default function CampaignDetailsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           campaign_id: campaignId,
-          social_account_id: selectedAccountId,
           post_url: postUrl.trim(),
         }),
       });
@@ -102,10 +123,7 @@ export default function CampaignDetailsPage() {
         setSubmitSuccess(true);
         setPostUrl("");
         loadData();
-        setTimeout(() => {
-          setSubmitSuccess(false);
-          setIsSubmitModalOpen(false);
-        }, 1500);
+        setTimeout(() => setSubmitSuccess(false), 5000);
       } else {
         setSubmitError(data.error || "Failed to submit clip");
       }
@@ -177,7 +195,7 @@ export default function CampaignDetailsPage() {
             <div className="flex items-center gap-3">
               {campaign.is_joined ? (
                 <button
-                  onClick={() => setIsSubmitModalOpen(true)}
+                  onClick={scrollToSubmit}
                   className="px-6 py-3 rounded-xl bg-brand-cyan hover:bg-brand-cyan/90 text-black font-black text-xs transition-all shadow-[0_0_20px_-3px_rgba(0,242,254,0.4)] flex items-center gap-2"
                 >
                   <Plus className="w-4 h-4" />
@@ -235,6 +253,120 @@ export default function CampaignDetailsPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* In-Page Quick Clip Submission Card (Zero friction, auto-handle bound) */}
+      <div id="instant-submit-section" className="p-6 rounded-2xl bg-[#0F141F] border border-slate-800 shadow-xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
+          <div>
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <Send className="w-5 h-5 text-brand-cyan" />
+              Submit Video Clip
+            </h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Paste your public clip URL. Your verified account handle is detected automatically — no manual handle selection needed.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] text-slate-400 font-medium">Verified Channels:</span>
+            {["TIKTOK", "INSTAGRAM", "YOUTUBE"].map((plat) => {
+              const verifiedAcc = socialAccounts.find((a) => a.platform === plat);
+              return (
+                <span
+                  key={plat}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold border transition-colors ${
+                    verifiedAcc
+                      ? "bg-brand-emerald/10 text-brand-emerald border-brand-emerald/30"
+                      : "bg-slate-900 text-slate-500 border-slate-800"
+                  }`}
+                  title={verifiedAcc ? `@${verifiedAcc.username} verified with bio code` : `No verified ${plat} handle`}
+                >
+                  {plat}: {verifiedAcc ? `@${verifiedAcc.username}` : "Unlinked"}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+
+        {submitError && (
+          <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-400 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{submitError}</span>
+            </div>
+            <button onClick={() => setSubmitError("")} className="text-red-400/80 hover:text-red-300">✕</button>
+          </div>
+        )}
+
+        {submitSuccess && (
+          <div className="p-3.5 rounded-xl bg-brand-emerald/10 border border-brand-emerald/30 text-xs text-brand-emerald flex items-center gap-2 animate-fadeIn">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>Clip submitted successfully! Sent to manager review queue. Views and earnings will track upon approval.</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmitClip} className="space-y-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
+                <ExternalLink className="w-4 h-4" />
+              </span>
+              <input
+                type="url"
+                required
+                placeholder="Paste TikTok, Instagram Reel, or YouTube Shorts public URL..."
+                value={postUrl}
+                onChange={(e) => {
+                  setPostUrl(e.target.value);
+                  if (submitError) setSubmitError("");
+                }}
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-3 text-xs sm:text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-cyan transition-colors"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={submitting || !postUrl.trim()}
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-brand-cyan to-brand-emerald text-black font-black text-xs transition-all hover:opacity-95 disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-brand-cyan/20 shrink-0"
+            >
+              {submitting ? <Loader2 className="w-4 h-4 animate-spin text-black" /> : <Send className="w-4 h-4" />}
+              <span>{submitting ? "Submitting..." : "Submit Clip URL"}</span>
+            </button>
+          </div>
+
+          {/* Dynamic handle detection & verification pill */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] pt-1 text-slate-400 gap-2">
+            {detectedPlatform ? (
+              matchedAccount ? (
+                <span className="text-brand-emerald font-semibold flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-brand-emerald shrink-0" />
+                  <span>
+                    Detected {detectedPlatform === "INSTAGRAM" ? "Instagram Reel" : detectedPlatform === "TIKTOK" ? "TikTok Clip" : "YouTube Short"} &bull; Automatically bound to verified handle: <strong className="text-white">@{matchedAccount.username}</strong>
+                  </span>
+                </span>
+              ) : (
+                <span className="text-yellow-400 font-semibold flex items-center gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5 text-yellow-400 shrink-0" />
+                  <span>
+                    Detected {detectedPlatform} link, but you haven't verified a {detectedPlatform} account with bio code yet.{" "}
+                    <Link href="/clipper/profile" className="text-brand-cyan underline ml-1 font-bold">
+                      Verify Account in Profile &rarr;
+                    </Link>
+                  </span>
+                </span>
+              )
+            ) : (
+              <span className="text-slate-500">
+                Paste any link from TikTok, Instagram Reels, or YouTube Shorts. Account handle binds automatically.
+              </span>
+            )}
+
+            <span className="text-slate-500 font-mono text-[10px]">
+              {campaign.cpm ? `$${campaign.cpm.toFixed(2)} CPM` : ""}
+            </span>
+          </div>
+        </form>
       </div>
 
       {/* "My Stats" Section (Rule 35) */}
@@ -390,104 +522,6 @@ export default function CampaignDetailsPage() {
           </div>
         )}
       </div>
-
-      {/* Submit Clip Modal */}
-      {isSubmitModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-[#0F141F] border border-slate-800 rounded-2xl max-w-lg w-full p-6 relative">
-            <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-              <Send className="w-5 h-5 text-brand-cyan" />
-              Submit Clip for Review
-            </h3>
-            <p className="text-xs text-slate-400 mb-6">
-              Only submissions from connected, verified accounts are eligible. Our review team verifies all brand guidelines before approving.
-            </p>
-
-            {submitError && (
-              <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-400 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{submitError}</span>
-              </div>
-            )}
-
-            {submitSuccess && (
-              <div className="mb-4 p-3 rounded-xl bg-brand-emerald/10 border border-brand-emerald/30 text-xs text-brand-emerald flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 shrink-0" />
-                <span>Clip submitted successfully! Sent to manager review queue.</span>
-              </div>
-            )}
-
-            <form onSubmit={handleSubmitClip} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1.5">
-                  Select Verified Social Account
-                </label>
-                {socialAccounts.length === 0 ? (
-                  <div className="p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-300">
-                    <p className="font-semibold">No verified accounts found.</p>
-                    <p className="text-[11px] mt-1 text-slate-400">
-                      You must connect and verify your social account before submitting content.
-                    </p>
-                    <Link
-                      href="/clipper/profile"
-                      className="mt-2 inline-block text-xs text-brand-cyan font-bold hover:underline"
-                    >
-                      Go to Profile & Accounts &rarr;
-                    </Link>
-                  </div>
-                ) : (
-                  <select
-                    value={selectedAccountId}
-                    onChange={(e) => setSelectedAccountId(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-brand-cyan"
-                  >
-                    {socialAccounts.map((acc) => (
-                      <option key={acc.id} value={acc.id}>
-                        [{acc.platform}] @{acc.username}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1.5">
-                  Published Video URL
-                </label>
-                <input
-                  type="url"
-                  required
-                  placeholder="e.g. https://www.tiktok.com/@creator/video/7398123456789012345"
-                  value={postUrl}
-                  onChange={(e) => setPostUrl(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-cyan"
-                />
-                <span className="text-[11px] text-slate-500 mt-1 block">
-                  Paste the full public URL from TikTok, Instagram Reels, or YouTube Shorts.
-                </span>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsSubmitModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting || socialAccounts.length === 0}
-                  className="px-5 py-2.5 rounded-xl bg-brand-cyan text-black font-bold flex items-center gap-2 hover:opacity-90 disabled:opacity-50"
-                >
-                  {submitting ? <Loader2 className="w-4 h-4 animate-spin text-black" /> : null}
-                  <span>Submit for Review</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

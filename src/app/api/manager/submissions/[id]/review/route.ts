@@ -33,6 +33,8 @@ export async function POST(
       return NextResponse.json({ error: "Submission not found" }, { status: 404 });
     }
 
+    const isAppeal = submission.status === SubmissionStatus.APPEALED;
+
     if (action === "APPROVE") {
       const updated = await prisma.$transaction(async (tx) => {
         const sub = await tx.submission.update({
@@ -74,9 +76,11 @@ export async function POST(
         await tx.notification.create({
           data: {
             user_id: submission.user_id,
-            type: "SUBMISSION_APPROVED",
-            title: "Clip Approved! 🎉",
-            message: `Your submission for "${submission.campaign.name}" was approved by a manager and is now actively tracking views and earnings!`,
+            type: isAppeal ? "APPEAL_ACCEPTED" : "SUBMISSION_APPROVED",
+            title: isAppeal ? "Appeal Accepted! Clip Approved 🎉" : "Clip Approved! 🎉",
+            message: isAppeal
+              ? `Your appeal for "${submission.campaign.name}" was accepted by staff! Your clip is now actively tracking views and earnings.`
+              : `Your submission for "${submission.campaign.name}" was approved by a manager and is now actively tracking views and earnings!`,
           },
         });
 
@@ -85,10 +89,10 @@ export async function POST(
 
       await logAuditEvent({
         actorId: manager.id,
-        action: "SUBMISSION_APPROVED",
+        action: isAppeal ? "APPEAL_APPROVED" : "SUBMISSION_APPROVED",
         targetType: "SUBMISSION",
         targetId: submission.id,
-        oldValue: { status: submission.status },
+        oldValue: { status: submission.status, appeal_reason: submission.appeal_reason },
         newValue: { status: SubmissionStatus.APPROVED },
       });
 
@@ -119,9 +123,11 @@ export async function POST(
         await tx.notification.create({
           data: {
             user_id: submission.user_id,
-            type: "SUBMISSION_REJECTED",
-            title: "Submission Not Approved",
-            message: `Your clip for "${submission.campaign.name}" was rejected. Reason: ${rejection_reason}`,
+            type: isAppeal ? "APPEAL_REJECTED" : "SUBMISSION_REJECTED",
+            title: isAppeal ? "Appeal Denied" : "Submission Not Approved",
+            message: isAppeal
+              ? `Your appeal for "${submission.campaign.name}" was reviewed and rejected. Final reason: ${rejection_reason}`
+              : `Your clip for "${submission.campaign.name}" was rejected. Reason: ${rejection_reason}`,
           },
         });
 
@@ -130,10 +136,10 @@ export async function POST(
 
       await logAuditEvent({
         actorId: manager.id,
-        action: "SUBMISSION_REJECTED",
+        action: isAppeal ? "APPEAL_REJECTED" : "SUBMISSION_REJECTED",
         targetType: "SUBMISSION",
         targetId: submission.id,
-        oldValue: { status: submission.status },
+        oldValue: { status: submission.status, appeal_reason: submission.appeal_reason },
         newValue: { status: SubmissionStatus.REJECTED, reason: rejection_reason },
       });
 
