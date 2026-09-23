@@ -160,7 +160,7 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
         </div>
 
         {/* Manager User & Worker Trigger */}
-        <div className="p-4 border-t border-slate-800/80 bg-[#080C17] space-y-3">
+        <div className="p-5 border-t border-slate-800/80 bg-[#080C17] space-y-3">
           {/* Worker Sync Button */}
           <button
             onClick={handleTriggerSync}
