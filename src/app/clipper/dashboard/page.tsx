@@ -11,7 +11,6 @@ import {
   TrendingUp,
   Clock,
   Sparkles,
-  ChevronRight,
   AlertCircle,
   ExternalLink,
 } from "lucide-react";
@@ -26,7 +25,6 @@ import {
 
 export default function ClipperDashboardPage() {
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [submissions, setSubmissions] = useState<any[]>([]);
   const [performanceRange, setPerformanceRange] = useState<"7d" | "30d" | "90d">("30d");
   const [chartData, setChartData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,12 +32,10 @@ export default function ClipperDashboardPage() {
   useEffect(() => {
     Promise.all([
       fetch("/api/users/me").then((res) => res.json()),
-      fetch("/api/submissions").then((res) => res.json()),
       fetch(`/api/clipper/performance?range=${performanceRange}`).then((res) => res.json()),
     ])
-      .then(([profileRes, subRes, perfRes]) => {
+      .then(([profileRes, perfRes]) => {
         if (profileRes.data) setUserProfile(profileRes.data);
-        if (subRes.data) setSubmissions(subRes.data);
         if (perfRes.data) setChartData(perfRes.data);
         setLoading(false);
       })
@@ -95,10 +91,10 @@ export default function ClipperDashboardPage() {
         <div className="p-5 rounded-2xl bg-[#0F141F] border border-slate-800 flex items-center justify-between hover:border-slate-700 transition-colors">
           <div>
             <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Approved</div>
-            <div className="text-3xl font-black text-brand-emerald mt-1">{stats.approvedClips}</div>
+            <div className="text-3xl font-black text-brand-cyan mt-1">{stats.approvedClips}</div>
             <div className="text-[11px] text-slate-500 mt-1">Actively generating views</div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-brand-emerald/10 border border-brand-emerald/20 flex items-center justify-center text-brand-emerald">
+          <div className="w-12 h-12 rounded-xl bg-brand-cyan/10 border border-brand-cyan/20 flex items-center justify-center text-brand-cyan">
             <CheckCircle2 className="w-6 h-6" />
           </div>
         </div>
@@ -221,92 +217,6 @@ export default function ClipperDashboardPage() {
             </div>
           )}
         </div>
-      </div>
-
-      {/* Recent Submissions Overview */}
-      <div className="p-6 rounded-2xl bg-[#0F141F] border border-slate-800">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-white">Recent Clip Submissions</h2>
-          <Link
-            href="/clipper/submissions"
-            className="text-xs font-semibold text-brand-cyan hover:underline flex items-center gap-1"
-          >
-            View all ({submissions.length}) <ChevronRight className="w-4 h-4" />
-          </Link>
-        </div>
-
-        {submissions.length === 0 ? (
-          <div className="py-12 text-center text-slate-500 text-xs">
-            <Video className="w-10 h-10 mx-auto mb-2 text-slate-600" />
-            <p className="text-sm font-semibold text-slate-400">No submissions yet.</p>
-            <p className="mt-1">Join a campaign and submit your first short-form video to start earning.</p>
-            <Link
-              href="/clipper/campaigns"
-              className="mt-4 inline-block px-4 py-2 rounded-xl bg-slate-800 text-brand-cyan font-bold"
-            >
-              Browse Campaigns
-            </Link>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="text-[11px] text-slate-400 uppercase tracking-wider border-b border-slate-800 pb-2">
-                <tr>
-                  <th className="pb-3">Campaign</th>
-                  <th className="pb-3">Platform</th>
-                  <th className="pb-3">Current Views</th>
-                  <th className="pb-3">Eligible Views</th>
-                  <th className="pb-3">Earnings</th>
-                  <th className="pb-3">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60 font-medium">
-                {submissions.slice(0, 5).map((sub) => (
-                  <tr key={sub.id} className="hover:bg-slate-900/40 transition-colors">
-                    <td className="py-3.5 pr-3 text-white font-bold max-w-[180px] truncate">
-                      {sub.campaign_name}
-                    </td>
-                    <td className="py-3.5 pr-3 text-slate-300">
-                      <span className="px-2 py-0.5 rounded bg-slate-800 text-[10px] font-semibold">
-                        {sub.platform}
-                      </span>
-                    </td>
-                    <td className="py-3.5 pr-3 text-slate-200">
-                      {sub.status === "PENDING" ? (
-                        <span className="text-slate-500 italic">Pending review</span>
-                      ) : (
-                        sub.current_views.toLocaleString()
-                      )}
-                    </td>
-                    <td className="py-3.5 pr-3 text-slate-200">
-                      {sub.status === "APPROVED" ? sub.eligible_views.toLocaleString() : "—"}
-                    </td>
-                    <td className="py-3.5 pr-3 font-bold text-brand-cyan">
-                      {sub.status === "APPROVED" ? `$${sub.current_earnings.toFixed(2)}` : "—"}
-                    </td>
-                    <td className="py-3.5">
-                      {sub.status === "APPROVED" && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-emerald/15 text-brand-emerald border border-brand-emerald/30">
-                          APPROVED
-                        </span>
-                      )}
-                      {sub.status === "PENDING" && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-yellow-400/15 text-yellow-400 border border-yellow-400/30">
-                          PENDING
-                        </span>
-                      )}
-                      {sub.status === "REJECTED" && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-500/15 text-red-400 border border-red-500/30">
-                          REJECTED
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
       </div>
     </div>
   );
