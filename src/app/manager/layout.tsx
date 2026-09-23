@@ -29,21 +29,36 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
   const [syncingViews, setSyncingViews] = useState(false);
   const [syncSummary, setSyncSummary] = useState<string | null>(null);
 
+  const isLoginPage = pathname === "/manager/login";
+
   useEffect(() => {
     fetch("/api/auth/me")
       .then((res) => {
-        if (!res.ok) router.push("/manager/login");
+        if (!res.ok) {
+          if (!isLoginPage) router.push("/manager/login");
+          return null;
+        }
         return res.json();
       })
       .then((data) => {
+        if (!data) return;
         if (data.authenticated && (data.user.role === "MANAGER" || data.user.role === "ADMIN")) {
           setUser(data.user);
-        } else {
+          if (isLoginPage) {
+            router.push("/manager/dashboard");
+          }
+        } else if (!isLoginPage) {
           router.push("/manager/login");
         }
       })
-      .catch(() => router.push("/manager/login"));
-  }, [router]);
+      .catch(() => {
+        if (!isLoginPage) router.push("/manager/login");
+      });
+  }, [router, isLoginPage]);
+
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });

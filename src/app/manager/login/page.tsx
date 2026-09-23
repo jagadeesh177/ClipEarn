@@ -68,7 +68,7 @@ export default function ManagerLoginPage() {
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
           <ClipEarnLogo size="lg" href="/" />
-          <h2 className="text-2xl font-black text-white mt-6">Campaign Manager Portal</h2>
+          <h1 className="text-2xl font-black text-white mt-6">Campaign Manager Portal</h1>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-xs font-semibold text-purple-400 mt-2">
             <Shield className="w-3.5 h-3.5" />
             <span>Authorized Personnel & Campaign Reviewers</span>
@@ -131,7 +131,7 @@ export default function ManagerLoginPage() {
 
           {/* Quick Reviewer Buttons */}
           <div className="mt-6 pt-6 border-t border-slate-800/80">
-            <span className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider text-center mb-3">
+            <span className="block text-xs font-medium text-slate-400 text-center mb-3">
               Instant Demo Access
             </span>
             <div className="grid grid-cols-2 gap-2">
