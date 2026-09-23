@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   UserCheck,
   Plus,
@@ -16,14 +17,54 @@ import {
 } from "lucide-react";
 import { clientCache } from "@/lib/clientCache";
 
-export default function ProfileAndAccountsPage() {
+function ProfileAndAccountsContent() {
+  const searchParams = useSearchParams();
+  const verifiedParam = searchParams.get("verified");
+  const errorParam = searchParams.get("error");
+  const accountIdParam = searchParams.get("accountId");
+  const expectedUsername = searchParams.get("expected");
+  const authorizedUsername = searchParams.get("authorized");
+
   const [profile, setProfile] = useState<any>(() => clientCache.get("clipper_user_profile"));
   const [accounts, setAccounts] = useState<any[]>(() => clientCache.get("clipper_social_accounts") || []);
   const [loading, setLoading] = useState(() => !clientCache.get("clipper_user_profile"));
 
+  // Top banner alert
+  const [statusBanner, setStatusBanner] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(() => {
+    if (verifiedParam === "true") {
+      return {
+        type: "success",
+        message: "✓ Instagram account verified",
+      };
+    }
+    if (errorParam === "code_not_found") {
+      return {
+        type: "error",
+        message:
+          "The verification code was not found in the Instagram bio. Please make sure the exact code is present in your bio and try again.",
+      };
+    }
+    if (errorParam === "username_mismatch") {
+      return {
+        type: "error",
+        message: `The authorized Instagram account (@${authorizedUsername || ""}) does not match the username you entered (@${expectedUsername || ""}). Please authorize the matching account.`,
+      };
+    }
+    if (errorParam === "instagram_auth_failed") {
+      return {
+        type: "error",
+        message: "Instagram authorization was cancelled or encountered an error. Please try again.",
+      };
+    }
+    return null;
+  });
+
   // Add account modal
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [platform, setPlatform] = useState("TIKTOK");
+  const [platform, setPlatform] = useState("INSTAGRAM");
   const [username, setUsername] = useState("");
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState("");
@@ -32,9 +73,8 @@ export default function ProfileAndAccountsPage() {
   const [verifyingAccount, setVerifyingAccount] = useState<any>(null);
   const [checkingBio, setCheckingBio] = useState(false);
   const [verificationError, setVerificationError] = useState("");
+  const [verificationSuccess, setVerificationSuccess] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [isLoginWall, setIsLoginWall] = useState(false);
-  const [manualBioText, setManualBioText] = useState("");
 
   const loadData = () => {
     Promise.all([
@@ -47,9 +87,20 @@ export default function ProfileAndAccountsPage() {
           clientCache.set("clipper_user_profile", profRes.data);
         }
         if (accRes.data) {
-          const verified = accRes.data.filter((a: any) => a.verification_status !== "DISCONNECTED");
-          setAccounts(verified);
-          clientCache.set("clipper_social_accounts", verified);
+          const validAccounts = accRes.data.filter((a: any) => a.verification_status !== "DISCONNECTED");
+          setAccounts(validAccounts);
+          clientCache.set("clipper_social_accounts", validAccounts);
+
+          // If coming back from callback with code_not_found, auto-open the verification modal for that account
+          if (errorParam === "code_not_found" && accountIdParam) {
+            const acc = validAccounts.find((a: any) => a.id === accountIdParam);
+            if (acc) {
+              setVerifyingAccount(acc);
+              setVerificationError(
+                "The verification code was not found in the Instagram bio. Please make sure the exact code is present in your bio and try again."
+              );
+            }
+          }
         }
         setLoading(false);
       })
@@ -79,8 +130,8 @@ export default function ProfileAndAccountsPage() {
         loadData();
         // Immediately open verification instructions for the created account
         setVerifyingAccount(data.account);
-        setIsLoginWall(false);
-        setManualBioText("");
+        setVerificationError("");
+        setVerificationSuccess(false);
       } else {
         setAddError(data.error || "Failed to connect account");
       }
@@ -91,40 +142,50 @@ export default function ProfileAndAccountsPage() {
     }
   };
 
-  const handleVerifyBio = async (bioText = "", confirmCode = false) => {
+  const handleVerifyBio = async () => {
     if (!verifyingAccount) return;
     setVerificationError("");
+    setVerificationSuccess(false);
     setCheckingBio(true);
 
     try {
       const res = await fetch(`/api/social-accounts/${verifyingAccount.id}/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bioText, confirmCode }),
       });
       const data = await res.json();
 
-      if (res.ok) {
-        alert("Account verified successfully! 🎉 You can now submit clips from this account.");
-        setVerifyingAccount(null);
-        setIsLoginWall(false);
-        setManualBioText("");
+      if (res.ok && data.is_verified) {
+        setVerificationSuccess(true);
+        setStatusBanner({
+          type: "success",
+          message: "✓ Instagram account verified",
+        });
         loadData();
+        setTimeout(() => {
+          setVerifyingAccount(null);
+          setVerificationSuccess(false);
+        }, 1800);
       } else {
-        if (data.is_login_wall) {
-          setIsLoginWall(true);
-        }
-        setVerificationError(data.error || "Verification code not detected in your bio.");
+        setVerificationError(
+          data.error ||
+          "The verification code was not found in the Instagram bio. Please make sure the exact code is present in your bio and try again."
+        );
       }
     } catch {
-      setVerificationError("Network error during verification.");
+      setVerificationError("Network error during verification. Please try again.");
     } finally {
       setCheckingBio(false);
     }
   };
 
   const handleDisconnect = async (accountId: string) => {
-    if (!confirm("Are you sure you want to delete this social account? Only the social profile will be removed. All your submitted clips, views, and earnings will remain 100% intact on the website.")) return;
+    if (
+      !confirm(
+        "Are you sure you want to delete this social account? Only the social profile will be removed. All your submitted clips, views, and earnings will remain 100% intact on the website."
+      )
+    )
+      return;
 
     // Optimistically remove from state so it immediately disappears from UI
     setAccounts((prev) => prev.filter((a) => a.id !== accountId));
@@ -154,50 +215,92 @@ export default function ProfileAndAccountsPage() {
   };
 
   return (
-    <div className="space-y-8 animate-fadeIn max-w-5xl">
+    <div className="max-w-4xl mx-auto space-y-8 animate-fadeIn">
       {/* Page Title */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-2.5">
-            <UserCheck className="w-7 h-7 text-brand-cyan" />
-            Profile & Connected Accounts
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-2">
+            <span>Profile &amp; Accounts</span>
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Connect and verify your social channels. Content can only be submitted from verified accounts.
+          <p className="text-xs sm:text-sm text-slate-400 mt-1">
+            Manage your creator profile and connected social channels.
           </p>
         </div>
 
         <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="px-4 py-2.5 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-bold text-xs transition-colors flex items-center gap-2 shadow-[0_0_20px_-3px_rgba(28,247,253,0.3)] self-start sm:self-auto"
+          onClick={() => {
+            setAddError("");
+            setIsAddModalOpen(true);
+          }}
+          className="px-4 py-2.5 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-black font-bold text-xs sm:text-sm transition-all shadow-[0_0_20px_-5px_rgba(28,247,253,0.3)] flex items-center justify-center gap-2"
         >
-          <Plus className="w-4 h-4" />
-          <span>Connect New Account</span>
+          <Plus className="w-4 h-4 text-black stroke-[2.5]" />
+          <span>Connect Social Account</span>
         </button>
       </div>
 
-      {/* Clipper Identity Card */}
-      <div className="p-6 rounded-2xl bg-[#0F141F] border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-        <div className="flex items-center gap-4">
-          <img
-            src={
-              profile?.avatar_url ||
-              `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.username || "clipper"}`
-            }
-            alt="Avatar"
-            className="w-16 h-16 rounded-2xl border border-slate-700 bg-slate-800 object-cover"
-          />
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold text-white">{profile?.username}</h2>
-              <span className="px-2 py-0.5 rounded bg-brand-cyan/15 text-brand-cyan font-bold text-[10px] uppercase">
-                {profile?.role}
+      {/* Status Banner */}
+      {statusBanner && (
+        <div
+          className={`p-4 rounded-xl border flex items-center justify-between gap-3 text-xs sm:text-sm ${
+            statusBanner.type === "success"
+              ? "bg-brand-cyan/10 border-brand-cyan/30 text-brand-cyan font-bold"
+              : "bg-red-500/10 border-red-500/30 text-red-300"
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            {statusBanner.type === "success" ? (
+              <Check className="w-4 h-4 shrink-0 text-brand-cyan" />
+            ) : (
+              <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+            )}
+            <span>{statusBanner.message}</span>
+          </div>
+          <button
+            onClick={() => setStatusBanner(null)}
+            className="text-xs text-slate-400 hover:text-white"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Creator Profile Card */}
+      <div className="rounded-2xl bg-[#0F141F] border border-slate-800 p-6 sm:p-8">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-brand-cyan to-brand-emerald p-[2px] shrink-0">
+            <div className="w-full h-full rounded-2xl bg-[#090E17] flex items-center justify-center text-2xl font-black text-white">
+              {profile?.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt={profile.username}
+                  className="w-full h-full rounded-2xl object-cover"
+                />
+              ) : (
+                profile?.username?.charAt(0)?.toUpperCase() || "C"
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2 flex-1">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <h2 className="text-xl font-bold text-white">{profile?.username || "Clipper"}</h2>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-brand-cyan/10 text-brand-cyan border border-brand-cyan/30 w-fit mx-auto sm:mx-0">
+                <Sparkles className="w-3 h-3" />
+                <span>Verified Clipper</span>
               </span>
             </div>
-            <div className="text-xs text-slate-400 mt-1 flex flex-wrap items-center gap-4">
-              <span>Status: <strong className="text-brand-cyan">{profile?.status}</strong></span>
-              <span>Discord ID: <span className="font-mono text-slate-300">{profile?.discord_id || "Connected"}</span></span>
-              <span>Referral Code: <span className="font-mono text-brand-cyan">{profile?.referral_code}</span></span>
+
+            <p className="text-xs text-slate-400">
+              {profile?.email || "No email linked (Discord OAuth)"}
+            </p>
+
+            <div className="pt-2 flex flex-wrap items-center justify-center sm:justify-start gap-4 text-xs text-slate-400">
+              <span>Member since: {new Date(profile?.created_at || Date.now()).toLocaleDateString()}</span>
+              <span>•</span>
+              <span>
+                Referral Code: <span className="font-mono text-brand-cyan">{profile?.referral_code}</span>
+              </span>
             </div>
           </div>
         </div>
@@ -208,7 +311,7 @@ export default function ProfileAndAccountsPage() {
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
             <ShieldCheck className="w-5 h-5 text-brand-cyan" />
-            Connected Social Media Accounts ({accounts.length})
+            <span>Connected Social Media Accounts ({accounts.length})</span>
           </h2>
           <span className="text-xs text-slate-500">Supported: TikTok, Instagram, YouTube</span>
         </div>
@@ -221,7 +324,10 @@ export default function ProfileAndAccountsPage() {
               Before submitting clips to any campaign, you must connect and verify your social channels.
             </p>
             <button
-              onClick={() => setIsAddModalOpen(true)}
+              onClick={() => {
+                setAddError("");
+                setIsAddModalOpen(true);
+              }}
               className="mt-4 px-4 py-2 rounded-xl bg-brand-cyan text-black font-bold text-xs"
             >
               + Connect Social Account
@@ -259,7 +365,8 @@ export default function ProfileAndAccountsPage() {
                         href={
                           acc.platform === "INSTAGRAM"
                             ? `https://www.instagram.com/${acc.username.replace(/^@/, "")}`
-                            : (acc.profile_url?.replace("instagram.com/@", "instagram.com/") || `https://${acc.platform.toLowerCase()}.com/@${acc.username.replace(/^@/, "")}`)
+                            : acc.profile_url?.replace("instagram.com/@", "instagram.com/") ||
+                              `https://${acc.platform.toLowerCase()}.com/@${acc.username.replace(/^@/, "")}`
                         }
                         target="_blank"
                         rel="noreferrer"
@@ -285,13 +392,28 @@ export default function ProfileAndAccountsPage() {
                         Verified on {new Date(acc.verified_at || acc.updated_at).toLocaleDateString()}
                       </span>
                     ) : (
-                      <button
-                        onClick={() => setVerifyingAccount(acc)}
-                        className="w-full py-2 rounded-xl bg-yellow-400/10 hover:bg-yellow-400/20 text-yellow-400 border border-yellow-400/30 font-bold text-xs flex items-center justify-center gap-2"
-                      >
-                        <RefreshCw className="w-3.5 h-3.5" />
-                        <span>Verify Account Bio Code</span>
-                      </button>
+                      <div className="flex gap-2 w-full">
+                        <button
+                          onClick={() => {
+                            setVerifyingAccount(acc);
+                            setVerificationError("");
+                            setVerificationSuccess(false);
+                          }}
+                          className="flex-1 py-2 rounded-xl bg-yellow-400/10 hover:bg-yellow-400/20 text-yellow-400 border border-yellow-400/30 font-bold text-xs flex items-center justify-center gap-1.5"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                          <span>Verify Bio Code</span>
+                        </button>
+                        {acc.platform === "INSTAGRAM" && (
+                          <a
+                            href={`/api/social-accounts/oauth/instagram?accountId=${acc.id}`}
+                            className="py-2 px-3 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 font-bold text-xs flex items-center justify-center gap-1.5"
+                            title="Authorize with Instagram"
+                          >
+                            <span>OAuth</span>
+                          </a>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -325,8 +447,8 @@ export default function ProfileAndAccountsPage() {
                   onChange={(e) => setPlatform(e.target.value)}
                   className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-brand-cyan"
                 >
-                  <option value="TIKTOK">TikTok</option>
                   <option value="INSTAGRAM">Instagram</option>
+                  <option value="TIKTOK">TikTok</option>
                   <option value="YOUTUBE">YouTube</option>
                 </select>
               </div>
@@ -376,11 +498,19 @@ export default function ProfileAndAccountsPage() {
           <div className="bg-[#0F141F] border border-slate-800 rounded-2xl max-w-lg w-full p-6 relative">
             <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
               <ShieldCheck className="w-5 h-5 text-brand-cyan" />
-              Verify Account Ownership
+              <span>Verify {verifyingAccount.platform === "INSTAGRAM" ? "Instagram" : ""} Account</span>
             </h3>
             <p className="text-xs text-slate-400 mb-6">
-              To prevent unauthorized submissions, prove that you control @{verifyingAccount.username} on {verifyingAccount.platform}.
+              To prevent unauthorized submissions, prove that you control @{verifyingAccount.username} on{" "}
+              {verifyingAccount.platform}.
             </p>
+
+            {verificationSuccess && (
+              <div className="mb-4 p-3.5 rounded-xl bg-brand-cyan/10 border border-brand-cyan/30 text-xs text-brand-cyan flex items-center gap-2.5">
+                <Check className="w-4 h-4 shrink-0 text-brand-cyan" />
+                <span className="font-bold">✓ Instagram account verified</span>
+              </div>
+            )}
 
             {verificationError && (
               <div className="mb-4 p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-300 flex items-start gap-2.5">
@@ -390,7 +520,12 @@ export default function ProfileAndAccountsPage() {
             )}
 
             <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-3 mb-6">
-              <div className="text-xs text-slate-300 font-semibold">Step 1: Copy this unique code:</div>
+              <div className="flex items-center justify-between text-xs text-slate-300">
+                <span>Instagram username:</span>
+                <span className="font-bold text-white">@{verifyingAccount.username}</span>
+              </div>
+
+              <div className="text-xs text-slate-300 font-semibold pt-1">Your verification code:</div>
               <div className="flex items-center justify-between p-3 rounded-lg bg-black/50 border border-brand-cyan/40 font-mono text-sm font-bold text-brand-cyan">
                 <span>{verifyingAccount.verification_code || "clipearn-81fa2b"}</span>
                 <button
@@ -402,62 +537,27 @@ export default function ProfileAndAccountsPage() {
                 </button>
               </div>
 
-              <div className="text-xs text-slate-400 space-y-1 pt-2">
-                <p><strong>Step 2:</strong> Paste the code anywhere into your {verifyingAccount.platform} profile bio.</p>
-                <p><strong>Step 3:</strong> Save your bio, wait ~20 seconds for profile caches to update, and click <strong>Verify Now</strong>.</p>
-              </div>
+              <ol className="text-xs text-slate-400 space-y-1.5 pt-2 list-decimal pl-4">
+                <li>Copy the verification code above.</li>
+                <li>Paste it into your Instagram profile bio.</li>
+                <li>Make sure your Instagram account is public.</li>
+                <li>Click <strong>&quot;Verify Now&quot;</strong> to confirm ownership.</li>
+              </ol>
             </div>
 
-            {/* Instagram Cloud Firewall Bypass / Fallback Card */}
-            {isLoginWall && (
-              <div className="mb-6 p-4 rounded-xl bg-cyan-950/40 border border-brand-cyan/40 text-xs space-y-3">
-                <div className="font-bold text-white flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-brand-cyan" />
-                  <span>Instagram Cloud Firewall Detected</span>
-                </div>
-                <p className="text-slate-300 leading-relaxed">
-                  Meta&apos;s anti-bot firewall blocked our cloud server from viewing your bio directly. Since you already added the code to your Instagram bio, confirm it below to verify immediately:
-                </p>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder={`Paste bio text (e.g. Jagadeesh ${verifyingAccount.verification_code})`}
-                    value={manualBioText}
-                    onChange={(e) => setManualBioText(e.target.value)}
-                    className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-brand-cyan"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleVerifyBio(manualBioText)}
-                    disabled={checkingBio || !manualBioText.trim()}
-                    className="px-4 py-2 bg-brand-cyan text-slate-950 font-bold rounded-xl text-xs hover:opacity-90 disabled:opacity-50 shrink-0"
-                  >
-                    Verify Bio
-                  </button>
-                </div>
-                <div className="pt-2 border-t border-slate-800 flex items-center justify-between">
-                  <span className="text-[11px] text-slate-400">Already saved to your bio?</span>
-                  <button
-                    type="button"
-                    onClick={() => handleVerifyBio("", true)}
-                    disabled={checkingBio}
-                    className="text-xs font-bold text-brand-cyan hover:underline flex items-center gap-1"
-                  >
-                    <span>Instant Confirm &amp; Verify</span>
-                    <span>&rarr;</span>
-                  </button>
-                </div>
-              </div>
-            )}
-
-            <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
               <button
                 type="button"
-                onClick={() => setVerifyingAccount(null)}
+                onClick={() => {
+                  setVerifyingAccount(null);
+                  setVerificationError("");
+                  setVerificationSuccess(false);
+                }}
                 className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs"
               >
-                Verify Later
+                Close
               </button>
+
               <button
                 type="button"
                 onClick={() => handleVerifyBio()}
@@ -472,5 +572,13 @@ export default function ProfileAndAccountsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ProfileAndAccountsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-[400px] flex items-center justify-center text-slate-500 text-xs">Loading profile...</div>}>
+      <ProfileAndAccountsContent />
+    </Suspense>
   );
 }

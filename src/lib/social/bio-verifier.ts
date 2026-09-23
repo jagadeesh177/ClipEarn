@@ -27,15 +27,17 @@ function decodeHtmlEntities(str: string): string {
 
 /**
  * Checks Instagram public profile bio for the verification code.
+ * Fetches the public profile using social crawler user-agents and parses the biography.
  */
 async function checkInstagramBio(username: string, verificationCode: string): Promise<VerificationResult> {
+  const { verifyCodeInBiography } = await import("./instagram");
   const cleanUsername = username.trim().replace(/^@/, "");
-  const targetCode = verificationCode.trim().toLowerCase();
+  const targetCode = verificationCode.trim();
 
   // Social crawlers receive full Open Graph meta tags and descriptions containing the bio
   const userAgents = [
-    "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
     "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+    "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
     "Twitterbot/1.0",
     "WhatsApp/2.21.12.21 A",
   ];
@@ -67,23 +69,33 @@ async function checkInstagramBio(username: string, verificationCode: string): Pr
 
       const html = await res.text();
 
-      // Extract bio from meta name="description"
-      // Format: "151 Followers, 265 Following, 3 Posts - Sanjay K (@sanj) on Instagram: "Bio text here""
-      const metaMatch =
-        html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']*)["']/i) ||
-        html.match(/<meta[^>]*content=["']([^"']*)["'][^>]*name=["']description["']/i);
-
-      if (metaMatch) {
-        const content = metaMatch[1];
-        const bioInQuotes = content.match(/on Instagram:\s*(?:&quot;|"|“)([\s\S]*?)(?:&quot;|"|”)$/);
-        if (bioInQuotes) {
-          extractedBio = decodeHtmlEntities(bioInQuotes[1]);
-        } else {
-          extractedBio = decodeHtmlEntities(content);
+      // 1. Check JSON biography in embedded data
+      const jsonMatch = html.match(/"biography"\s*:\s*"([^"]*)"/);
+      if (jsonMatch) {
+        try {
+          extractedBio = JSON.parse(`"${jsonMatch[1]}"`);
+        } catch {
+          extractedBio = jsonMatch[1];
         }
       }
 
-      // Check og:description if empty
+      // 2. Check meta name="description"
+      if (!extractedBio) {
+        const metaMatch =
+          html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']*)["']/i) ||
+          html.match(/<meta[^>]*content=["']([^"']*)["'][^>]*name=["']description["']/i);
+        if (metaMatch) {
+          const content = metaMatch[1];
+          const bioInQuotes = content.match(/on Instagram:\s*(?:&quot;|"|“)([\s\S]*?)(?:&quot;|"|”)$/);
+          if (bioInQuotes) {
+            extractedBio = decodeHtmlEntities(bioInQuotes[1]);
+          } else {
+            extractedBio = decodeHtmlEntities(content);
+          }
+        }
+      }
+
+      // 3. Check og:description if empty
       if (!extractedBio) {
         const ogMatch =
           html.match(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']*)["']/i) ||
@@ -93,59 +105,41 @@ async function checkInstagramBio(username: string, verificationCode: string): Pr
         }
       }
 
-      // Check JSON biography if still empty
-      if (!extractedBio) {
-        const jsonMatch = html.match(/"biography"\s*:\s*"([^"]*)"/);
-        if (jsonMatch) {
-          try {
-            extractedBio = JSON.parse(`"${jsonMatch[1]}"`);
-          } catch {
-            extractedBio = jsonMatch[1];
-          }
-        }
-      }
-
-      // Check if code is found in the extracted bio OR anywhere in the raw page html
-      if (
-        (extractedBio && extractedBio.toLowerCase().includes(targetCode)) ||
-        html.toLowerCase().includes(targetCode)
-      ) {
+      // Check if exact code is in extracted bio
+      if (extractedBio && verifyCodeInBiography(extractedBio, targetCode)) {
         return {
           is_verified: true,
-          bio_text: extractedBio || `Found verification code ${verificationCode}`,
+          bio_text: extractedBio,
           verification_code_found: true,
         };
       }
 
-      // Check if Instagram served a login wall / sign-in redirect
+      // Check boundary match in full HTML as fallback if code is in page JSON
+      const escapedCode = targetCode.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const boundaryRegex = new RegExp(`(^|[^a-zA-Z0-9_-])${escapedCode}(?![a-zA-Z0-9_-])`, "i");
+      if (boundaryRegex.test(html)) {
+        return {
+          is_verified: true,
+          bio_text: extractedBio || targetCode,
+          verification_code_found: true,
+        };
+      }
+
       const isLoginWall =
         html.includes("Welcome back to Instagram") ||
         html.includes("Sign in to check out") ||
-        html.includes("Log into Instagram") ||
-        extractedBio.includes("Welcome back to Instagram") ||
-        extractedBio.includes("Sign in to check out");
+        html.includes("Log into Instagram");
 
       if (isLoginWall) {
         hitLoginWall = true;
-        extractedBio = ""; // Discard login wall text - not the user's bio!
-        continue; // Try next user agent
+        extractedBio = "";
+        continue;
       }
 
-      // If we got a valid, non-login response and extracted bio, break
       if (extractedBio) break;
     } catch {
       // Try next user agent
     }
-  }
-
-  if (hitLoginWall && !extractedBio) {
-    return {
-      is_verified: false,
-      is_login_wall: true,
-      bio_text: undefined,
-      verification_code_found: false,
-      error: `Instagram's cloud firewall blocked our server from reading @${cleanUsername}'s bio directly. Please paste your bio text below or confirm your code to verify ownership immediately.`,
-    };
   }
 
   const cleanBioPreview = extractedBio
@@ -156,7 +150,7 @@ async function checkInstagramBio(username: string, verificationCode: string): Pr
     is_verified: false,
     bio_text: extractedBio || undefined,
     verification_code_found: false,
-    error: `Verification code "${verificationCode}" was not found in @${cleanUsername}'s Instagram bio. Current bio detected: ${cleanBioPreview}. Please paste the code into your bio, save changes on Instagram, and try again.`,
+    error: `Verification code "${targetCode}" was not found in @${cleanUsername}'s Instagram bio. Current bio detected: ${cleanBioPreview}. Please paste the code into your bio, save changes on Instagram, and try again.`,
   };
 }
 

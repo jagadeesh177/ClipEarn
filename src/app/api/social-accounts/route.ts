@@ -16,7 +16,15 @@ export async function GET() {
       orderBy: { created_at: "desc" },
     });
 
-    return NextResponse.json({ data: accounts });
+    const sanitized = accounts.map((acc) => {
+      const { access_token_encrypted, refresh_token_encrypted, ...rest } = acc;
+      return {
+        ...rest,
+        has_access_token: Boolean(access_token_encrypted),
+      };
+    });
+
+    return NextResponse.json({ data: sanitized });
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || "Failed to fetch social accounts" }, { status: 500 });
   }

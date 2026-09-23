@@ -6,14 +6,16 @@ import { YouTubeProvider } from "./youtube";
 import { MockSocialProvider } from "./mock-provider";
 
 export function getSocialProvider(platform: Platform): SocialProvider {
+  if (platform === Platform.INSTAGRAM) {
+    return new InstagramProvider();
+  }
+
   const isMock = process.env.MOCK_SOCIAL_PROVIDERS === "true";
   if (isMock) {
     return new MockSocialProvider(platform);
   }
 
   switch (platform) {
-    case Platform.INSTAGRAM:
-      return new InstagramProvider();
     case Platform.TIKTOK:
       return new TikTokProvider();
     case Platform.YOUTUBE:

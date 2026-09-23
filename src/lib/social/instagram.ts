@@ -2,7 +2,73 @@ import { Platform } from "@prisma/client";
 import { SocialProvider, SocialAccountData, VerificationResult, VideoMetadata } from "./types";
 import { MockSocialProvider } from "./mock-provider";
 
-import { verifySocialBio } from "./bio-verifier";
+/**
+ * Normalizes bio text and matches the exact verification code.
+ * Rules:
+ * - Trims whitespace safely
+ * - Normalizes line breaks (\r\n -> \n)
+ * - Exact code matching (does not remove characters from code)
+ * - Rejects partial/substring collisions (e.g. clipearn-552zhusv does NOT match clipearn-552zhusvg)
+ */
+export function verifyCodeInBiography(
+  biography: string | undefined | null,
+  code: string
+): boolean {
+  if (!biography || !code) return false;
+
+  const targetCode = code.trim().toLowerCase();
+  if (targetCode.length < 6) return false;
+
+  // Normalize line breaks and casing
+  const normalizedBio = biography
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .toLowerCase();
+
+  if (normalizedBio.includes(targetCode)) {
+    // Check all occurrences to see if any is a valid match
+    let searchFrom = 0;
+    while (searchFrom < normalizedBio.length) {
+      const idx = normalizedBio.indexOf(targetCode, searchFrom);
+      if (idx === -1) break;
+
+      const before = idx > 0 ? normalizedBio[idx - 1] : "";
+      const after =
+        idx + targetCode.length < normalizedBio.length
+          ? normalizedBio.slice(idx + targetCode.length)
+          : "";
+
+      // 'before' can be anything non-alphanumeric, or end of another clipearn code
+      const validBefore =
+        !before ||
+        !/[a-zA-Z0-9]/.test(before) ||
+        /clipearn-[a-z0-9]{5,8}$/.test(normalizedBio.slice(0, idx));
+
+      // 'after' can be non-alphanumeric, end of string, or start of another clipearn code
+      const validAfter =
+        !after ||
+        !/^[a-zA-Z0-9]/.test(after) ||
+        after.startsWith("clipearn-");
+
+      if (validBefore && validAfter) {
+        return true;
+      }
+
+      searchFrom = idx + 1;
+    }
+  }
+
+  return false;
+}
+
+export interface InstagramProfileData {
+  id: string;
+  user_id?: string;
+  username: string;
+  name?: string;
+  biography?: string;
+  profile_picture_url?: string;
+}
 
 export class InstagramProvider implements SocialProvider {
   public platform = Platform.INSTAGRAM;
@@ -12,53 +78,286 @@ export class InstagramProvider implements SocialProvider {
     return this.mockFallback.parsePostId(postUrl);
   }
 
-  async connect(code: string): Promise<SocialAccountData> {
-    const appId = process.env.META_APP_ID;
-    const appSecret = process.env.META_APP_SECRET;
+  /**
+   * Generates the official Instagram OAuth Authorization URL.
+   * Uses Instagram Business Login / Instagram API with Instagram Login.
+   * Minimum required scope: instagram_business_basic
+   */
+  getAuthorizationUrl(redirectUri: string, state: string): string {
+    const appId =
+      process.env.INSTAGRAM_APP_ID ||
+      process.env.META_APP_ID ||
+      "1716880756043945";
 
-    if (!appId || !appSecret || appId === "your_meta_app_id") {
-      return this.mockFallback.connect(code);
+    const params = new URLSearchParams({
+      enable_fb_login: "0",
+      force_authentication: "1",
+      client_id: appId,
+      redirect_uri: redirectUri,
+      response_type: "code",
+      scope: "instagram_business_basic",
+      state: state,
+    });
+
+    return `https://www.instagram.com/oauth/authorize?${params.toString()}`;
+  }
+
+  /**
+   * Exchanges an OAuth authorization code for an Instagram access token.
+   * First exchanges for short-lived token, then attempts long-lived exchange.
+   */
+  async exchangeCodeForToken(
+    code: string,
+    redirectUri: string
+  ): Promise<{
+    access_token: string;
+    user_id?: string;
+    expires_in?: number;
+  }> {
+    const appId =
+      process.env.INSTAGRAM_APP_ID ||
+      process.env.META_APP_ID ||
+      "1716880756043945";
+    const appSecret =
+      process.env.INSTAGRAM_APP_SECRET ||
+      process.env.META_APP_SECRET ||
+      "";
+
+    if (!appSecret || appSecret.includes("your_")) {
+      // In development fallback if credentials not configured
+      return {
+        access_token: `mock_ig_token_${code}`,
+        user_id: `ig_user_${Date.now()}`,
+        expires_in: 5184000, // 60 days
+      };
     }
 
-    // Official Meta Graph API OAuth token exchange
+    // 1. Primary: Instagram Business Login token exchange (POST to api.instagram.com)
     try {
-      const redirectUri = process.env.META_REDIRECT_URI || "";
-      const tokenUrl = `https://graph.facebook.com/v20.0/oauth/access_token?client_id=${appId}&redirect_uri=${encodeURIComponent(
+      const formData = new URLSearchParams();
+      formData.append("client_id", appId);
+      formData.append("client_secret", appSecret);
+      formData.append("grant_type", "authorization_code");
+      formData.append("redirect_uri", redirectUri);
+      formData.append("code", code);
+
+      const res = await fetch("https://api.instagram.com/oauth/access_token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: formData.toString(),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.access_token) {
+        let finalToken = data.access_token;
+        let expiresIn = data.expires_in || 3600;
+
+        // Try exchanging for long-lived token (60 days)
+        try {
+          const longLivedRes = await fetch(
+            `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${encodeURIComponent(
+              appSecret
+            )}&access_token=${encodeURIComponent(finalToken)}`
+          );
+          const longLivedData = await longLivedRes.json();
+          if (longLivedRes.ok && longLivedData.access_token) {
+            finalToken = longLivedData.access_token;
+            expiresIn = longLivedData.expires_in || 5184000;
+          }
+        } catch {
+          // Keep short-lived token if long-lived exchange is unavailable
+        }
+
+        return {
+          access_token: finalToken,
+          user_id: data.user_id ? String(data.user_id) : undefined,
+          expires_in: expiresIn,
+        };
+      }
+    } catch {
+      // Fall through to Meta Graph fallback
+    }
+
+    // 2. Fallback: Facebook Graph API token exchange (for Facebook Login for Business apps)
+    try {
+      const fbTokenUrl = `https://graph.facebook.com/v21.0/oauth/access_token?client_id=${appId}&redirect_uri=${encodeURIComponent(
         redirectUri
       )}&client_secret=${appSecret}&code=${code}`;
 
-      const res = await fetch(tokenUrl);
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        throw new Error(data.error?.message || "Instagram token exchange failed");
+      const fbRes = await fetch(fbTokenUrl);
+      const fbData = await fbRes.json();
+
+      if (fbRes.ok && fbData.access_token) {
+        return {
+          access_token: fbData.access_token,
+          expires_in: fbData.expires_in || 5184000,
+        };
       }
-
-      // Fetch user profile
-      const userRes = await fetch(
-        `https://graph.facebook.com/v20.0/me?fields=id,username&access_token=${data.access_token}`
-      );
-      const userData = await userRes.json();
-
-      const rawUsername = userData.username || `ig_user_${userData.id}`;
-      const cleanUsername = rawUsername.replace(/^@/, "");
-
-      return {
-        platform: Platform.INSTAGRAM,
-        platform_user_id: userData.id,
-        username: cleanUsername,
-        profile_url: `https://www.instagram.com/${cleanUsername}`,
-        access_token: data.access_token,
-        token_expires_at: data.expires_in
-          ? new Date(Date.now() + data.expires_in * 1000)
-          : undefined,
-      };
     } catch {
-      return this.mockFallback.connect(code);
+      // Failed token exchange
     }
+
+    throw new Error(
+      "Instagram authorization failed. Please ensure your redirect URI and Instagram app credentials match in Meta App Dashboard."
+    );
   }
 
-  async verifyAccount(username: string, verificationCode: string): Promise<VerificationResult> {
-    return verifySocialBio(Platform.INSTAGRAM, username, verificationCode);
+  /**
+   * Retrieves the authorized Instagram profile using the official Meta API.
+   * Endpoint: GET https://graph.instagram.com/v21.0/me?fields=id,user_id,username,name,biography,profile_picture_url
+   */
+  async getProfileByToken(accessToken: string): Promise<InstagramProfileData> {
+    // 1. Primary: Instagram Graph host
+    try {
+      const igRes = await fetch(
+        `https://graph.instagram.com/v21.0/me?fields=id,user_id,username,name,biography,profile_picture_url&access_token=${encodeURIComponent(
+          accessToken
+        )}`
+      );
+      const igData = await igRes.json();
+
+      if (igRes.ok && (igData.username || igData.id)) {
+        return {
+          id: igData.id || igData.user_id,
+          user_id: igData.user_id,
+          username: igData.username || "",
+          name: igData.name,
+          biography: igData.biography || "",
+          profile_picture_url: igData.profile_picture_url,
+        };
+      }
+    } catch {
+      // Fall through to Graph Facebook host
+    }
+
+    // 2. Fallback: Facebook Graph host (graph.facebook.com)
+    try {
+      const fbRes = await fetch(
+        `https://graph.facebook.com/v21.0/me?fields=id,username,name,biography,profile_picture_url&access_token=${encodeURIComponent(
+          accessToken
+        )}`
+      );
+      const fbData = await fbRes.json();
+
+      if (fbRes.ok && (fbData.username || fbData.id)) {
+        return {
+          id: fbData.id,
+          username: fbData.username || "",
+          name: fbData.name,
+          biography: fbData.biography || "",
+          profile_picture_url: fbData.profile_picture_url,
+        };
+      }
+    } catch {
+      // Profile fetch failed
+    }
+
+    throw new Error(
+      "Unable to retrieve profile from Meta Instagram API. Please verify the access token."
+    );
+  }
+
+  /**
+   * Connect implementation for social provider interface.
+   */
+  async connect(code: string): Promise<SocialAccountData> {
+    const redirectUri =
+      process.env.INSTAGRAM_REDIRECT_URI ||
+      process.env.META_REDIRECT_URI ||
+      "";
+
+    const { access_token, user_id, expires_in } = await this.exchangeCodeForToken(
+      code,
+      redirectUri
+    );
+
+    const profile = await this.getProfileByToken(access_token);
+    const cleanUsername = profile.username.replace(/^@/, "");
+
+    return {
+      platform: Platform.INSTAGRAM,
+      platform_user_id: profile.id || user_id || `ig_${cleanUsername}`,
+      username: cleanUsername,
+      profile_url: `https://www.instagram.com/${cleanUsername}`,
+      access_token: access_token,
+      token_expires_at: expires_in
+        ? new Date(Date.now() + expires_in * 1000)
+        : undefined,
+    };
+  }
+
+  /**
+   * Verifies an Instagram account by reading the official biography via the official Meta API.
+   * Validates:
+   * 1. Authorized Instagram account matches the requested username.
+   * 2. Exact verification code exists in the official biography field.
+   */
+  async verifyAccount(
+    username: string,
+    verificationCode: string,
+    tokenOverride?: string
+  ): Promise<VerificationResult> {
+    const cleanUsername = username.trim().replace(/^@/, "");
+    const cleanTargetCode = verificationCode.trim();
+
+    if (!cleanUsername) {
+      return { is_verified: false, error: "Username cannot be empty." };
+    }
+
+    if (!cleanTargetCode || cleanTargetCode.length < 6) {
+      return { is_verified: false, error: "Invalid verification code." };
+    }
+
+    // Determine access token: explicit token > env test token > env fallback
+    const token =
+      tokenOverride ||
+      process.env.INSTAGRAM_TEST_ACCESS_TOKEN ||
+      process.env.META_ACCESS_TOKEN;
+
+    if (!token) {
+      const { verifySocialBio } = await import("./bio-verifier");
+      return verifySocialBio(Platform.INSTAGRAM, cleanUsername, cleanTargetCode);
+    }
+
+    // Fetch official profile via Meta API
+    let profile: InstagramProfileData;
+    try {
+      profile = await this.getProfileByToken(token);
+    } catch {
+      const { verifySocialBio } = await import("./bio-verifier");
+      return verifySocialBio(Platform.INSTAGRAM, cleanUsername, cleanTargetCode);
+    }
+
+    // Validate that the authorized Instagram account matches the requested username
+    if (
+      profile.username &&
+      profile.username.toLowerCase().replace(/^@/, "") !== cleanUsername.toLowerCase()
+    ) {
+      return {
+        is_verified: false,
+        error: `The authorized Instagram account (@${profile.username}) does not match the username you entered (@${cleanUsername}). Please authorize the matching account.`,
+      };
+    }
+
+    // Read the official biography field and match exact code
+    const biography = profile.biography || "";
+    const isCodePresent = verifyCodeInBiography(biography, cleanTargetCode);
+
+    if (isCodePresent) {
+      return {
+        is_verified: true,
+        bio_text: biography,
+        verification_code_found: true,
+      };
+    }
+
+    return {
+      is_verified: false,
+      bio_text: biography,
+      verification_code_found: false,
+      error:
+        "The verification code was not found in the Instagram bio. Please make sure the exact code is present in your bio and try again.",
+    };
   }
 
   async getProfile(platformUserId: string) {
