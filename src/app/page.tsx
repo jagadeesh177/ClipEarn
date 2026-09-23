@@ -182,10 +182,10 @@ export default function LandingPage() {
       <section id="how-it-works" className="py-24 bg-[#0A0F1D]/60 border-y border-slate-800/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-xs font-bold text-brand-cyan uppercase tracking-widest">Workflow</h2>
-            <p className="text-3xl sm:text-4xl font-extrabold text-white mt-2">
+            <p className="text-xs font-bold text-brand-cyan uppercase tracking-widest">Workflow</p>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white mt-2">
               How You Earn on ClipEarn
-            </p>
+            </h2>
             <p className="text-slate-400 mt-4 text-base">
               A transparent, fraud-protected pipeline ensuring creators get paid fairly for real attention.
             </p>
@@ -238,19 +238,19 @@ export default function LandingPage() {
       {/* Featured Campaigns Section */}
       <section id="campaigns" className="py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12">
-            <div>
-              <h2 className="text-xs font-bold text-brand-cyan uppercase tracking-widest">Active Budgets</h2>
-              <p className="text-3xl sm:text-4xl font-extrabold text-white mt-2">
-                Featured Clipping Campaigns
-              </p>
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <p className="text-xs font-bold text-brand-cyan uppercase tracking-widest">Active Budgets</p>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white mt-2">
+              Featured Clipping Campaigns
+            </h2>
+            <div className="mt-3">
+              <Link
+                href="/login"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-cyan hover:underline"
+              >
+                Browse all campaigns <ChevronRight className="w-4 h-4" />
+              </Link>
             </div>
-            <Link
-              href="/login"
-              className="mt-4 sm:mt-0 text-sm font-semibold text-brand-cyan hover:underline flex items-center gap-1.5"
-            >
-              Browse all campaigns <ChevronRight className="w-4 h-4" />
-            </Link>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -273,7 +273,7 @@ export default function LandingPage() {
 
                 <div className="p-6 flex-1 flex flex-col justify-between">
                   <div>
-                    <span className="text-xs text-brand-emerald font-semibold uppercase tracking-wider">
+                    <span className="text-xs text-brand-emerald font-semibold">
                       {camp.brand}
                     </span>
                     <h3 className="text-xl font-bold text-white mt-1 mb-3">{camp.name}</h3>
@@ -282,7 +282,7 @@ export default function LandingPage() {
                       {camp.platforms.map((p, pidx) => (
                         <span
                           key={pidx}
-                          className="px-2.5 py-1 rounded-md bg-slate-800/80 text-[11px] font-medium text-slate-300"
+                          className="px-2.5 py-1 rounded-md bg-slate-800/80 text-xs font-medium text-slate-300"
                         >
                           {p}
                         </span>
@@ -303,7 +303,7 @@ export default function LandingPage() {
 
                   <Link
                     href="/login"
-                    className="mt-6 w-full py-2.5 rounded-xl bg-slate-800 hover:bg-brand-cyan hover:text-black font-semibold text-xs transition-colors flex items-center justify-center gap-2"
+                    className="mt-6 w-full py-2.5 rounded-xl bg-brand-cyan/15 hover:bg-brand-cyan text-brand-cyan hover:text-black border border-brand-cyan/30 hover:border-brand-cyan font-bold text-xs transition-all shadow-[0_0_15px_-3px_rgba(0,242,254,0.15)] hover:shadow-[0_0_20px_-3px_rgba(0,242,254,0.4)] flex items-center justify-center gap-2"
                   >
                     + Join Campaign
                   </Link>
@@ -322,7 +322,7 @@ export default function LandingPage() {
               <span className="text-xs font-bold text-brand-emerald uppercase tracking-widest">
                 Growth for Modern Brands
               </span>
-              <h2 className="text-3xl sm:text-5xl font-extrabold text-white mt-2 leading-tight">
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-white mt-2 leading-tight">
                 Turn Millions of Views Into Viral Customer Acquisition
               </h2>
               <p className="mt-6 text-base text-slate-300 leading-relaxed">
@@ -333,7 +333,7 @@ export default function LandingPage() {
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-brand-emerald mt-0.5 shrink-0" />
                   <div>
-                    <h4 className="text-sm font-bold text-white">Pay Only for Verified Eligible Views</h4>
+                    <h3 className="text-sm font-bold text-white">Pay Only for Verified Eligible Views</h3>
                     <p className="text-xs text-slate-400">No upfront waste. Budgets are deducted purely on verified views.</p>
                   </div>
                 </div>
@@ -341,7 +341,7 @@ export default function LandingPage() {
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-brand-emerald mt-0.5 shrink-0" />
                   <div>
-                    <h4 className="text-sm font-bold text-white">Manager Vetted Content</h4>
+                    <h3 className="text-sm font-bold text-white">Manager Vetted Content</h3>
                     <p className="text-xs text-slate-400">Every clip is approved by human campaign managers before it can earn.</p>
                   </div>
                 </div>
@@ -349,7 +349,7 @@ export default function LandingPage() {
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-brand-emerald mt-0.5 shrink-0" />
                   <div>
-                    <h4 className="text-sm font-bold text-white">Comprehensive CSV & Real-time Analytics</h4>
+                    <h3 className="text-sm font-bold text-white">Comprehensive CSV & Real-time Analytics</h3>
                     <p className="text-xs text-slate-400">Direct export of all clip URLs, clipper usernames, and engagement curves.</p>
                   </div>
                 </div>
@@ -365,39 +365,39 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="p-8 rounded-2xl bg-[#0F141F] border border-slate-800 shadow-glow">
+            <div className="p-6 sm:p-8 rounded-2xl bg-[#0F141F] border border-slate-800 shadow-glow">
               <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
                 <Flame className="w-5 h-5 text-brand-cyan" />
                 Live Campaign Performance Example
               </h3>
 
               <div className="space-y-4 text-xs">
-                <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex justify-between items-center">
-                  <div>
+                <div className="p-5 sm:p-6 rounded-xl bg-slate-900 border border-slate-800 flex justify-between items-center gap-4">
+                  <div className="space-y-0.5">
                     <div className="text-slate-400 font-medium">Campaign CPM</div>
                     <div className="text-lg font-bold text-white">$1.00 per 1,000 views</div>
                   </div>
-                  <div className="px-3 py-1 rounded bg-brand-cyan/10 text-brand-cyan font-bold">
+                  <div className="px-3.5 py-1.5 rounded-full bg-brand-cyan/10 border border-brand-cyan/20 text-brand-cyan font-bold tracking-wide shrink-0">
                     ACTIVE
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 grid grid-cols-2 gap-4">
-                  <div>
+                <div className="p-5 sm:p-6 rounded-xl bg-slate-900 border border-slate-800 grid grid-cols-2 gap-4">
+                  <div className="space-y-0.5">
                     <div className="text-slate-400 font-medium">Total Views Tracked</div>
                     <div className="text-xl font-black text-brand-emerald">363,523</div>
                   </div>
-                  <div>
+                  <div className="space-y-0.5">
                     <div className="text-slate-400 font-medium">Budget Consumed</div>
                     <div className="text-xl font-black text-white">$122.02 / $10,000</div>
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 text-slate-400">
-                  <p className="italic">
+                <div className="p-5 sm:p-6 rounded-xl bg-slate-900/60 border border-slate-800 text-slate-400">
+                  <p className="italic leading-relaxed">
                     "ClipEarn drove over 20M views for our podcast launch in 30 days without having to negotiate individual contracts with creators."
                   </p>
-                  <div className="mt-2 text-slate-200 font-semibold">— Growth Lead, Steve Wynn Media</div>
+                  <div className="mt-3 text-slate-200 font-semibold">— Growth Lead, Steve Wynn Media</div>
                 </div>
               </div>
             </div>
@@ -409,10 +409,10 @@ export default function LandingPage() {
       <section id="faq" className="py-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-xs font-bold text-brand-cyan uppercase tracking-widest">Questions</h2>
-            <p className="text-3xl sm:text-4xl font-extrabold text-white mt-2">
+            <p className="text-xs font-bold text-brand-cyan uppercase tracking-widest">Questions</p>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white mt-2">
               Frequently Asked Questions
-            </p>
+            </h2>
           </div>
 
           <div className="space-y-4">
