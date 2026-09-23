@@ -72,9 +72,11 @@ export async function POST(request: Request) {
     const randomHex = Math.random().toString(36).substring(2, 8);
     const verificationCode = `clipearn-${randomHex}`;
 
-    let profileUrl = `https://${platformEnum.toLowerCase()}.com/@${cleanUsername}`;
-    if (platformEnum === Platform.YOUTUBE) {
-      profileUrl = `https://youtube.com/@${cleanUsername}`;
+    let profileUrl = `https://www.instagram.com/${cleanUsername}`;
+    if (platformEnum === Platform.TIKTOK) {
+      profileUrl = `https://www.tiktok.com/@${cleanUsername}`;
+    } else if (platformEnum === Platform.YOUTUBE) {
+      profileUrl = `https://www.youtube.com/@${cleanUsername}`;
     }
 
     const account = await prisma.socialAccount.create({

@@ -357,28 +357,6 @@ export default function CampaignDetailsPage() {
                   <span>Submit</span>
                 </button>
               </div>
-
-              {/* Handle Detection Live Feedback */}
-              {detectedPlatform && (
-                <div className="text-center text-[11px] pt-1">
-                  {matchedAccount ? (
-                    <span className="text-brand-cyan font-semibold flex items-center justify-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-brand-cyan" />
-                      <span>
-                        Detected {detectedPlatform} &bull; Auto-bound to verified handle:{" "}
-                        <strong className="text-white">@{matchedAccount.username}</strong>
-                      </span>
-                    </span>
-                  ) : (
-                    <span className="text-yellow-400 font-semibold flex items-center justify-center gap-1.5">
-                      <AlertCircle className="w-3.5 h-3.5 text-yellow-400" />
-                      <span>
-                        Detected {detectedPlatform} link. Please verify a {detectedPlatform} account in your profile.
-                      </span>
-                    </span>
-                  )}
-                </div>
-              )}
             </form>
           </div>
 

@@ -37,11 +37,14 @@ export class InstagramProvider implements SocialProvider {
       );
       const userData = await userRes.json();
 
+      const rawUsername = userData.username || `ig_user_${userData.id}`;
+      const cleanUsername = rawUsername.replace(/^@/, "");
+
       return {
         platform: Platform.INSTAGRAM,
         platform_user_id: userData.id,
-        username: userData.username || `ig_user_${userData.id}`,
-        profile_url: `https://instagram.com/${userData.username}`,
+        username: cleanUsername,
+        profile_url: `https://www.instagram.com/${cleanUsername}`,
         access_token: data.access_token,
         token_expires_at: data.expires_in
           ? new Date(Date.now() + data.expires_in * 1000)

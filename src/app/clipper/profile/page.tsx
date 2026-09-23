@@ -245,7 +245,11 @@ export default function ProfileAndAccountsPage() {
 
                       <h3 className="text-base font-bold text-white mt-2">@{acc.username}</h3>
                       <a
-                        href={acc.profile_url}
+                        href={
+                          acc.platform === "INSTAGRAM"
+                            ? `https://www.instagram.com/${acc.username.replace(/^@/, "")}`
+                            : (acc.profile_url?.replace("instagram.com/@", "instagram.com/") || `https://${acc.platform.toLowerCase()}.com/@${acc.username.replace(/^@/, "")}`)
+                        }
                         target="_blank"
                         rel="noreferrer"
                         className="text-xs text-slate-400 hover:text-brand-cyan flex items-center gap-1 mt-0.5"

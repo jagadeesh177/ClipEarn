@@ -41,7 +41,10 @@ export class MockSocialProvider implements SocialProvider {
       platform: this.platform,
       platform_user_id: mockId,
       username: mockUsername,
-      profile_url: `https://${this.platform.toLowerCase()}.com/@${mockUsername}`,
+      profile_url:
+        this.platform === "INSTAGRAM"
+          ? `https://www.instagram.com/${mockUsername}`
+          : `https://${this.platform.toLowerCase()}.com/@${mockUsername}`,
       access_token: `mock_token_${code}`,
       token_expires_at: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
     };
@@ -74,9 +77,13 @@ export class MockSocialProvider implements SocialProvider {
   }
 
   async getProfile(platformUserId: string): Promise<{ username: string; profile_url: string; bio?: string }> {
+    const username = `creator_${platformUserId.slice(0, 8)}`;
     return {
-      username: `creator_${platformUserId.slice(0, 8)}`,
-      profile_url: `https://${this.platform.toLowerCase()}.com/@creator_${platformUserId.slice(0, 8)}`,
+      username,
+      profile_url:
+        this.platform === "INSTAGRAM"
+          ? `https://www.instagram.com/${username}`
+          : `https://${this.platform.toLowerCase()}.com/@${username}`,
       bio: "Short-form clips & UGC creator",
     };
   }
