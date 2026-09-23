@@ -91,15 +91,15 @@ export function ImageUpload({
           {description && <p className="text-[11px] text-slate-400 mt-0.5">{description}</p>}
         </div>
 
-        {/* Tab switch */}
-        <div className="flex items-center gap-1 p-1 bg-slate-900 border border-slate-800 rounded-lg text-[11px] font-semibold">
+        {/* Tab switch - Equal visual weight segmented control (Issue 8) */}
+        <div className="inline-flex items-center p-1 bg-slate-900 border border-slate-700/80 rounded-xl text-xs font-semibold">
           <button
             type="button"
             onClick={() => setActiveTab("upload")}
-            className={`px-2.5 py-1 rounded-md transition-colors flex items-center gap-1.5 ${
+            className={`h-7 px-3 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-bold ${
               activeTab === "upload"
-                ? "bg-brand-cyan text-slate-950 font-bold"
-                : "text-slate-400 hover:text-white"
+                ? "bg-slate-800 text-brand-cyan border border-brand-cyan/30 shadow-sm"
+                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
             }`}
           >
             <UploadCloud className="w-3.5 h-3.5" />
@@ -108,10 +108,10 @@ export function ImageUpload({
           <button
             type="button"
             onClick={() => setActiveTab("url")}
-            className={`px-2.5 py-1 rounded-md transition-colors flex items-center gap-1.5 ${
+            className={`h-7 px-3 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-bold ${
               activeTab === "url"
-                ? "bg-brand-cyan text-slate-950 font-bold"
-                : "text-slate-400 hover:text-white"
+                ? "bg-slate-800 text-brand-cyan border border-brand-cyan/30 shadow-sm"
+                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
             }`}
           >
             <LinkIcon className="w-3.5 h-3.5" />
@@ -122,8 +122,8 @@ export function ImageUpload({
 
       {/* Image Preview if available */}
       {value ? (
-        <div className="relative rounded-2xl bg-slate-900/90 border border-slate-700/80 p-4 flex items-center gap-4">
-          <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-950 border border-slate-800 shrink-0 relative flex items-center justify-center">
+        <div className="relative rounded-2xl bg-slate-900/90 border border-slate-700/80 p-3.5 flex items-center gap-3.5">
+          <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-950 border border-slate-800 shrink-0 relative flex items-center justify-center">
             <img
               src={value}
               alt="Campaign Preview"
@@ -137,29 +137,26 @@ export function ImageUpload({
           </div>
 
           <div className="flex-1 min-w-0">
+            {/* Consolidated clean status badge (Issue 7) */}
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-                <Check className="w-3 h-3" /> Image Selected
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-cyan bg-brand-cyan/10 border border-brand-cyan/20 px-2.5 py-0.5 rounded-full">
+                <Check className="w-3.5 h-3.5" /> Image attached
               </span>
-              {value.startsWith("/uploads/") && (
-                <span className="text-[10px] text-slate-400 font-mono bg-slate-800 px-2 py-0.5 rounded">
-                  Local Storage
-                </span>
-              )}
             </div>
-            <p className="text-xs text-white font-medium truncate mt-1">{value}</p>
-            <div className="flex items-center gap-3 mt-2">
+            
+            {/* Accessible secondary action buttons with 32px height (Issue 10) */}
+            <div className="flex items-center gap-2 mt-2.5">
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="text-xs text-brand-cyan hover:underline font-semibold"
+                className="h-8 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 hover:text-white text-xs font-semibold transition-colors flex items-center gap-1.5"
               >
                 Replace image
               </button>
               <button
                 type="button"
                 onClick={handleRemove}
-                className="text-xs text-red-400 hover:text-red-300 font-semibold"
+                className="h-8 px-3 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 hover:text-red-300 text-xs font-semibold transition-colors flex items-center gap-1.5"
               >
                 Remove
               </button>

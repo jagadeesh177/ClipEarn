@@ -273,7 +273,7 @@ export default function ManagerCampaignsPage() {
                         </div>
                       </td>
 
-                      <td className="py-4 pr-3 text-brand-emerald font-semibold">
+                      <td className="py-4 pr-3 text-slate-300 font-semibold">
                         {camp.brand_name || "N/A"}
                       </td>
 
@@ -293,7 +293,7 @@ export default function ManagerCampaignsPage() {
                           </div>
                           <div className="w-full h-2 bg-slate-800/80 rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-gradient-to-r from-brand-cyan to-brand-emerald rounded-full transition-all duration-300"
+                              className="h-full bg-brand-cyan rounded-full transition-all duration-300"
                               style={{ width: `${budgetPercent}%` }}
                             />
                           </div>
@@ -304,7 +304,7 @@ export default function ManagerCampaignsPage() {
                         <span className="text-slate-200 font-bold">
                           {(Number(camp.eligible_views) || 0).toLocaleString()}
                         </span>
-                        <span className="text-[10px] text-slate-500 block">
+                        <span className="text-[10px] text-slate-400 block">
                           {camp.submissions_count ?? camp._count?.submissions ?? 0} submissions
                         </span>
                       </td>
@@ -314,7 +314,7 @@ export default function ManagerCampaignsPage() {
                           <span
                             className={`w-2 h-2 rounded-full shrink-0 ${
                               camp.status === "ACTIVE"
-                                ? "bg-brand-emerald shadow-[0_0_8px_rgba(0,229,153,0.6)]"
+                                ? "bg-brand-cyan shadow-[0_0_8px_rgba(0,242,254,0.6)]"
                                 : camp.status === "PAUSED"
                                 ? "bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.6)]"
                                 : "bg-slate-500"
@@ -323,7 +323,7 @@ export default function ManagerCampaignsPage() {
                           <span
                             className={
                               camp.status === "ACTIVE"
-                                ? "text-brand-emerald font-semibold"
+                                ? "text-brand-cyan font-semibold"
                                 : camp.status === "PAUSED"
                                 ? "text-yellow-400 font-semibold"
                                 : "text-slate-400 font-semibold"
@@ -359,7 +359,7 @@ export default function ManagerCampaignsPage() {
                             {camp.status === "ACTIVE" ? (
                               <PauseCircle className="w-4 h-4 text-yellow-400" />
                             ) : (
-                              <PlayCircle className="w-4 h-4 text-brand-emerald" />
+                              <PlayCircle className="w-4 h-4 text-brand-cyan" />
                             )}
                           </button>
 
@@ -374,9 +374,9 @@ export default function ManagerCampaignsPage() {
                             }}
                             title="Export Client Performance Sheet (.xlsx)"
                             aria-label={`Export Client Performance Sheet for ${camp.name}`}
-                            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-800/90 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 border border-slate-700/60 hover:border-emerald-500/40 transition-colors flex items-center justify-center shrink-0"
+                            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/60 transition-colors flex items-center justify-center shrink-0"
                           >
-                            <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                            <FileSpreadsheet className="w-4 h-4 text-brand-cyan" />
                           </button>
 
                           {/* Delete Campaign */}
@@ -403,16 +403,16 @@ export default function ManagerCampaignsPage() {
       {/* Edit Campaign Modal */}
       {editingCampaign && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-[#0F141F] border border-slate-800 rounded-2xl max-w-lg w-full p-6 sm:p-7 shadow-2xl relative">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800/80 mb-5">
+          <div className="bg-[#0F141F] border border-slate-800 rounded-2xl max-w-lg w-full p-6 sm:p-7 shadow-2xl relative max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800/80 mb-4 shrink-0">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-brand-cyan/10 border border-brand-cyan/20 text-brand-cyan">
                   <Edit className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white">Edit Campaign Parameters</h3>
-                  <span className="text-xs text-brand-emerald font-semibold">
-                    {editingCampaign.brand_name} • {editingCampaign.name}
+                  <h2 className="text-base font-bold text-white">Edit Campaign Parameters</h2>
+                  <span className="text-xs text-slate-400 font-medium">
+                    {editingCampaign.brand_name} &bull; {editingCampaign.name}
                   </span>
                 </div>
               </div>
@@ -421,12 +421,13 @@ export default function ManagerCampaignsPage() {
                 type="button"
                 onClick={() => setEditingCampaign(null)}
                 className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                aria-label="Close edit modal"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleSaveEdit} className="space-y-5 text-xs">
+            <form onSubmit={handleSaveEdit} className="flex-1 overflow-y-auto pr-1 -mr-1 space-y-4 text-xs">
               {/* CPM Rate */}
               <div>
                 <label className="block text-slate-300 font-semibold mb-1.5">
@@ -445,7 +446,7 @@ export default function ManagerCampaignsPage() {
                     placeholder="1.00"
                   />
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1">
+                <p className="text-xs text-slate-400 mt-1.5 leading-normal">
                   Rate paid to creators per 1,000 verified views. Changing this immediately updates payout calculations for future view syncs.
                 </p>
               </div>
@@ -468,9 +469,9 @@ export default function ManagerCampaignsPage() {
                     placeholder="10000"
                   />
                 </div>
-                <div className="flex justify-between items-center text-[11px] text-slate-500 mt-1">
+                <div className="flex justify-between items-center text-xs text-slate-400 mt-1.5">
                   <span>Contracted brand sponsor budget pool.</span>
-                  <span className="text-brand-cyan font-medium">
+                  <span className="text-slate-300 font-medium">
                     Accrued spend: ${(Number(editingCampaign.used_budget) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
@@ -483,9 +484,9 @@ export default function ManagerCampaignsPage() {
                 </label>
                 <div className="grid grid-cols-3 gap-2.5">
                   {[
-                    { id: "TIKTOK", label: "TikTok", activeBg: "bg-cyan-500/20 text-cyan-300 border-cyan-500/40" },
-                    { id: "INSTAGRAM", label: "Instagram", activeBg: "bg-pink-500/20 text-pink-300 border-pink-500/40" },
-                    { id: "YOUTUBE", label: "YouTube", activeBg: "bg-red-500/20 text-red-300 border-red-500/40" },
+                    { id: "TIKTOK", label: "TikTok" },
+                    { id: "INSTAGRAM", label: "Instagram" },
+                    { id: "YOUTUBE", label: "YouTube" },
                   ].map((p) => {
                     const isSelected = editForm.allowed_platforms.includes(p.id);
                     return (
@@ -493,10 +494,10 @@ export default function ManagerCampaignsPage() {
                         key={p.id}
                         type="button"
                         onClick={() => togglePlatform(p.id)}
-                        className={`py-2.5 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                        className={`h-10 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                           isSelected
-                            ? p.activeBg
-                            : "bg-slate-900/80 text-slate-500 border-slate-800 hover:text-slate-300"
+                            ? "bg-brand-cyan/15 text-brand-cyan border-brand-cyan/40"
+                            : "bg-slate-900/60 text-slate-500 border-slate-800 hover:text-slate-300"
                         }`}
                       >
                         <span>{p.label}</span>
@@ -505,7 +506,7 @@ export default function ManagerCampaignsPage() {
                     );
                   })}
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1.5">
+                <p className="text-xs text-slate-400 mt-1.5">
                   Creators can only submit clip links from the selected platforms above.
                 </p>
               </div>
@@ -519,10 +520,10 @@ export default function ManagerCampaignsPage() {
                   <button
                     type="button"
                     onClick={() => setEditForm({ ...editForm, status: "ACTIVE" })}
-                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                    className={`h-10 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                       editForm.status === "ACTIVE"
-                        ? "bg-brand-cyan/20 text-brand-cyan border-brand-cyan/40"
-                        : "bg-slate-900 text-slate-400 border-slate-800 hover:text-white"
+                        ? "bg-brand-cyan/15 text-brand-cyan border-brand-cyan/40"
+                        : "bg-slate-900/60 text-slate-400 border-slate-800 hover:text-white"
                     }`}
                   >
                     <span className="w-2 h-2 rounded-full bg-brand-cyan" />
@@ -532,20 +533,20 @@ export default function ManagerCampaignsPage() {
                   <button
                     type="button"
                     onClick={() => setEditForm({ ...editForm, status: "PAUSED" })}
-                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                    className={`h-10 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                       editForm.status === "PAUSED"
-                        ? "bg-yellow-400/20 text-yellow-400 border-yellow-400/40"
-                        : "bg-slate-900 text-slate-400 border-slate-800 hover:text-white"
+                        ? "bg-slate-800 text-white border-slate-600"
+                        : "bg-slate-900/60 text-slate-400 border-slate-800 hover:text-white"
                     }`}
                   >
-                    <span className="w-2 h-2 rounded-full bg-yellow-400" />
+                    <span className="w-2 h-2 rounded-full bg-slate-400" />
                     <span>Paused (Submissions paused)</span>
                   </button>
                 </div>
               </div>
 
               {/* Image Upload / Brand Logo */}
-              <div className="pt-2">
+              <div className="pt-1">
                 <ImageUpload
                   value={editForm.image_url}
                   onChange={(url) => setEditForm((prev) => ({ ...prev, image_url: url }))}
@@ -554,20 +555,20 @@ export default function ManagerCampaignsPage() {
                 />
               </div>
 
-              {/* Action buttons */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+              {/* Sticky Action buttons footer (Issue 6) */}
+              <div className="sticky bottom-0 bg-[#0F141F] pt-3 pb-1 border-t border-slate-800/80 flex items-center justify-end gap-3 mt-4 shrink-0">
                 <button
                   type="button"
                   disabled={savingEdit}
                   onClick={() => setEditingCampaign(null)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-colors"
+                  className="h-10 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={savingEdit}
-                  className="px-5 py-2.5 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-bold text-xs transition-all flex items-center gap-2 shadow-lg shadow-brand-cyan/20"
+                  className="h-10 px-5 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-bold text-xs transition-all flex items-center gap-2 shadow-lg shadow-brand-cyan/20"
                 >
                   {savingEdit ? <Loader2 className="w-4 h-4 animate-spin text-slate-950" /> : null}
                   <span>{savingEdit ? "Saving..." : "Save Parameters"}</span>
@@ -587,7 +588,7 @@ export default function ManagerCampaignsPage() {
                 <Trash2 className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white">Delete Campaign?</h3>
+                <h2 className="text-base font-bold text-white">Delete Campaign?</h2>
                 <span className="text-xs text-slate-400 font-medium">This action cannot be undone.</span>
               </div>
             </div>
