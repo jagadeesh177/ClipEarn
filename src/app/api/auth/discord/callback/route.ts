@@ -38,7 +38,8 @@ export async function GET(request: Request) {
     try {
       const clientId = process.env.DISCORD_CLIENT_ID!;
       const clientSecret = process.env.DISCORD_CLIENT_SECRET!;
-      const redirectUri = process.env.DISCORD_REDIRECT_URI || "http://localhost:3000/api/auth/discord/callback";
+      const urlObj = new URL(request.url);
+      const redirectUri = process.env.DISCORD_REDIRECT_URI || `${urlObj.origin}/api/auth/discord/callback`;
 
       const tokenRes = await fetch("https://discord.com/api/oauth2/token", {
         method: "POST",
@@ -74,74 +75,96 @@ export async function GET(request: Request) {
     }
   }
 
-  // Automatic profile provisioning
-  let user = await prisma.user.findUnique({
-    where: { discord_id: discordId },
-  });
+  try {
+    // Automatic profile provisioning
+    let user = await prisma.user.findUnique({
+      where: { discord_id: discordId },
+    });
 
-  if (!user) {
-    let referrerId: string | null = null;
-    if (referralCode) {
-      const referrer = await prisma.user.findUnique({
-        where: { referral_code: referralCode },
+    // If not found by discord_id, check if user exists by email to link account
+    if (!user && email) {
+      const existingUser = await prisma.user.findUnique({
+        where: { email },
       });
-      if (referrer) {
-        referrerId = referrer.id;
+      if (existingUser) {
+        user = await prisma.user.update({
+          where: { id: existingUser.id },
+          data: {
+            discord_id: discordId,
+            avatar_url: avatarUrl || existingUser.avatar_url,
+            last_login_at: new Date(),
+          },
+        });
       }
     }
 
-    const uniqueCode = `CLIP${Math.floor(100000 + Math.random() * 900000)}`;
-    user = await prisma.user.create({
-      data: {
-        discord_id: discordId,
-        username,
-        email,
-        avatar_url: avatarUrl,
-        role: UserRole.CLIPPER,
-        referral_code: uniqueCode,
-        referred_by_id: referrerId,
-        last_login_at: new Date(),
-      },
-    });
+    if (!user) {
+      let referrerId: string | null = null;
+      if (referralCode) {
+        const referrer = await prisma.user.findUnique({
+          where: { referral_code: referralCode },
+        });
+        if (referrer) {
+          referrerId = referrer.id;
+        }
+      }
 
-    if (referrerId) {
-      await prisma.referral.create({
+      const uniqueCode = `CLIP${Math.floor(100000 + Math.random() * 900000)}`;
+      user = await prisma.user.create({
         data: {
-          referrer_id: referrerId,
-          referred_user_id: user.id,
-          referral_code: referralCode!,
-          status: ReferralStatus.PENDING,
+          discord_id: discordId,
+          username,
+          email,
+          avatar_url: avatarUrl,
+          role: UserRole.CLIPPER,
+          referral_code: uniqueCode,
+          referred_by_id: referrerId,
+          last_login_at: new Date(),
+        },
+      });
+
+      if (referrerId) {
+        await prisma.referral.create({
+          data: {
+            referrer_id: referrerId,
+            referred_user_id: user.id,
+            referral_code: referralCode!,
+            status: ReferralStatus.PENDING,
+          },
+        });
+      }
+    } else {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          username: user.username || username,
+          avatar_url: avatarUrl || user.avatar_url,
+          last_login_at: new Date(),
         },
       });
     }
-  } else {
-    user = await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        username,
-        avatar_url: avatarUrl || user.avatar_url,
-        last_login_at: new Date(),
-      },
+
+    const token = signSessionToken({
+      userId: user.id,
+      role: user.role,
+      username: user.username,
+      email: user.email,
     });
+
+    const response = NextResponse.redirect(new URL("/clipper/dashboard", request.url));
+    const isHttps = request.headers.get("x-forwarded-proto") === "https" || request.url.startsWith("https://");
+
+    response.cookies.set(COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: isHttps,
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60,
+      path: "/",
+    });
+
+    return response;
+  } catch (err: any) {
+    console.error("Discord profile provisioning error:", err);
+    return NextResponse.redirect(new URL("/login?error=profile_failed", request.url));
   }
-
-  const token = signSessionToken({
-    userId: user.id,
-    role: user.role,
-    username: user.username,
-    email: user.email,
-  });
-
-  const response = NextResponse.redirect(new URL("/clipper/dashboard", request.url));
-  const isHttps = request.headers.get("x-forwarded-proto") === "https" || request.url.startsWith("https://");
-
-  response.cookies.set(COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: isHttps,
-    sameSite: "lax",
-    maxAge: 7 * 24 * 60 * 60,
-    path: "/",
-  });
-
-  return response;
 }
