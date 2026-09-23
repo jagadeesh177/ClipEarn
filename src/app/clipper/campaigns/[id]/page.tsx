@@ -378,56 +378,68 @@ export default function CampaignDetailsPage() {
 
           {/* Three Tabs: My Submissions | My Stats | Leaderboard */}
           <div className="space-y-4">
-            <div className="flex items-center gap-8 border-b border-slate-800/80 px-1">
+            <div
+              role="tablist"
+              aria-label="Campaign activity tabs"
+              className="flex items-center gap-1.5 p-1 bg-[#0A0F1D] border border-slate-800/80 rounded-2xl w-fit"
+            >
               <button
                 type="button"
+                role="tab"
+                id="tab-submissions"
+                aria-controls="panel-submissions"
+                aria-selected={activeTab === "submissions"}
                 onClick={() => setActiveTab("submissions")}
-                className={`pb-3 text-sm font-bold transition-all relative ${
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
                   activeTab === "submissions"
-                    ? "text-brand-cyan"
-                    : "text-slate-400 hover:text-white"
+                    ? "bg-brand-cyan/15 text-brand-cyan border border-brand-cyan/30 shadow-sm"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent"
                 }`}
               >
                 <span>My Submissions</span>
-                {activeTab === "submissions" && (
-                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-cyan rounded-full" />
-                )}
               </button>
 
               <button
                 type="button"
+                role="tab"
+                id="tab-stats"
+                aria-controls="panel-stats"
+                aria-selected={activeTab === "stats"}
                 onClick={() => setActiveTab("stats")}
-                className={`pb-3 text-sm font-bold transition-all relative ${
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
                   activeTab === "stats"
-                    ? "text-brand-cyan"
-                    : "text-slate-400 hover:text-white"
+                    ? "bg-brand-cyan/15 text-brand-cyan border border-brand-cyan/30 shadow-sm"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent"
                 }`}
               >
                 <span>My Stats</span>
-                {activeTab === "stats" && (
-                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-cyan rounded-full" />
-                )}
               </button>
 
               <button
                 type="button"
+                role="tab"
+                id="tab-leaderboard"
+                aria-controls="panel-leaderboard"
+                aria-selected={activeTab === "leaderboard"}
                 onClick={() => setActiveTab("leaderboard")}
-                className={`pb-3 text-sm font-bold transition-all relative ${
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
                   activeTab === "leaderboard"
-                    ? "text-brand-cyan"
-                    : "text-slate-400 hover:text-white"
+                    ? "bg-brand-cyan/15 text-brand-cyan border border-brand-cyan/30 shadow-sm"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent"
                 }`}
               >
                 <span>Leaderboard</span>
-                {activeTab === "leaderboard" && (
-                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-cyan rounded-full" />
-                )}
               </button>
             </div>
 
-            {/* TAB 1: My Submissions List matching Screenshot 1 */}
+            {/* TAB 1: My Submissions List */}
             {activeTab === "submissions" && (
-              <div className="rounded-2xl bg-[#0D131D] border border-slate-800/80 p-2 sm:p-4 divide-y divide-slate-800/60">
+              <div
+                role="tabpanel"
+                id="panel-submissions"
+                aria-labelledby="tab-submissions"
+                className="rounded-2xl bg-[#0D131D] border border-slate-800/80 p-2 sm:p-4 divide-y divide-slate-800/60"
+              >
                 {mySubmissions.length === 0 ? (
                   <div className="py-12 text-center text-slate-500 text-xs">
                     No submissions yet for this campaign. Paste your video URL above to submit!
@@ -538,7 +550,12 @@ export default function CampaignDetailsPage() {
 
             {/* TAB 2: My Stats matching Screenshot 2 */}
             {activeTab === "stats" && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div
+                role="tabpanel"
+                id="panel-stats"
+                aria-labelledby="tab-stats"
+                className="grid grid-cols-2 sm:grid-cols-4 gap-4"
+              >
                 <div className="p-6 rounded-2xl bg-[#0D131D] border border-slate-800/80 text-center space-y-1">
                   <div className="text-2xl sm:text-3xl font-black text-white">
                     {myStats?.totalViews?.toLocaleString() || 0}
@@ -614,7 +631,12 @@ export default function CampaignDetailsPage() {
 
             {/* TAB 3: Leaderboard matching Screenshot 3 */}
             {activeTab === "leaderboard" && (
-              <div className="rounded-2xl bg-[#0D131D] border border-slate-800/80 overflow-hidden">
+              <div
+                role="tabpanel"
+                id="panel-leaderboard"
+                aria-labelledby="tab-leaderboard"
+                className="rounded-2xl bg-[#0D131D] border border-slate-800/80 overflow-hidden"
+              >
                 {leaderboard.length === 0 ? (
                   <div className="py-12 text-center text-slate-500 text-xs">
                     No approved clipper views recorded on this campaign yet.
