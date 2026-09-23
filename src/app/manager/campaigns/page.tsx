@@ -165,16 +165,22 @@ export default function ManagerCampaignsPage() {
                         ${camp.cpm.toFixed(2)}
                       </td>
 
-                      <td className="py-4 pr-3 max-w-[200px]">
-                        <div className="flex justify-between text-[11px] mb-1">
-                          <span className="text-white font-bold">${camp.used_budget.toFixed(2)}</span>
-                          <span className="text-slate-500">${camp.total_budget.toLocaleString()}</span>
-                        </div>
-                        <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-to-r from-brand-cyan to-brand-emerald rounded-full"
-                            style={{ width: `${budgetPercent}%` }}
-                          />
+                      <td className="py-4 pr-3 min-w-[170px] max-w-[210px]">
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-white font-bold">
+                              ${camp.used_budget.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                            <span className="text-slate-400">
+                              ${camp.total_budget.toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="w-full h-2 bg-slate-800/80 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-brand-cyan to-brand-emerald rounded-full transition-all duration-300"
+                              style={{ width: `${budgetPercent}%` }}
+                            />
+                          </div>
                         </div>
                       </td>
 
@@ -188,27 +194,40 @@ export default function ManagerCampaignsPage() {
                       </td>
 
                       <td className="py-4 pr-3">
-                        <span
-                          className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                            camp.status === "ACTIVE"
-                              ? "bg-brand-emerald/15 text-brand-emerald border border-brand-emerald/30"
-                              : camp.status === "PAUSED"
-                              ? "bg-yellow-400/15 text-yellow-400 border border-yellow-400/30"
-                              : "bg-slate-700 text-slate-300"
-                          }`}
-                        >
-                          {camp.status}
-                        </span>
+                        <div className="inline-flex items-center gap-2 text-xs font-semibold">
+                          <span
+                            className={`w-2 h-2 rounded-full shrink-0 ${
+                              camp.status === "ACTIVE"
+                                ? "bg-brand-emerald shadow-[0_0_8px_rgba(0,229,153,0.6)]"
+                                : camp.status === "PAUSED"
+                                ? "bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.6)]"
+                                : "bg-slate-500"
+                            }`}
+                          />
+                          <span
+                            className={
+                              camp.status === "ACTIVE"
+                                ? "text-brand-emerald font-semibold"
+                                : camp.status === "PAUSED"
+                                ? "text-yellow-400 font-semibold"
+                                : "text-slate-400 font-semibold"
+                            }
+                          >
+                            {camp.status === "ACTIVE" ? "Active" : camp.status === "PAUSED" ? "Paused" : camp.status}
+                          </span>
+                        </div>
                       </td>
 
                       <td className="py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-2.5 sm:gap-3">
                           {/* Toggle pause/resume */}
                           <button
+                            type="button"
                             onClick={() => handleToggleStatus(camp.id, camp.status)}
                             disabled={updatingId === camp.id}
                             title={camp.status === "ACTIVE" ? "Pause Campaign" : "Resume Campaign"}
-                            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                            aria-label={camp.status === "ACTIVE" ? `Pause ${camp.name}` : `Resume ${camp.name}`}
+                            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/60 transition-colors flex items-center justify-center shrink-0"
                           >
                             {camp.status === "ACTIVE" ? (
                               <PauseCircle className="w-4 h-4 text-yellow-400" />
@@ -217,21 +236,29 @@ export default function ManagerCampaignsPage() {
                             )}
                           </button>
 
-                          {/* Export CSV (Rule 74) */}
-                          <a
-                            href={`/api/export/campaign/${camp.id}`}
-                            download
+                          {/* Export CSV (Consistent Button Element) */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const a = document.createElement("a");
+                              a.href = `/api/export/campaign/${camp.id}`;
+                              a.download = `campaign-${camp.id}.csv`;
+                              a.click();
+                            }}
                             title="Export Campaign Submissions CSV"
-                            className="p-2 rounded-lg bg-slate-800 hover:bg-brand-cyan hover:text-black text-slate-300 transition-colors"
+                            aria-label={`Export CSV for ${camp.name}`}
+                            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-800/90 hover:bg-brand-cyan hover:text-black text-slate-300 border border-slate-700/60 hover:border-brand-cyan transition-colors flex items-center justify-center shrink-0"
                           >
                             <Download className="w-4 h-4" />
-                          </a>
+                          </button>
 
                           {/* Delete Campaign */}
                           <button
+                            type="button"
                             onClick={() => setCampaignToDelete(camp)}
                             title="Delete Campaign"
-                            className="p-2 rounded-lg bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 border border-slate-700/60 hover:border-red-500/40 transition-colors"
+                            aria-label={`Delete ${camp.name}`}
+                            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-800/90 hover:bg-red-500/20 text-slate-400 hover:text-red-400 border border-slate-700/60 hover:border-red-500/40 transition-colors flex items-center justify-center shrink-0"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
