@@ -29,31 +29,16 @@ async function handleDelete(id: string) {
       return NextResponse.json({ error: "Social account not found" }, { status: 404 });
     }
 
-    // Permanently delete social account and its dependent records from the database
+    // Permanently delete ONLY the social account.
+    // All submitted clips, snapshots, views, and earnings remain 100% intact on the website.
     await prisma.$transaction(async (tx) => {
-      // Find all submissions referencing this social account
-      const submissions = await tx.submission.findMany({
+      // Safely unlink submissions from this social account
+      await tx.submission.updateMany({
         where: { social_account_id: account.id },
-        select: { id: true },
+        data: { social_account_id: null },
       });
-      const subIds = submissions.map((s) => s.id);
 
-      if (subIds.length > 0) {
-        await tx.viewSnapshot.deleteMany({
-          where: { submission_id: { in: subIds } },
-        });
-        await tx.earningsLedger.deleteMany({
-          where: { submission_id: { in: subIds } },
-        });
-        await tx.fraudFlag.deleteMany({
-          where: { submission_id: { in: subIds } },
-        });
-        await tx.submission.deleteMany({
-          where: { id: { in: subIds } },
-        });
-      }
-
-      // Delete the social account record itself
+      // Delete only the social account record itself
       await tx.socialAccount.delete({
         where: { id: account.id },
       });

@@ -60,10 +60,10 @@ function ClipperLoginContent() {
           <h2 className="text-2xl font-black text-white mt-6">Welcome back!</h2>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-xs font-semibold text-brand-cyan mt-2">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Clipper / UGC Creator Portal</span>
+            <span>Clipper Portal</span>
           </div>
           {refCode && (
-            <div className="mt-3 text-xs text-brand-emerald font-medium bg-brand-emerald/10 border border-brand-emerald/20 px-3 py-1.5 rounded-lg inline-block">
+            <div className="mt-3 text-xs text-brand-cyan font-medium bg-brand-cyan/10 border border-brand-cyan/20 px-3 py-1.5 rounded-lg inline-block">
               Referred by friend: <span className="font-bold">{refCode}</span>
             </div>
           )}

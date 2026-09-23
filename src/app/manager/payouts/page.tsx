@@ -81,7 +81,7 @@ export default function ManagerPayoutsPage() {
             Payout Approvals & Processing
           </h1>
           <p className="text-sm text-slate-400 mt-1">
-            Authorize creator withdrawals, issue external transaction IDs, and maintain auditable settlement records.
+            Authorize clipper withdrawals, issue external transaction IDs, and maintain auditable settlement records.
           </p>
         </div>
       </div>
@@ -220,7 +220,7 @@ export default function ManagerPayoutsPage() {
                     className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white font-mono focus:outline-none focus:border-brand-cyan"
                   />
                   <span className="text-[11px] text-slate-500 mt-1 block">
-                    This reference will be visible to the creator on their payout history.
+                    This reference will be visible to the clipper on their payout history.
                   </span>
                 </div>
               ) : (

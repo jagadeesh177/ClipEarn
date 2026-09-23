@@ -111,7 +111,7 @@ export async function GET(
     // Sheet 2: All Deliverable Clips Line-Item Details
     const detailsHeader = [
       "Item #",
-      "Creator Username",
+      "Clipper Username",
       "Social Account Handle",
       "Platform",
       "Clip Published URL",

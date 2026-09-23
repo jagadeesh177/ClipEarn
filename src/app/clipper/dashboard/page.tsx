@@ -23,20 +23,33 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+import { clientCache } from "@/lib/clientCache";
+
 export default function ClipperDashboardPage() {
-  const [userProfile, setUserProfile] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<any>(() => clientCache.get("clipper_user_profile"));
   const [performanceRange, setPerformanceRange] = useState<"7d" | "30d" | "90d">("30d");
-  const [chartData, setChartData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [chartData, setChartData] = useState<any[]>(() => clientCache.get("clipper_perf_30d") || []);
+  const [loading, setLoading] = useState(() => !clientCache.get("clipper_user_profile"));
 
   useEffect(() => {
+    const cachedPerf = clientCache.get(`clipper_perf_${performanceRange}`);
+    if (cachedPerf) {
+      setChartData(cachedPerf);
+    }
+
     Promise.all([
       fetch("/api/users/me").then((res) => res.json()),
       fetch(`/api/clipper/performance?range=${performanceRange}`).then((res) => res.json()),
     ])
       .then(([profileRes, perfRes]) => {
-        if (profileRes.data) setUserProfile(profileRes.data);
-        if (perfRes.data) setChartData(perfRes.data);
+        if (profileRes.data) {
+          setUserProfile(profileRes.data);
+          clientCache.set("clipper_user_profile", profileRes.data);
+        }
+        if (perfRes.data) {
+          setChartData(perfRes.data);
+          clientCache.set(`clipper_perf_${performanceRange}`, perfRes.data);
+        }
         setLoading(false);
       })
       .catch(() => setLoading(false));

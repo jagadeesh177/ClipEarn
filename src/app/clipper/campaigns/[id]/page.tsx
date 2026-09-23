@@ -133,11 +133,6 @@ export default function CampaignDetailsPage() {
 
   const handleSubmitClip = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!termsAgreed) {
-      setSubmitError("Please confirm compliance with Clipper Obligations & Liability terms.");
-      return;
-    }
-
     setSubmitError("");
     setSubmitting(true);
 
@@ -226,11 +221,14 @@ export default function CampaignDetailsPage() {
     );
   }
 
-  const usedBudgetNum = Number(campaign.used_budget) || 0;
+  const currentViewsNum = Number(campaign.total_views || campaign.eligible_views || 0);
+  const minViewsPayout = Number(campaign.minimum_views_for_payout) || 0;
+  // Only once views reach the min views for payout does budget used increase; otherwise view progress increases while budget used stays 0
+  const hasReachedMinViews = minViewsPayout > 0 ? currentViewsNum >= minViewsPayout : true;
+  const usedBudgetNum = hasReachedMinViews ? (Number(campaign.used_budget) || 0) : 0;
   const totalBudgetNum = Number(campaign.total_budget) || 10000;
   const budgetPercent = Math.min(100, Math.round((usedBudgetNum / totalBudgetNum) * 100));
 
-  const currentViewsNum = Number(campaign.total_views || campaign.eligible_views || 0);
   const maxViewsNum = Number(campaign.max_payable_views) || Math.floor((totalBudgetNum / (Number(campaign.cpm) || 1)) * 1000);
   const viewsPercent = maxViewsNum > 0 ? Math.min(100, Math.round((currentViewsNum / maxViewsNum) * 100)) : 0;
 
@@ -343,24 +341,6 @@ export default function CampaignDetailsPage() {
                   )}
                   <span>Submit</span>
                 </button>
-              </div>
-
-              {/* Compliance Checkbox matching screenshot */}
-              <div className="flex items-center justify-center gap-2 text-xs text-slate-400">
-                <input
-                  type="checkbox"
-                  id="complianceCheck"
-                  checked={termsAgreed}
-                  onChange={(e) => setTermsAgreed(e.target.checked)}
-                  className="w-4 h-4 rounded bg-slate-900 border-slate-800 text-brand-cyan focus:ring-brand-cyan cursor-pointer"
-                />
-                <label htmlFor="complianceCheck" className="cursor-pointer select-none">
-                  I confirm this submission complies with the{" "}
-                  <Link href="/clipper/guidelines" className="text-brand-cyan hover:underline font-semibold">
-                    Clipper Obligations & Liability
-                  </Link>{" "}
-                  terms.
-                </label>
               </div>
 
               {/* Handle Detection Live Feedback */}
@@ -727,7 +707,7 @@ export default function CampaignDetailsPage() {
                 <DiscordIcon className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="font-bold text-white text-xs">Join Creator Discord</h3>
+                <h3 className="font-bold text-white text-xs">Join Clipper Discord</h3>
                 <p className="text-[11px] text-slate-400">Official ClipEarn Community</p>
               </div>
             </div>

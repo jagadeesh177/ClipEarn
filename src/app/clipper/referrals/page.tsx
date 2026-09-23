@@ -37,10 +37,10 @@ export default function ReferralsPage() {
       <div className="pb-4 border-b border-slate-800/80">
         <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-2.5">
           <Share2 className="w-7 h-7 text-brand-cyan" />
-          Creator Referral Program
+          Clipper Referral Program
         </h1>
         <p className="text-sm text-slate-400 mt-1">
-          Invite other creators to ClipEarn and earn bonus rewards when their clips get approved.
+          Invite other clippers to ClipEarn and earn bonus rewards when their clips get approved.
         </p>
       </div>
 
@@ -89,7 +89,7 @@ export default function ReferralsPage() {
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
             Qualified Referrals
           </span>
-          <div className="text-3xl font-black text-brand-emerald mt-1">{stats.qualifiedCount}</div>
+          <div className="text-3xl font-black text-brand-cyan mt-1">{stats.qualifiedCount}</div>
           <span className="text-[11px] text-slate-500 mt-1 block">Has approved clip</span>
         </div>
 
@@ -104,7 +104,7 @@ export default function ReferralsPage() {
 
       {/* Referred Users Table */}
       <div className="p-6 rounded-2xl bg-[#0F141F] border border-slate-800">
-        <h2 className="text-base font-bold text-white mb-4">Referred Creators</h2>
+        <h2 className="text-base font-bold text-white mb-4">Referred Clippers</h2>
 
         {loading ? (
           <div className="py-6 text-center text-slate-500 text-xs">Loading referrals...</div>
@@ -121,7 +121,7 @@ export default function ReferralsPage() {
             <table className="w-full text-left text-xs">
               <thead className="text-[10px] text-slate-400 uppercase tracking-wider border-b border-slate-800 pb-2">
                 <tr>
-                  <th className="pb-3">Creator</th>
+                  <th className="pb-3">Clipper</th>
                   <th className="pb-3">Joined Date</th>
                   <th className="pb-3">Status</th>
                   <th className="pb-3">Qualified Date</th>

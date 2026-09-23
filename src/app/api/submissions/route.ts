@@ -53,7 +53,7 @@ export async function GET(request: Request) {
       platform: s.platform,
       post_url: s.post_url,
       platform_post_id: s.platform_post_id,
-      account_username: s.social_account.username,
+      account_username: s.social_account?.username || "unlinked",
       status: s.status,
       current_views: s.current_views,
       eligible_views: s.eligible_views,

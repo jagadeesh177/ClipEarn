@@ -97,22 +97,32 @@ function CampaignAvatar({ imageUrl, name }: { imageUrl?: string | null; name: st
   );
 }
 
+import { clientCache } from "@/lib/clientCache";
+
 export default function BrowseCampaignsPage() {
-  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [campaigns, setCampaigns] = useState<any[]>(() => clientCache.get("clipper_campaigns_list") || []);
   const [search, setSearch] = useState("");
   const [selectedPlatform, setSelectedPlatform] = useState<string>("ALL");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !clientCache.get("clipper_campaigns_list"));
   const [joiningId, setJoiningId] = useState<string | null>(null);
 
-  const fetchCampaigns = () => {
-    setLoading(true);
+  const fetchCampaigns = (isFilterChange = false) => {
+    // Only show full loading skeleton if we don't have any cached data
+    if (!campaigns.length && !clientCache.get("clipper_campaigns_list")) {
+      setLoading(true);
+    }
     let url = `/api/campaigns?limit=50&search=${encodeURIComponent(search)}`;
     if (selectedPlatform !== "ALL") url += `&platform=${selectedPlatform}`;
 
     fetch(url)
       .then((res) => res.json())
       .then((data) => {
-        if (data.data) setCampaigns(data.data);
+        if (data.data) {
+          setCampaigns(data.data);
+          if (selectedPlatform === "ALL" && !search) {
+            clientCache.set("clipper_campaigns_list", data.data);
+          }
+        }
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -159,8 +169,8 @@ export default function BrowseCampaignsPage() {
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
-            placeholder="Search campaigns by brand, creator, or keyword..."
-            aria-label="Search campaigns by brand, creator, or keyword"
+            placeholder="Search campaigns by brand, host, or keyword..."
+            aria-label="Search campaigns by brand, host, or keyword"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && fetchCampaigns()}

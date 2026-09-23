@@ -76,7 +76,7 @@ export default function ManagerDashboardPage() {
 
           <Link
             href="/manager/campaigns/create"
-            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-brand-cyan to-brand-emerald text-black font-black text-xs transition-opacity hover:opacity-95 flex items-center gap-2"
+            className="px-4 py-2.5 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-black text-xs transition-opacity hover:opacity-95 flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
             <span>Create Campaign</span>
@@ -91,7 +91,7 @@ export default function ManagerDashboardPage() {
             Active Campaigns
           </span>
           <div className="text-3xl font-black text-white mt-1">{data.activeCampaignsCount}</div>
-          <span className="text-xs text-slate-400 mt-1 block">Live creator budgets</span>
+          <span className="text-xs text-slate-400 mt-1 block">Live campaign budgets</span>
         </div>
 
         <div className="p-5 rounded-2xl bg-[#0F141F] border border-slate-800 hover:border-slate-700 transition-colors">
@@ -104,17 +104,17 @@ export default function ManagerDashboardPage() {
 
         <div className="p-5 rounded-2xl bg-[#0F141F] border border-slate-800 hover:border-slate-700 transition-colors">
           <span className="text-xs font-semibold text-slate-400 block">
-            Total UGC Clippers
+            Total Video Clippers
           </span>
           <div className="text-3xl font-black text-brand-cyan mt-1">{data.totalClippersCount}</div>
-          <span className="text-xs text-slate-400 mt-1 block">Registered creators</span>
+          <span className="text-xs text-slate-400 mt-1 block">Registered clippers</span>
         </div>
 
         <div className="p-5 rounded-2xl bg-[#0F141F] border border-slate-800 hover:border-slate-700 transition-colors">
           <span className="text-xs font-semibold text-slate-400 block">
             Total Views Delivered
           </span>
-          <div className="text-3xl font-black text-brand-emerald mt-1">
+          <div className="text-3xl font-black text-brand-cyan mt-1">
             {data.totalViews.toLocaleString()}
           </div>
           <span className="text-xs text-slate-400 mt-1 block">
@@ -126,7 +126,7 @@ export default function ManagerDashboardPage() {
       {/* Budget & Financial Solvency Section */}
       <div className="space-y-4">
         <h2 className="text-base font-bold text-white flex items-center gap-2">
-          <DollarSign className="w-5 h-5 text-brand-emerald" />
+          <DollarSign className="w-5 h-5 text-brand-cyan" />
           Financial & Campaign Budget Health
         </h2>
 

@@ -68,7 +68,7 @@ export default function LandingPage() {
     },
     {
       q: "How do I verify ownership of my social accounts?",
-      a: "When you connect an account, ClipEarn generates a unique verification code (e.g. clipearn-81fa2b). You simply paste this code into your profile bio on that platform, wait ~20 seconds, and click Verify. This ensures creators only submit content from channels they genuinely own.",
+      a: "When you connect an account, ClipEarn generates a unique verification code (e.g. clipearn-81fa2b). You simply paste this code into your profile bio on that platform, wait ~20 seconds, and click Verify. This ensures clippers only submit content from channels they genuinely own.",
     },
     {
       q: "When can I request a payout?",
@@ -125,7 +125,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/90 border border-slate-800 text-xs text-brand-cyan font-medium mb-8 shadow-inner">
             <Zap className="w-3.5 h-3.5" />
-            <span>The #1 Short-Form Creator Payout Platform</span>
+            <span>The #1 Short-Form Clipper Payout Platform</span>
           </div>
 
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white max-w-4xl mx-auto leading-[1.1]">
@@ -152,7 +152,7 @@ export default function LandingPage() {
               onClick={() => setBrandModalOpen(true)}
               className="w-full sm:w-auto px-8 py-4 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-white font-semibold text-base transition-colors flex items-center justify-center gap-2"
             >
-              For Brands & Creators
+              For Brands & Advertisers
             </button>
           </div>
 
@@ -167,7 +167,7 @@ export default function LandingPage() {
               <div className="text-xs text-slate-400 uppercase tracking-wider mt-1">Verified Views</div>
             </div>
             <div>
-              <div className="text-2xl sm:text-3xl font-black text-brand-emerald">3 Platforms</div>
+              <div className="text-2xl sm:text-3xl font-black text-brand-cyan">3 Platforms</div>
               <div className="text-xs text-slate-400 uppercase tracking-wider mt-1">TikTok, IG & YouTube</div>
             </div>
             <div>
@@ -187,7 +187,7 @@ export default function LandingPage() {
               How You Earn on ClipEarn
             </h2>
             <p className="text-slate-400 mt-4 text-base">
-              A transparent, fraud-protected pipeline ensuring creators get paid fairly for real attention.
+              A transparent, fraud-protected pipeline ensuring clippers get paid fairly for real attention.
             </p>
           </div>
 
@@ -385,7 +385,7 @@ export default function LandingPage() {
                 <div className="p-5 sm:p-6 rounded-xl bg-slate-900 border border-slate-800 grid grid-cols-2 gap-4">
                   <div className="space-y-0.5">
                     <div className="text-slate-400 font-medium">Total Views Tracked</div>
-                    <div className="text-xl font-black text-brand-emerald">363,523</div>
+                    <div className="text-xl font-black text-brand-cyan">363,523</div>
                   </div>
                   <div className="space-y-0.5">
                     <div className="text-slate-400 font-medium">Budget Consumed</div>
@@ -395,7 +395,7 @@ export default function LandingPage() {
 
                 <div className="p-5 sm:p-6 rounded-xl bg-slate-900/60 border border-slate-800 text-slate-400">
                   <p className="italic leading-relaxed">
-                    "ClipEarn drove over 20M views for our podcast launch in 30 days without having to negotiate individual contracts with creators."
+                    "ClipEarn drove over 20M views for our podcast launch in 30 days through a distributed network of active clippers."
                   </p>
                   <div className="mt-3 text-slate-200 font-semibold">— Growth Lead, Steve Wynn Media</div>
                 </div>

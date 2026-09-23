@@ -84,7 +84,7 @@ export default function ClipperMarketplacePage() {
             ClipEarn Marketplace
           </h1>
           <p className="text-sm text-slate-400 mt-1">
-            Free creator resources, viral CapCut presets, trending audio packs, and clipping masterclasses.
+            Free clipper resources, viral CapCut presets, trending audio packs, and clipping masterclasses.
           </p>
         </div>
 

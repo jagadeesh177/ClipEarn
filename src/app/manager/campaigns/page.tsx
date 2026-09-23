@@ -447,7 +447,7 @@ export default function ManagerCampaignsPage() {
                   />
                 </div>
                 <p className="text-xs text-slate-400 mt-1.5 leading-normal">
-                  Rate paid to creators per 1,000 verified views. Changing this immediately updates payout calculations for future view syncs.
+                  Rate paid to clippers per 1,000 verified views. Changing this immediately updates payout calculations for future view syncs.
                 </p>
               </div>
 
@@ -507,7 +507,7 @@ export default function ManagerCampaignsPage() {
                   })}
                 </div>
                 <p className="text-xs text-slate-400 mt-1.5">
-                  Creators can only submit clip links from the selected platforms above.
+                  Clippers can only submit clip links from the selected platforms above.
                 </p>
               </div>
 
@@ -595,7 +595,7 @@ export default function ManagerCampaignsPage() {
 
             <p className="text-xs text-slate-300 leading-relaxed bg-slate-900/60 border border-slate-800 p-3.5 rounded-xl mb-6">
               Are you sure you want to delete <span className="text-white font-bold">{campaignToDelete.name}</span> ({campaignToDelete.brand_name})?
-              All associated creator memberships, submissions, and view snapshots will be permanently removed.
+              All associated clipper memberships, submissions, and view snapshots will be permanently removed.
             </p>
 
             <div className="flex items-center justify-end gap-3 pt-2">

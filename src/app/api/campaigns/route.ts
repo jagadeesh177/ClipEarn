@@ -58,6 +58,10 @@ export async function GET(request: Request) {
     const formattedCampaigns = campaigns.map((c) => {
       const totalViews = c.submissions.reduce((sum, s) => sum + s.current_views, 0);
       const eligibleViews = c.submissions.reduce((sum, s) => sum + s.eligible_views, 0);
+      const minViews = c.minimum_views_for_payout || 0;
+      // Only once views reach minimum_views_for_payout does budget used increase
+      const hasReachedMinViews = minViews > 0 ? totalViews >= minViews : true;
+      const usedBudget = hasReachedMinViews ? Number(c.used_budget) : 0;
       const isJoined = user ? c.memberships.length > 0 : false;
       const maxPayableViews = Math.floor((Number(c.total_budget) / Number(c.cpm)) * 1000);
 
@@ -70,8 +74,8 @@ export async function GET(request: Request) {
         status: c.status,
         cpm: Number(c.cpm),
         total_budget: Number(c.total_budget),
-        used_budget: Number(c.used_budget),
-        remaining_budget: Math.max(0, Number(c.total_budget) - Number(c.used_budget)),
+        used_budget: usedBudget,
+        remaining_budget: Math.max(0, Number(c.total_budget) - usedBudget),
         minimum_views_for_payout: c.minimum_views_for_payout,
         allowed_platforms: c.allowed_platforms,
         view_eligibility_mode: c.view_eligibility_mode,

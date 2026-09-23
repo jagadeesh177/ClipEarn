@@ -27,7 +27,7 @@ export default function ManagerLeaderboardPage() {
             Executive Leaderboard Rankings
           </h1>
           <p className="text-sm text-slate-400 mt-1">
-            Global creator rankings calculated on approved eligible views and cumulative payout claims.
+            Global clipper rankings calculated on approved eligible views and cumulative payout claims.
           </p>
         </div>
       </div>

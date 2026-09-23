@@ -66,3 +66,119 @@ body {
   mask-composite: exclude;
   pointer-events: none;
 }
+
+/* ========================================================
+   CLIPEARN WHITE (LIGHT) MODE STYLES
+   Toggled via 'light' class on <html> element
+   ======================================================== */
+html.light,
+html.light body {
+  background-color: #F8FAFC !important;
+  color: #0F172A !important;
+}
+
+html.light ::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+html.light ::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+}
+
+/* Background surfaces */
+html.light .bg-\[\#070A0F\],
+html.light .bg-\[\#05080E\],
+html.light .bg-\[\#080C14\],
+html.light .bg-\[\#090E17\] {
+  background-color: #F8FAFC !important;
+}
+
+html.light aside,
+html.light .bg-\[\#0B0F17\],
+html.light .bg-\[\#0A0F1D\],
+html.light .bg-\[\#0F141F\],
+html.light .bg-\[\#0D131D\],
+html.light .bg-\[\#141C2B\],
+html.light .bg-\[\#131B2A\] {
+  background-color: #FFFFFF !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+}
+
+html.light .bg-slate-950,
+html.light .bg-slate-900,
+html.light .bg-slate-900\/90,
+html.light .bg-slate-900\/80,
+html.light .bg-slate-900\/70,
+html.light .bg-slate-900\/60,
+html.light .bg-slate-900\/50 {
+  background-color: #F1F5F9 !important;
+}
+
+html.light .bg-slate-800,
+html.light .bg-slate-800\/80,
+html.light .bg-slate-800\/60 {
+  background-color: #E2E8F0 !important;
+}
+
+/* Borders */
+html.light .border-slate-800,
+html.light .border-slate-800\/80,
+html.light .border-slate-800\/60,
+html.light .border-slate-700,
+html.light .border-slate-700\/80 {
+  border-color: #E2E8F0 !important;
+}
+
+/* Text colors */
+html.light .text-white,
+html.light .text-slate-100,
+html.light .text-slate-200 {
+  color: #0F172A !important;
+}
+
+html.light .text-slate-300 {
+  color: #334155 !important;
+}
+
+html.light .text-slate-400 {
+  color: #64748B !important;
+}
+
+html.light .text-slate-500 {
+  color: #94A3B8 !important;
+}
+
+/* Inputs and interactive elements */
+html.light input,
+html.light select,
+html.light textarea {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+  border-color: #CBD5E1 !important;
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: #94A3B8 !important;
+}
+
+/* Retain brand cyan buttons & badges text readability */
+html.light .bg-brand-cyan,
+html.light .bg-brand-cyan * {
+  color: #0F172A !important;
+}
+
+html.light .text-brand-cyan {
+  color: #0891b2 !important;
+}
+
+html.light .border-brand-cyan\/30,
+html.light .border-brand-cyan\/40 {
+  border-color: rgba(8, 145, 178, 0.4) !important;
+}
+
+html.light .bg-brand-cyan\/10,
+html.light .bg-brand-cyan\/15,
+html.light .bg-brand-cyan\/20 {
+  background-color: rgba(6, 182, 212, 0.12) !important;
+}
+

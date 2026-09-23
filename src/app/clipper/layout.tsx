@@ -20,17 +20,32 @@ import {
   HelpCircle,
   ExternalLink,
   MessageCircle,
+  Moon,
+  Sun,
 } from "lucide-react";
+import { clientCache } from "@/lib/clientCache";
 
 export default function ClipperLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
-  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [user, setUser] = useState<any>(() => clientCache.get("clipper_user_me"));
+  const [unreadNotifications, setUnreadNotifications] = useState<number>(() => clientCache.get("clipper_unread_count") || 0);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   useEffect(() => {
+    // Read theme preference
+    const savedTheme = (localStorage.getItem("clipearn_theme") as "dark" | "light") || "dark";
+    setTheme(savedTheme);
+    if (savedTheme === "light") {
+      document.documentElement.classList.add("light");
+      document.documentElement.classList.remove("dark");
+    } else {
+      document.documentElement.classList.add("dark");
+      document.documentElement.classList.remove("light");
+    }
+
     fetch("/api/auth/me")
       .then((res) => {
         if (!res.ok) router.push("/login");
@@ -39,6 +54,7 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
       .then((data) => {
         if (data.authenticated) {
           setUser(data.user);
+          clientCache.set("clipper_user_me", data.user);
         } else {
           router.push("/login");
         }
@@ -50,10 +66,23 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
       .then((data) => {
         if (data.unreadCount !== undefined) {
           setUnreadNotifications(data.unreadCount);
+          clientCache.set("clipper_unread_count", data.unreadCount);
         }
       })
       .catch(() => {});
   }, [router]);
+
+  const toggleTheme = (newTheme: "dark" | "light") => {
+    setTheme(newTheme);
+    localStorage.setItem("clipearn_theme", newTheme);
+    if (newTheme === "light") {
+      document.documentElement.classList.add("light");
+      document.documentElement.classList.remove("dark");
+    } else {
+      document.documentElement.classList.add("dark");
+      document.documentElement.classList.remove("light");
+    }
+  };
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -77,9 +106,20 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
       {/* Mobile Topbar */}
       <div className="md:hidden flex items-center justify-between p-4 bg-[#0A0F1D] border-b border-slate-800 sticky top-0 z-40">
         <ClipEarnLogo size="sm" href="/clipper/dashboard" />
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          {/* Black / White Toggle for Mobile */}
+          <button
+            type="button"
+            onClick={() => toggleTheme(theme === "dark" ? "light" : "dark")}
+            className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:text-white"
+            title={`Switch to ${theme === "dark" ? "White" : "Black"} mode`}
+          >
+            {theme === "dark" ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-brand-cyan" />}
+          </button>
+
           <Link
             href="/clipper/notifications"
+            prefetch={true}
             className="p-2 rounded-lg bg-slate-900 border border-slate-800 relative text-slate-300"
           >
             <Bell className="w-5 h-5" />
@@ -121,7 +161,7 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
           {/* PERSONAL Group */}
           <div className="mt-5">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3">
-              CREATOR WORKSPACE
+              CLIPPER WORKSPACE
             </span>
             <div className="mt-2 space-y-1">
               {personalNav.map((item) => {
@@ -131,6 +171,7 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
                   <Link
                     key={item.href}
                     href={item.href}
+                    prefetch={true}
                     onClick={() => setMobileMenuOpen(false)}
                     className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                       isActive
@@ -154,8 +195,41 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
           </div>
         </div>
 
-        {/* User Card at bottom of sidebar matching brand cyan */}
+        {/* Sidebar Footer with Theme Toggle and User Info */}
         <div className="p-4 border-t border-slate-800/80 bg-[#080C14] shrink-0">
+          {/* Theme Toggle: Black & White */}
+          <div className="p-2 mb-3 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              Theme
+            </span>
+            <div className="flex items-center gap-1 p-0.5 bg-slate-950/80 rounded-lg border border-slate-800">
+              <button
+                type="button"
+                onClick={() => toggleTheme("dark")}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold transition-all ${
+                  theme === "dark"
+                    ? "bg-slate-800 text-brand-cyan shadow-sm"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <Moon className="w-3 h-3" />
+                <span>Black</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => toggleTheme("light")}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold transition-all ${
+                  theme === "light"
+                    ? "bg-white text-slate-950 shadow-sm"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <Sun className="w-3 h-3 text-amber-500" />
+                <span>White</span>
+              </button>
+            </div>
+          </div>
+
           <div className="flex items-center gap-3">
             {/* Circular initial avatar in bright cyan circle */}
             <div className="w-10 h-10 rounded-full bg-brand-cyan text-slate-950 font-black text-sm flex items-center justify-center shrink-0 shadow-sm">
@@ -237,7 +311,7 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
                   </div>
                   <div>
                     <span className="font-bold text-white block group-hover:text-brand-cyan">
-                      Join Creator Discord
+                      Join Clipper Discord
                     </span>
                     <span className="text-[11px] text-slate-400">
                       Live 24/7 staff support & clipping tips

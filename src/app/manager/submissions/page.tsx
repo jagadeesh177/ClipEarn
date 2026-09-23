@@ -103,7 +103,7 @@ export default function ManagerSubmissionsReviewPage() {
             Submission Review Queue
           </h1>
           <p className="text-sm text-slate-400 mt-1">
-            Audit submitted creator video links against campaign requirements before approving view tracking.
+            Audit submitted clipper video links against campaign requirements before approving view tracking.
           </p>
         </div>
       </div>
@@ -202,7 +202,7 @@ export default function ManagerSubmissionsReviewPage() {
                         <span className="px-1.5 py-0.2 rounded bg-slate-800 text-[10px] font-bold text-slate-300">
                           {sub.platform}
                         </span>
-                        <span className="text-slate-400">@{sub.social_account.username}</span>
+                        <span className="text-slate-400">@{sub.social_account?.username || "unlinked"}</span>
                       </div>
                     </td>
 
@@ -398,7 +398,7 @@ export default function ManagerSubmissionsReviewPage() {
                       <textarea
                         required
                         rows={3}
-                        placeholder="Detail the exact reason for rejection so the creator knows what to fix..."
+                        placeholder="Detail the exact reason for rejection so the clipper knows what to fix..."
                         value={customReason}
                         onChange={(e) => setCustomReason(e.target.value)}
                         className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-red-400"
@@ -407,14 +407,14 @@ export default function ManagerSubmissionsReviewPage() {
                   )}
 
                   <p className="text-[11px] text-slate-500">
-                    This reason is immediately sent to the creator's notification inbox and dashboard so they know why the clip was rejected.
+                    This reason is immediately sent to the clipper's notification inbox and dashboard so they know why the clip was rejected.
                   </p>
                 </div>
               )}
 
               {actionType === "APPROVE" && (
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Approving this submission immediately initiates automated 8-hour view tracking and begins calculating payable creator earnings based on the campaign's CPM.
+                  Approving this submission immediately initiates automated 8-hour view tracking and begins calculating payable clipper earnings based on the campaign's CPM.
                 </p>
               )}
 

@@ -24,11 +24,13 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+import { clientCache } from "@/lib/clientCache";
+
 export default function ClipperEarningsPage() {
-  const [data, setData] = useState<any>(null);
-  const [userProfile, setUserProfile] = useState<any>(null);
-  const [chartData, setChartData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<any>(() => clientCache.get("clipper_earnings_payouts"));
+  const [userProfile, setUserProfile] = useState<any>(() => clientCache.get("clipper_user_profile"));
+  const [chartData, setChartData] = useState<any[]>(() => clientCache.get("clipper_perf_30d") || []);
+  const [loading, setLoading] = useState(() => !clientCache.get("clipper_earnings_payouts"));
 
   // Request payout modal
   const [isPayoutModalOpen, setIsPayoutModalOpen] = useState(false);
@@ -39,17 +41,88 @@ export default function ClipperEarningsPage() {
   const [payoutError, setPayoutError] = useState("");
   const [payoutSuccess, setPayoutSuccess] = useState(false);
 
+  // Set Up Payout Method Modal State
+  const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
+  const [setupPaymentMethod, setSetupPaymentMethod] = useState("Bank (India)");
+  const [accountHolderName, setAccountHolderName] = useState("EASALA JAGADEESH");
+  const [accountNumber, setAccountNumber] = useState("086201000013736");
+  const [ifscCode, setIfscCode] = useState("IOBA0000862");
+  const [routingNumber, setRoutingNumber] = useState("");
+  const [iban, setIban] = useState("");
+  const [swiftCode, setSwiftCode] = useState("");
+  const [paypalEmail, setPaypalEmail] = useState("");
+  const [wiseEmail, setWiseEmail] = useState("");
+  const [savingDetails, setSavingDetails] = useState(false);
+  const [setupSuccessMessage, setSetupSuccessMessage] = useState("");
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("clipearn_payout_details");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.paymentMethod) setSetupPaymentMethod(parsed.paymentMethod);
+        if (parsed.accountHolderName) setAccountHolderName(parsed.accountHolderName);
+        if (parsed.accountNumber) setAccountNumber(parsed.accountNumber);
+        if (parsed.ifscCode) setIfscCode(parsed.ifscCode);
+        if (parsed.routingNumber) setRoutingNumber(parsed.routingNumber);
+        if (parsed.iban) setIban(parsed.iban);
+        if (parsed.swiftCode) setSwiftCode(parsed.swiftCode);
+        if (parsed.paypalEmail) setPaypalEmail(parsed.paypalEmail);
+        if (parsed.wiseEmail) setWiseEmail(parsed.wiseEmail);
+      }
+    } catch {}
+  }, []);
+
+  const handleSavePayoutDetails = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingDetails(true);
+    const details = {
+      paymentMethod: setupPaymentMethod,
+      accountHolderName,
+      accountNumber,
+      ifscCode,
+      routingNumber,
+      iban,
+      swiftCode,
+      paypalEmail,
+      wiseEmail,
+      savedAt: new Date().toISOString(),
+    };
+    try {
+      localStorage.setItem("clipearn_payout_details", JSON.stringify(details));
+    } catch {}
+    setTimeout(() => {
+      setSavingDetails(false);
+      setSetupSuccessMessage("Payment details saved successfully!");
+      setTimeout(() => {
+        setSetupSuccessMessage("");
+        setIsSetupModalOpen(false);
+      }, 1200);
+    }, 400);
+  };
+
   const loadData = () => {
-    setLoading(true);
+    if (!data && !clientCache.get("clipper_earnings_payouts")) {
+      setLoading(true);
+    }
     Promise.all([
       fetch("/api/payouts").then((res) => res.json()),
       fetch("/api/users/me").then((res) => res.json()),
       fetch("/api/clipper/performance?range=30d").then((res) => res.json()),
     ])
       .then(([payoutsRes, userRes, perfRes]) => {
-        if (payoutsRes && !payoutsRes.error) setData(payoutsRes);
-        if (userRes && userRes.data) setUserProfile(userRes.data);
-        if (perfRes && perfRes.data) setChartData(perfRes.data);
+        if (payoutsRes && !payoutsRes.error) {
+          setData(payoutsRes);
+          clientCache.set("clipper_earnings_payouts", payoutsRes);
+        }
+        if (userRes && userRes.data) {
+          setUserProfile(userRes.data);
+          clientCache.set("clipper_user_profile", userRes.data);
+        }
+        if (perfRes && perfRes.data) {
+          setChartData(perfRes.data);
+          clientCache.set("clipper_perf_30d", perfRes.data);
+        }
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -176,19 +249,20 @@ export default function ClipperEarningsPage() {
             Your Earnings Overview
           </h1>
           <p className="text-sm text-slate-400 mt-1">
-            Auditable payout records, platform fee breakdown, and creator performance analytics.
+            Auditable payout records, platform fee breakdown, and clipper performance analytics.
           </p>
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
-          {/* Payout Method Connected Badge */}
-          <Link
-            href="/clipper/profile"
-            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-brand-cyan/10 hover:bg-brand-cyan/20 border border-brand-cyan/30 text-brand-cyan text-xs font-bold transition-colors"
+          {/* Payout Method Connected / Setup Button */}
+          <button
+            type="button"
+            onClick={() => setIsSetupModalOpen(true)}
+            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-brand-cyan/10 hover:bg-brand-cyan/20 border border-brand-cyan/30 text-brand-cyan text-xs font-bold transition-colors cursor-pointer"
           >
             <CheckCircle2 className="w-4 h-4 text-brand-cyan" />
-            <span>Payout Method Connected</span>
-          </Link>
+            <span>Payout Method: {setupPaymentMethod}</span>
+          </button>
 
           {/* Request Payout Action Button */}
           <button
@@ -595,6 +669,272 @@ export default function ClipperEarningsPage() {
                 >
                   {requesting ? <Loader2 className="w-4 h-4 animate-spin text-slate-950" /> : null}
                   <span>Confirm Payout Request</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 8. Interactive Set Up Payout Method Modal */}
+      {isSetupModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-[#0F141F] border border-slate-800 rounded-2xl max-w-md w-full p-6 relative shadow-2xl">
+            <h3 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
+              <CreditCard className="w-5 h-5 text-brand-cyan" />
+              Set Up Payout Method
+            </h3>
+            <p className="text-xs text-slate-400 mb-5">
+              Enter your payment details so we can send you your earnings
+            </p>
+
+            {setupSuccessMessage && (
+              <div className="mb-4 p-3 rounded-xl bg-brand-cyan/10 border border-brand-cyan/30 text-xs text-brand-cyan flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>{setupSuccessMessage}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSavePayoutDetails} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1.5">
+                  Payment Method
+                </label>
+                <select
+                  value={setupPaymentMethod}
+                  onChange={(e) => setSetupPaymentMethod(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-brand-cyan"
+                >
+                  <option value="Bank (IBAN)">Bank (IBAN)</option>
+                  <option value="Bank (US)">Bank (US)</option>
+                  <option value="Bank (India)">Bank (India)</option>
+                  <option value="PayPal">PayPal</option>
+                  <option value="Wise">Wise</option>
+                </select>
+              </div>
+
+              {/* Bank (India) Fields */}
+              {setupPaymentMethod === "Bank (India)" && (
+                <>
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1.5">
+                      Account Holder Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="EASALA JAGADEESH"
+                      value={accountHolderName}
+                      onChange={(e) => setAccountHolderName(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-cyan font-medium"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1.5">
+                      Account Number
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="086201000013736"
+                      value={accountNumber}
+                      onChange={(e) => setAccountNumber(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-cyan font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1.5">
+                      IFSC Code
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="IOBA0000862"
+                      value={ifscCode}
+                      onChange={(e) => setIfscCode(e.target.value.toUpperCase())}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-cyan font-mono uppercase"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Bank (US) Fields */}
+              {setupPaymentMethod === "Bank (US)" && (
+                <>
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1.5">
+                      Account Holder Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Full Name"
+                      value={accountHolderName}
+                      onChange={(e) => setAccountHolderName(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-brand-cyan"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1.5">
+                      Routing Number (ACH)
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="9-digit Routing Number"
+                      value={routingNumber}
+                      onChange={(e) => setRoutingNumber(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white font-mono focus:outline-none focus:border-brand-cyan"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1.5">
+                      Account Number
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Account Number"
+                      value={accountNumber}
+                      onChange={(e) => setAccountNumber(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white font-mono focus:outline-none focus:border-brand-cyan"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Bank (IBAN) Fields */}
+              {setupPaymentMethod === "Bank (IBAN)" && (
+                <>
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1.5">
+                      Account Holder Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Full Name"
+                      value={accountHolderName}
+                      onChange={(e) => setAccountHolderName(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-brand-cyan"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1.5">
+                      IBAN
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="GB33 BUKB 2020 1555 5555 55"
+                      value={iban}
+                      onChange={(e) => setIban(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white font-mono focus:outline-none focus:border-brand-cyan"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1.5">
+                      SWIFT / BIC Code
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="BUKBGB22"
+                      value={swiftCode}
+                      onChange={(e) => setSwiftCode(e.target.value.toUpperCase())}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white font-mono uppercase focus:outline-none focus:border-brand-cyan"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* PayPal Fields */}
+              {setupPaymentMethod === "PayPal" && (
+                <>
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1.5">
+                      Account Holder Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Full Name"
+                      value={accountHolderName}
+                      onChange={(e) => setAccountHolderName(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-brand-cyan"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1.5">
+                      PayPal Email Address
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="paypal@example.com"
+                      value={paypalEmail}
+                      onChange={(e) => setPaypalEmail(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-brand-cyan"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Wise Fields */}
+              {setupPaymentMethod === "Wise" && (
+                <>
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1.5">
+                      Account Holder Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Full Name"
+                      value={accountHolderName}
+                      onChange={(e) => setAccountHolderName(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-brand-cyan"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1.5">
+                      Wise Account Email / Tag
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="wise@example.com"
+                      value={wiseEmail}
+                      onChange={(e) => setWiseEmail(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-brand-cyan"
+                    />
+                  </div>
+                </>
+              )}
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsSetupModalOpen(false)}
+                  className="h-9 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingDetails}
+                  className="h-9 px-6 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-bold text-xs flex items-center gap-2 shadow-md shadow-cyan-500/20 disabled:opacity-50"
+                >
+                  {savingDetails ? <Loader2 className="w-4 h-4 animate-spin text-slate-950" /> : null}
+                  <span>Save Details</span>
                 </button>
               </div>
             </form>

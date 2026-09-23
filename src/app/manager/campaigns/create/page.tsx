@@ -136,7 +136,7 @@ export default function CreateCampaignPage() {
           Create New Clipping Campaign
         </h1>
         <p className="text-sm text-slate-400 mt-1">
-          Deploy a sponsored budget pool, establish creator requirements, and configure CPM view limits.
+          Deploy a sponsored budget pool, establish clipper requirements, and configure CPM view limits.
         </p>
       </div>
 

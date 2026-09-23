@@ -156,7 +156,7 @@ export default function ManagerLoginPage() {
           </div>
 
           <div className="mt-6 pt-4 text-center text-xs text-slate-500">
-            <span>Are you a creator? </span>
+            <span>Are you a clipper? </span>
             <Link href="/login" className="text-brand-cyan hover:underline font-medium">
               Clipper Sign In
             </Link>

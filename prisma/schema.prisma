@@ -199,7 +199,7 @@ model Submission {
   id                    String            @id @default(uuid())
   campaign_id           String
   user_id               String
-  social_account_id     String
+  social_account_id     String?
   platform              Platform
   post_url              String            @db.Text
   platform_post_id      String
@@ -223,7 +223,7 @@ model Submission {
 
   campaign              Campaign          @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
   user                  User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  social_account        SocialAccount     @relation(fields: [social_account_id], references: [id], onDelete: Restrict)
+  social_account        SocialAccount?    @relation(fields: [social_account_id], references: [id], onDelete: SetNull)
   reviewer              User?             @relation("ReviewedBy", fields: [reviewed_by], references: [id])
   
   view_snapshots        ViewSnapshot[]

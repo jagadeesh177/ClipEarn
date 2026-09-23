@@ -30,7 +30,7 @@ export default function ClipEarnChatPage() {
       user: "DemoManager",
       badge: "Staff",
       avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
-      text: "Friendly reminder to all creators on the Steve Wynn campaign: remember to include #SteveWynn and #BusinessStrategy in captions to pass review smoothly!",
+      text: "Friendly reminder to all clippers on the Steve Wynn campaign: remember to include #SteveWynn and #BusinessStrategy in captions to pass review smoothly!",
       time: "10:25 AM",
     },
     {
@@ -56,7 +56,7 @@ export default function ClipEarnChatPage() {
   const [inputMessage, setInputMessage] = useState("");
 
   const channels = [
-    { id: "general-chat", name: "general-chat", desc: "Creator discussions & clipping tips" },
+    { id: "general-chat", name: "general-chat", desc: "Clipper discussions & clipping tips" },
     { id: "payout-support", name: "payout-support", desc: "Inquiries regarding payouts and ledgers" },
     { id: "campaign-requests", name: "campaign-requests", desc: "Suggest brands you want to clip for" },
   ];
@@ -88,7 +88,7 @@ export default function ClipEarnChatPage() {
         <div>
           <div className="flex items-center gap-2 mb-4 text-xs font-bold text-slate-400 uppercase tracking-wider px-2">
             <MessageSquare className="w-4 h-4 text-brand-cyan" />
-            <span>ClipEarn Creator Chat</span>
+            <span>ClipEarn Clipper Chat</span>
           </div>
 
           <div className="space-y-1">
@@ -110,8 +110,8 @@ export default function ClipEarnChatPage() {
         </div>
 
         <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 text-[11px] text-slate-500 hidden md:block">
-          <Shield className="w-4 h-4 text-brand-emerald mb-1" />
-          <span>Moderated creator community. Keep discussions productive and respectful.</span>
+          <Shield className="w-4 h-4 text-brand-cyan mb-1" />
+          <span>Moderated clipper community. Keep discussions productive and respectful.</span>
         </div>
       </div>
 

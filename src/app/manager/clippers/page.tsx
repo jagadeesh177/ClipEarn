@@ -64,7 +64,7 @@ export default function ManagerClippersPage() {
             Clippers Directory
           </h1>
           <p className="text-sm text-slate-400 mt-1">
-            Monitor registered creators, connected social channels, approved clips, and account statuses.
+            Monitor registered clippers, connected social channels, approved clips, and account statuses.
           </p>
         </div>
       </div>

@@ -149,8 +149,12 @@ export async function syncSubmissionViews(submissionId: string): Promise<SyncRes
     }
 
     // 3. Calculate earnings delta using exact rate
+    // Once views reach minimum_views_for_payout, then only budget used increases; otherwise view progress increases
+    const minPayoutViews = campaign.minimum_views_for_payout || 0;
+    const qualifiesForPayout = minPayoutViews > 0 ? totalPotentialEligible >= minPayoutViews : true;
+
     const cpmRate = Number(campaign.cpm);
-    let rawEarningsDelta = (deltaEligibleViews / 1000) * cpmRate;
+    let rawEarningsDelta = qualifiesForPayout ? (deltaEligibleViews / 1000) * cpmRate : 0;
 
     // Check budget cap
     const currentUsedBudget = Number(campaign.used_budget);
@@ -158,7 +162,7 @@ export async function syncSubmissionViews(submissionId: string): Promise<SyncRes
     let finalEarningsDelta = rawEarningsDelta;
     let actualEligibleDelta = deltaEligibleViews;
 
-    if (currentUsedBudget + rawEarningsDelta > totalBudget) {
+    if (qualifiesForPayout && currentUsedBudget + rawEarningsDelta > totalBudget) {
       finalEarningsDelta = Math.max(0, totalBudget - currentUsedBudget);
       // Adjust eligible views delta to correspond to capped budget
       actualEligibleDelta = Math.floor((finalEarningsDelta / cpmRate) * 1000);

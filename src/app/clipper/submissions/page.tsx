@@ -8,7 +8,6 @@ import {
   Clock,
   XCircle,
   ExternalLink,
-  Plus,
   AlertCircle,
   Send,
   Loader2,
@@ -16,24 +15,14 @@ import {
   MessageSquare,
   HelpCircle,
   ShieldCheck,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react";
 
-export default function MySubmissionsPage() {
-  const [submissions, setSubmissions] = useState<any[]>([]);
-  const [statusFilter, setStatusFilter] = useState<string>("ALL");
-  const [loading, setLoading] = useState(true);
+import { clientCache } from "@/lib/clientCache";
 
-  // In-place Quick Submit State
-  const [showQuickSubmit, setShowQuickSubmit] = useState(false);
-  const [campaigns, setCampaigns] = useState<any[]>([]);
-  const [quickCampaignId, setQuickCampaignId] = useState("");
-  const [quickUrl, setQuickUrl] = useState("");
-  const [socialAccounts, setSocialAccounts] = useState<any[]>([]);
-  const [submittingClip, setSubmittingClip] = useState(false);
-  const [submitError, setSubmitError] = useState("");
-  const [submitSuccess, setSubmitSuccess] = useState("");
+export default function MySubmissionsPage() {
+  const [submissions, setSubmissions] = useState<any[]>(() => clientCache.get("clipper_submissions_list") || []);
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [loading, setLoading] = useState(() => !clientCache.get("clipper_submissions_list"));
 
   // Rejection Reason Modal State
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
@@ -52,11 +41,18 @@ export default function MySubmissionsPage() {
     let url = "/api/submissions";
     if (statusFilter !== "ALL") url += `?status=${statusFilter}`;
 
-    setLoading(true);
+    if (!submissions.length && !clientCache.get("clipper_submissions_list")) {
+      setLoading(true);
+    }
     fetch(url)
       .then((res) => res.json())
       .then((data) => {
-        if (data.data) setSubmissions(data.data);
+        if (data.data) {
+          setSubmissions(data.data);
+          if (statusFilter === "ALL") {
+            clientCache.set("clipper_submissions_list", data.data);
+          }
+        }
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -66,39 +62,6 @@ export default function MySubmissionsPage() {
     loadSubmissions();
   }, [statusFilter]);
 
-  // Load campaigns & social accounts for quick in-place submission
-  useEffect(() => {
-    Promise.all([
-      fetch("/api/campaigns?limit=50").then((r) => r.json()),
-      fetch("/api/social-accounts").then((r) => r.json()),
-    ])
-      .then(([campRes, socialRes]) => {
-        if (campRes.data) {
-          setCampaigns(campRes.data);
-          if (campRes.data.length > 0) setQuickCampaignId(campRes.data[0].id);
-        }
-        if (socialRes.data) {
-          setSocialAccounts(socialRes.data.filter((a: any) => a.verification_status === "VERIFIED"));
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  // Detect platform & verified account for quick submit
-  const detectedPlatform = React.useMemo(() => {
-    const url = quickUrl.trim().toLowerCase();
-    if (!url) return null;
-    if (url.includes("tiktok.com")) return "TIKTOK";
-    if (url.includes("instagram.com")) return "INSTAGRAM";
-    if (url.includes("youtube.com") || url.includes("youtu.be")) return "YOUTUBE";
-    return null;
-  }, [quickUrl]);
-
-  const matchedAccount = React.useMemo(() => {
-    if (!detectedPlatform) return null;
-    return socialAccounts.find((a) => a.platform === detectedPlatform);
-  }, [detectedPlatform, socialAccounts]);
-
   const cleanPostUrl = (rawUrl: string) => {
     try {
       const url = new URL(rawUrl);
@@ -106,42 +69,6 @@ export default function MySubmissionsPage() {
       return `${url.hostname.replace(/^www\./, "")}${cleanPath}`;
     } catch {
       return rawUrl;
-    }
-  };
-
-  const handleQuickSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitError("");
-    setSubmitSuccess("");
-    if (!quickCampaignId || !quickUrl.trim()) return;
-
-    try {
-      setSubmittingClip(true);
-      const res = await fetch("/api/submissions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          campaign_id: quickCampaignId,
-          post_url: quickUrl.trim(),
-        }),
-      });
-      const data = await res.json();
-
-      if (res.ok) {
-        setSubmitSuccess("Clip submitted successfully! Sent to manager review queue.");
-        setQuickUrl("");
-        loadSubmissions();
-        setTimeout(() => {
-          setSubmitSuccess("");
-          setShowQuickSubmit(false);
-        }, 3000);
-      } else {
-        setSubmitError(data.error || "Failed to submit clip");
-      }
-    } catch {
-      setSubmitError("Network error submitting clip");
-    } finally {
-      setSubmittingClip(false);
     }
   };
 
@@ -203,150 +130,13 @@ export default function MySubmissionsPage() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setShowQuickSubmit((prev) => !prev)}
+        <Link
+          href="/clipper/campaigns"
           className="px-4 py-2.5 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-bold text-xs transition-all flex items-center gap-2 shadow-[0_0_20px_-3px_rgba(28,247,253,0.3)] self-start sm:self-auto"
         >
-          <Plus className="w-4 h-4" />
-          <span>{showQuickSubmit ? "Hide Submit Form" : "Quick Submit Clip"}</span>
-          {showQuickSubmit ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-        </button>
+          <span>Browse Campaigns &rarr;</span>
+        </Link>
       </div>
-
-      {/* In-Place Quick Submit Clip Card (No page redirect required) */}
-      {showQuickSubmit && (
-        <div className="p-6 rounded-2xl bg-[#0F141F] border border-slate-800 shadow-xl space-y-4 animate-fadeIn">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-800/80">
-            <div>
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <Send className="w-4 h-4 text-brand-cyan" />
-                Submit Video Clip Directly Here
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                No need to leave this page. Select your campaign and paste the video URL — verified handle binds automatically.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {["TIKTOK", "INSTAGRAM", "YOUTUBE"].map((p) => {
-                const verified = socialAccounts.find((a) => a.platform === p);
-                return (
-                  <span
-                    key={p}
-                    className={`px-2.5 py-1 rounded-md text-xs font-semibold border ${
-                      verified
-                        ? "bg-brand-cyan/10 text-brand-cyan border-brand-cyan/30"
-                        : "bg-slate-900 text-slate-500 border-slate-800"
-                    }`}
-                  >
-                    {p}: {verified ? `@${verified.username}` : "Unlinked"}
-                  </span>
-                );
-              })}
-            </div>
-          </div>
-
-          {submitError && (
-            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-400 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{submitError}</span>
-              </div>
-              <button onClick={() => setSubmitError("")} className="text-red-400 hover:text-red-300">✕</button>
-            </div>
-          )}
-
-          {submitSuccess && (
-            <div className="p-3 rounded-xl bg-brand-cyan/10 border border-brand-cyan/30 text-xs text-brand-cyan flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
-              <span>{submitSuccess}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleQuickSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-slate-300 font-semibold text-xs mb-1.5">
-                  Select Campaign
-                </label>
-                <select
-                  value={quickCampaignId}
-                  onChange={(e) => setQuickCampaignId(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-brand-cyan"
-                >
-                  {campaigns.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} (${c.cpm ? Number(c.cpm).toFixed(2) : "1.00"} CPM)
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-semibold text-xs mb-1.5">
-                  Published Video URL
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </span>
-                  <input
-                    type="url"
-                    required
-                    placeholder="Paste TikTok, Instagram Reel, or YouTube Shorts public URL..."
-                    value={quickUrl}
-                    onChange={(e) => {
-                      setQuickUrl(e.target.value);
-                      if (submitError) setSubmitError("");
-                    }}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-cyan"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Dynamic auto-binding pill and Submit button aligned directly */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-              <div className="text-xs text-slate-400">
-                {detectedPlatform ? (
-                  matchedAccount ? (
-                    <span className="text-brand-cyan font-semibold flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-brand-cyan shrink-0" />
-                      <span>
-                        Detected {detectedPlatform} clip &bull; Auto-bound to verified handle: <strong className="text-white">@{matchedAccount.username}</strong>
-                      </span>
-                    </span>
-                  ) : (
-                    <span className="text-yellow-400 font-semibold flex items-center gap-1.5">
-                      <AlertCircle className="w-3.5 h-3.5 text-yellow-400 shrink-0" />
-                      <span>
-                        Detected {detectedPlatform} link, but you have no verified {detectedPlatform} account.{" "}
-                        <Link href="/clipper/profile" className="text-brand-cyan underline font-bold ml-1">
-                          Verify Account &rarr;
-                        </Link>
-                      </span>
-                    </span>
-                  )
-                ) : (
-                  <span className="text-slate-400">
-                    Paste any public link. Verified social handle binds automatically without dropdown selection.
-                  </span>
-                )}
-              </div>
-
-              <button
-                type="submit"
-                disabled={submittingClip || !quickUrl.trim()}
-                className="h-10 px-6 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-bold text-xs transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2 shrink-0 shadow-md shadow-cyan-500/20"
-              >
-                {submittingClip ? <Loader2 className="w-4 h-4 animate-spin text-slate-950" /> : <Send className="w-4 h-4 text-slate-950" />}
-                <span>{submittingClip ? "Submitting..." : "Submit Clip"}</span>
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
 
       {/* Filter Tabs */}
       <div className="flex items-center gap-1.5 p-1 bg-[#0F141F] border border-slate-800 rounded-xl text-xs font-semibold overflow-x-auto w-fit">

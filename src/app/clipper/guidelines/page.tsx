@@ -20,13 +20,13 @@ export default function GuidelinesPage() {
       title: "1. How ClipEarn Works",
       icon: Video,
       content:
-        "ClipEarn connects premier brands with short-form video editors and UGC creators. Brands sponsor dedicated campaigns with established CPM rates (e.g. $1.00 CPM = $1.00 per 1,000 views). Creators produce clips, publish them to TikTok, Instagram Reels, or YouTube Shorts, and earn cash for verified views.",
+        "ClipEarn connects premier brands with short-form video clippers and clip channels. Brands sponsor dedicated campaigns with established CPM rates (e.g. $1.00 CPM = $1.00 per 1,000 views). Clippers produce clips, publish them to TikTok, Instagram Reels, or YouTube Shorts, and earn cash for verified views.",
     },
     {
       title: "2. Connecting & Verifying Social Accounts",
       icon: ShieldCheck,
       content:
-        "To ensure creators only submit content they legitimately own, you must verify your social account before submitting. We generate a unique verification code (e.g. clipearn-81fa2b). Add this code to your social media bio, wait ~20 seconds, and click Verify. Unverified channels cannot submit clips.",
+        "To ensure clippers only submit content from channels they legitimately own, you must verify your social account before submitting. We generate a unique verification code (e.g. clipearn-81fa2b). Add this code to your social media bio, wait ~20 seconds, and click Verify. Unverified channels cannot submit clips.",
     },
     {
       title: "3. Submission & Human Manager Review",
@@ -50,7 +50,7 @@ export default function GuidelinesPage() {
       title: "6. Anti-Fraud & Prohibited Behavior",
       icon: AlertTriangle,
       content:
-        "ClipEarn maintains strict anti-fraud safeguards. We prohibit: duplicate submissions of the same video, purchasing artificial bot views, sub-licensing other creators' accounts, submitting deleted or private videos, and cross-submitting identical clips across conflicting campaigns. Suspicious activity generates fraud flags for administrative investigation.",
+        "ClipEarn maintains strict anti-fraud safeguards. We prohibit: duplicate submissions of the same video, purchasing artificial bot views, sub-licensing other clippers' accounts, submitting deleted or private videos, and cross-submitting identical clips across conflicting campaigns. Suspicious activity generates fraud flags for administrative investigation.",
     },
   ];
 
@@ -60,7 +60,7 @@ export default function GuidelinesPage() {
       <div className="pb-4 border-b border-slate-800/80">
         <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-2.5">
           <BookOpen className="w-7 h-7 text-brand-cyan" />
-          ClipEarn Creator Guidelines & Rules
+          ClipEarn Clipper Guidelines & Rules
         </h1>
         <p className="text-sm text-slate-400 mt-1">
           Everything you need to know about qualifying clips, view calculations, and getting paid.
