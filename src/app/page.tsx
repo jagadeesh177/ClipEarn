@@ -363,7 +363,9 @@ export default function LandingPage() {
             <span className="text-slate-400">&copy; {new Date().getFullYear()} ClipEarn Inc. All rights reserved.</span>
           </div>
 
-          <nav aria-label="Footer navigation" className="flex flex-wrap items-center justify-center gap-6 sm:gap-8 font-medium">
+          <nav aria-label="Footer navigation" className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 font-medium">
+            <Link href="/privacy" className="text-slate-400 hover:text-slate-200 transition-colors">Privacy Policy</Link>
+            <Link href="/data-deletion" className="text-slate-400 hover:text-slate-200 transition-colors">Data Deletion</Link>
             <Link href="/clipper/guidelines" className="text-slate-400 hover:text-slate-200 transition-colors">Guidelines</Link>
             <Link href="/manager/login" className="text-slate-400 hover:text-slate-200 transition-colors">Manager Login</Link>
             <Link href="/login" className="text-slate-400 hover:text-slate-200 transition-colors">Clipper Sign In</Link>

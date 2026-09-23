@@ -129,6 +129,14 @@ function ClipperLoginContent() {
           <ShieldCheck className="w-4 h-4 text-brand-emerald" />
           <span>Automated view verification & auditable ledger payouts</span>
         </div>
+
+        <div className="mt-4 flex items-center justify-center gap-4 text-xs text-slate-500">
+          <Link href="/privacy" className="hover:text-slate-300 transition-colors">Privacy Policy</Link>
+          <span>•</span>
+          <Link href="/data-deletion" className="hover:text-slate-300 transition-colors">Data Deletion</Link>
+          <span>•</span>
+          <Link href="/" className="hover:text-slate-300 transition-colors">Home</Link>
+        </div>
       </div>
     </div>
   );
