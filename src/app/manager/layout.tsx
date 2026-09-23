@@ -124,18 +124,18 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
         }`}
       >
         <div className="p-5 overflow-y-auto">
-          <div className="pb-6 border-b border-slate-800/80 flex items-center justify-between">
-            <ClipEarnLogo size="md" href="/manager/dashboard" />
-            <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-400 font-bold text-[9px] uppercase border border-purple-500/30">
+          <div className="pb-6 border-b border-slate-800/80 flex items-center justify-between gap-5">
+            <ClipEarnLogo size="sm" href="/manager/dashboard" />
+            <span className="px-2.5 py-0.5 rounded bg-purple-500/20 text-purple-400 font-bold text-[9px] uppercase border border-purple-500/30 shrink-0 ml-5">
               Staff
             </span>
           </div>
 
           <div className="mt-6">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3">
               Management
             </span>
-            <div className="mt-2 space-y-1">
+            <div className="mt-2 space-y-2">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
