@@ -324,15 +324,15 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
         {children}
       </main>
 
-      {/* Floating "Need help?" Button in Brand Cyan with white text cleanly docked bottom-right */}
+      {/* Floating "Need help?" Button in Brand Cyan cleanly docked bottom-right */}
       <div className="fixed bottom-6 right-6 z-50">
         <button
           onClick={() => setHelpOpen(true)}
           aria-label="Open help and support dialog"
-          className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-brand-cyan hover:bg-[#1cf7fd] font-bold text-xs sm:text-sm shadow-xl shadow-cyan-500/25 transition-all hover:scale-105 active:scale-95"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-bold text-xs sm:text-sm shadow-xl shadow-cyan-500/25 transition-all hover:scale-105 active:scale-95"
         >
-          <MessageCircle className="w-4 h-4 fill-slate-950 text-slate-950" />
-          <span className="text-white">Need help?</span>
+          <MessageCircle className="w-4 h-4 fill-slate-950" />
+          <span>Need help?</span>
         </button>
       </div>
 
