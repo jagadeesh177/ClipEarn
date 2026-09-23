@@ -532,24 +532,45 @@ export default function CampaignDetailsPage() {
 
                 {/* Payout Eligibility Status Card */}
                 {myStats && myStats.minimumViewsForPayout > 0 && (
-                  <div className="col-span-2 sm:col-span-4 p-4 rounded-2xl bg-[#080C14] border border-slate-800/80 space-y-2 text-left">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-slate-400 font-semibold">Payout Eligibility Progress</span>
-                      <span className="font-bold text-brand-cyan">
-                        {myStats.payoutProgressText}
+                  (myStats.qualifiesForPayout || (myStats.viewsRemainingForPayout !== undefined && myStats.viewsRemainingForPayout <= 0) || (myStats.progressPercent !== undefined && myStats.progressPercent >= 100)) ? (
+                    <div className="col-span-2 sm:col-span-4 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between gap-3 text-left animate-fadeIn">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        </div>
+                        <div>
+                          <div className="text-xs sm:text-sm font-bold text-white">
+                            You&apos;re eligible for payout
+                          </div>
+                          <div className="text-[11px] text-emerald-400/90 font-medium">
+                            Threshold reached • Your approved views are earning payouts
+                          </div>
+                        </div>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-bold text-[10px] uppercase tracking-wider shrink-0 border border-emerald-500/40">
+                        Eligible
                       </span>
                     </div>
-                    <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-brand-cyan rounded-full transition-all duration-500"
-                        style={{ width: `${myStats.progressPercent || 0}%` }}
-                      />
+                  ) : (
+                    <div className="col-span-2 sm:col-span-4 p-4 rounded-2xl bg-[#080C14] border border-slate-800/80 space-y-2 text-left">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-slate-400 font-semibold">Payout Eligibility Progress</span>
+                        <span className="font-bold text-brand-cyan">
+                          {myStats.payoutProgressText}
+                        </span>
+                      </div>
+                      <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-brand-cyan rounded-full transition-all duration-500"
+                          style={{ width: `${myStats.progressPercent || 0}%` }}
+                        />
+                      </div>
+                      <div className="flex justify-between items-center text-[11px] text-slate-500">
+                        <span>{myStats.payoutFractionText}</span>
+                        <span>{myStats.progressPercent || 0}% complete</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center text-[11px] text-slate-500">
-                      <span>{myStats.payoutFractionText}</span>
-                      <span>{myStats.progressPercent || 0}% complete</span>
-                    </div>
-                  </div>
+                  )
                 )}
               </div>
             )}

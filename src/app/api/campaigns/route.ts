@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser, requireRole } from "@/lib/auth";
-import { UserRole, CampaignStatus, Platform, Prisma } from "@prisma/client";
+import { UserRole, CampaignStatus, Platform, Prisma, SubmissionStatus } from "@prisma/client";
 import { logAuditEvent } from "@/lib/audit";
 
 export async function GET(request: Request) {
@@ -47,6 +47,7 @@ export async function GET(request: Request) {
           },
           submissions: {
             select: {
+              status: true,
               current_views: true,
               eligible_views: true,
             },
@@ -56,11 +57,17 @@ export async function GET(request: Request) {
     ]);
 
     const formattedCampaigns = campaigns.map((c) => {
-      const totalViews = c.submissions.reduce((sum, s) => sum + s.current_views, 0);
-      const eligibleViews = c.submissions.reduce((sum, s) => sum + s.eligible_views, 0);
+      const approvedSubmissions = c.submissions.filter(
+        (s) => s.status === SubmissionStatus.APPROVED
+      );
+      const totalApprovedViews = approvedSubmissions.reduce(
+        (sum, s) => sum + (s.eligible_views || s.current_views),
+        0
+      );
+      const eligibleViews = approvedSubmissions.reduce((sum, s) => sum + s.eligible_views, 0);
       const minViews = c.minimum_views_for_payout || 0;
-      // Only once views reach minimum_views_for_payout does budget used increase
-      const hasReachedMinViews = minViews > 0 ? totalViews >= minViews : true;
+      // Only once approved views reach minimum_views_for_payout does budget used increase
+      const hasReachedMinViews = minViews > 0 ? totalApprovedViews >= minViews : true;
       const usedBudget = hasReachedMinViews ? Number(c.used_budget) : 0;
       const isJoined = user ? c.memberships.length > 0 : false;
       const maxPayableViews = Math.floor((Number(c.total_budget) / Number(c.cpm)) * 1000);
@@ -79,7 +86,7 @@ export async function GET(request: Request) {
         minimum_views_for_payout: c.minimum_views_for_payout,
         allowed_platforms: c.allowed_platforms,
         view_eligibility_mode: c.view_eligibility_mode,
-        total_views: totalViews,
+        total_views: totalApprovedViews,
         eligible_views: eligibleViews,
         max_payable_views: maxPayableViews,
         clippers_count: c._count.memberships,

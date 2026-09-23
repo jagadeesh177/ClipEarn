@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser, requireRole } from "@/lib/auth";
-import { UserRole, Prisma } from "@prisma/client";
+import { UserRole, Prisma, SubmissionStatus } from "@prisma/client";
 import { logAuditEvent } from "@/lib/audit";
 
 export async function GET(
@@ -22,6 +22,7 @@ export async function GET(
         },
         submissions: {
           select: {
+            status: true,
             current_views: true,
             eligible_views: true,
           },
@@ -33,11 +34,17 @@ export async function GET(
       return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
     }
 
-    const totalViews = campaign.submissions.reduce((sum, s) => sum + s.current_views, 0);
-    const eligibleViews = campaign.submissions.reduce((sum, s) => sum + s.eligible_views, 0);
+    const approvedSubmissions = campaign.submissions.filter(
+      (s) => s.status === SubmissionStatus.APPROVED
+    );
+    const totalApprovedViews = approvedSubmissions.reduce(
+      (sum, s) => sum + (s.eligible_views || s.current_views),
+      0
+    );
+    const eligibleViews = approvedSubmissions.reduce((sum, s) => sum + s.eligible_views, 0);
     const minViews = campaign.minimum_views_for_payout || 0;
-    // Once views reach minimum_views_for_payout, then only budget used increases; otherwise view progress increases while budget used stays 0
-    const hasReachedMinViews = minViews > 0 ? totalViews >= minViews : true;
+    // Once approved views reach minimum_views_for_payout, then only budget used increases; otherwise view progress increases while budget used stays 0
+    const hasReachedMinViews = minViews > 0 ? totalApprovedViews >= minViews : true;
     const computedUsedBudget = hasReachedMinViews ? Number(campaign.used_budget) : 0;
     const isJoined = user ? campaign.memberships.length > 0 : false;
     const maxPayableViews = Math.floor((Number(campaign.total_budget) / Number(campaign.cpm)) * 1000);
@@ -60,7 +67,7 @@ export async function GET(
         view_eligibility_mode: campaign.view_eligibility_mode,
         requirements: campaign.requirements || [],
         prohibited_content: campaign.prohibited_content || [],
-        total_views: totalViews,
+        total_views: totalApprovedViews,
         eligible_views: eligibleViews,
         max_payable_views: maxPayableViews,
         clippers_count: campaign._count.memberships,

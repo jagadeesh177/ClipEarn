@@ -57,10 +57,11 @@ export async function GET(
         minimumViewsForPayout: minViews,
         viewsRemainingForPayout,
         progressPercent,
+        qualifiesForPayout,
         payoutProgressText:
           viewsRemainingForPayout > 0
             ? `${viewsRemainingForPayout.toLocaleString()} more approved views to start earning`
-            : "Eligible for payout!",
+            : "You're eligible for payout",
         payoutFractionText: `${eligibleViews.toLocaleString()} / ${minViews.toLocaleString()} approved views required for payout`,
       },
     });

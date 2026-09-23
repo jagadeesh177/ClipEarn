@@ -18,14 +18,9 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                const theme = localStorage.getItem('clipearn_theme');
-                if (theme === 'light') {
-                  document.documentElement.classList.remove('dark');
-                  document.documentElement.classList.add('light');
-                } else {
-                  document.documentElement.classList.add('dark');
-                  document.documentElement.classList.remove('light');
-                }
+                localStorage.removeItem('clipearn_theme');
+                document.documentElement.classList.add('dark');
+                document.documentElement.classList.remove('light');
               } catch (e) {}
             `,
           }}

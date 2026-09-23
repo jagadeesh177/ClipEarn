@@ -20,8 +20,6 @@ import {
   HelpCircle,
   ExternalLink,
   MessageCircle,
-  Moon,
-  Sun,
 } from "lucide-react";
 import { clientCache } from "@/lib/clientCache";
 
@@ -32,19 +30,14 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
   const [user, setUser] = useState<any>(() => clientCache.get("clipper_user_me"));
   const [unreadNotifications, setUnreadNotifications] = useState<number>(() => clientCache.get("clipper_unread_count") || 0);
   const [helpOpen, setHelpOpen] = useState(false);
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   useEffect(() => {
-    // Read theme preference
-    const savedTheme = (localStorage.getItem("clipearn_theme") as "dark" | "light") || "dark";
-    setTheme(savedTheme);
-    if (savedTheme === "light") {
-      document.documentElement.classList.add("light");
-      document.documentElement.classList.remove("dark");
-    } else {
+    // Keep strictly dark (pure black) theme
+    try {
+      localStorage.removeItem("clipearn_theme");
       document.documentElement.classList.add("dark");
       document.documentElement.classList.remove("light");
-    }
+    } catch {}
 
     fetch("/api/auth/me")
       .then((res) => {
@@ -149,18 +142,6 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
     }
   }, [router]);
 
-  const toggleTheme = (newTheme: "dark" | "light") => {
-    setTheme(newTheme);
-    localStorage.setItem("clipearn_theme", newTheme);
-    if (newTheme === "light") {
-      document.documentElement.classList.add("light");
-      document.documentElement.classList.remove("dark");
-    } else {
-      document.documentElement.classList.add("dark");
-      document.documentElement.classList.remove("light");
-    }
-  };
-
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
@@ -184,16 +165,6 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
       <div className="md:hidden flex items-center justify-between p-4 bg-[#0A0F1D] border-b border-slate-800 sticky top-0 z-40">
         <ClipEarnLogo size="sm" href="/clipper/dashboard" />
         <div className="flex items-center gap-2">
-          {/* Black / White Toggle for Mobile */}
-          <button
-            type="button"
-            onClick={() => toggleTheme(theme === "dark" ? "light" : "dark")}
-            className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:text-white"
-            title={`Switch to ${theme === "dark" ? "White" : "Black"} mode`}
-          >
-            {theme === "dark" ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-brand-cyan" />}
-          </button>
-
           <Link
             href="/clipper/notifications"
             prefetch={true}
@@ -307,41 +278,8 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
           </div>
         </div>
 
-        {/* Sidebar Footer with Theme Toggle and User Info */}
+        {/* Sidebar Footer with User Info */}
         <div className="p-5 pb-6 border-t border-slate-800/80 bg-[#080C14] shrink-0 space-y-3.5">
-          {/* Theme Toggle: Black & White */}
-          <div className="p-2 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-400">
-              Theme
-            </span>
-            <div className="flex items-center gap-1 p-0.5 bg-slate-950/80 rounded-lg border border-slate-800">
-              <button
-                type="button"
-                onClick={() => toggleTheme("dark")}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
-                  theme === "dark"
-                    ? "bg-slate-800 text-brand-cyan shadow-sm"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                <Moon className="w-3 h-3" />
-                <span>Black</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => toggleTheme("light")}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
-                  theme === "light"
-                    ? "bg-white text-slate-950 shadow-sm"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                <Sun className="w-3 h-3 text-amber-500" />
-                <span>White</span>
-              </button>
-            </div>
-          </div>
-
           <div className="flex items-center gap-3">
             {/* Circular initial avatar in bright cyan circle */}
             <div className="w-10 h-10 rounded-full bg-brand-cyan text-slate-950 font-black text-sm flex items-center justify-center shrink-0 shadow-sm">
@@ -371,36 +309,6 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
           </div>
         </div>
       </aside>
-
-      {/* Floating Top-Right Theme Toggle for Desktop */}
-      <div className="fixed top-5 right-6 z-40 hidden md:flex items-center gap-1.5 p-1 bg-[#0F141F]/90 backdrop-blur-md rounded-xl border border-slate-800 shadow-xl">
-        <button
-          type="button"
-          onClick={() => toggleTheme("dark")}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-            theme === "dark"
-              ? "bg-slate-800 text-brand-cyan shadow-sm"
-              : "text-slate-400 hover:text-white"
-          }`}
-          title="Switch to Black mode"
-        >
-          <Moon className="w-3.5 h-3.5" />
-          <span>Black</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => toggleTheme("light")}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-            theme === "light"
-              ? "bg-white text-slate-950 shadow-sm"
-              : "text-slate-400 hover:text-white"
-          }`}
-          title="Switch to White mode"
-        >
-          <Sun className="w-3.5 h-3.5 text-amber-500" />
-          <span>White</span>
-        </button>
-      </div>
 
       {/* Main Content Area with padding at bottom for floating elements */}
       <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 pb-28 max-w-7xl mx-auto w-full">
