@@ -6,6 +6,7 @@ import {
   Compass,
   Plus,
   Download,
+  FileSpreadsheet,
   PauseCircle,
   PlayCircle,
   CheckCircle2,
@@ -95,7 +96,7 @@ export default function ManagerCampaignsPage() {
             Campaign Management
           </h1>
           <p className="text-sm text-slate-400 mt-1">
-            Configure budgets, CPM parameters, platform rules, and download brand CSV performance exports.
+            Configure budgets, CPM parameters, platform rules, and export branded client Excel performance sheets (.xlsx).
           </p>
         </div>
 
@@ -236,20 +237,20 @@ export default function ManagerCampaignsPage() {
                             )}
                           </button>
 
-                          {/* Export CSV (Consistent Button Element) */}
+                          {/* Export Client Sheet (.xlsx) */}
                           <button
                             type="button"
                             onClick={() => {
                               const a = document.createElement("a");
                               a.href = `/api/export/campaign/${camp.id}`;
-                              a.download = `campaign-${camp.id}.csv`;
+                              a.download = `${camp.name.replace(/[^a-zA-Z0-9_-]/g, "_")}_Client_Report.xlsx`;
                               a.click();
                             }}
-                            title="Export Campaign Submissions CSV"
-                            aria-label={`Export CSV for ${camp.name}`}
-                            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-800/90 hover:bg-brand-cyan hover:text-black text-slate-300 border border-slate-700/60 hover:border-brand-cyan transition-colors flex items-center justify-center shrink-0"
+                            title="Export Client Performance Sheet (.xlsx)"
+                            aria-label={`Export Client Performance Sheet for ${camp.name}`}
+                            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-800/90 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 border border-slate-700/60 hover:border-emerald-500/40 transition-colors flex items-center justify-center shrink-0"
                           >
-                            <Download className="w-4 h-4" />
+                            <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
                           </button>
 
                           {/* Delete Campaign */}
