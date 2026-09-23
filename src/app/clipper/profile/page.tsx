@@ -40,7 +40,9 @@ export default function ProfileAndAccountsPage() {
     ])
       .then(([profRes, accRes]) => {
         if (profRes.data) setProfile(profRes.data);
-        if (accRes.data) setAccounts(accRes.data);
+        if (accRes.data) {
+          setAccounts(accRes.data.filter((a: any) => a.verification_status !== "DISCONNECTED"));
+        }
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -105,7 +107,10 @@ export default function ProfileAndAccountsPage() {
   };
 
   const handleDisconnect = async (accountId: string) => {
-    if (!confirm("Are you sure you want to disconnect this social account?")) return;
+    if (!confirm("Are you sure you want to permanently delete this social media account? It will be completely removed from your profile and the database.")) return;
+
+    // Optimistically remove from state so it immediately disappears from UI
+    setAccounts((prev) => prev.filter((a) => a.id !== accountId));
 
     try {
       const res = await fetch(`/api/social-accounts/${accountId}/disconnect`, {
@@ -114,10 +119,13 @@ export default function ProfileAndAccountsPage() {
       if (res.ok) {
         loadData();
       } else {
-        alert("Failed to disconnect account");
+        const data = await res.json();
+        alert(data.error || "Failed to delete account from database");
+        loadData();
       }
     } catch {
-      alert("Network error");
+      alert("Network error deleting account");
+      loadData();
     }
   };
 
@@ -169,7 +177,7 @@ export default function ProfileAndAccountsPage() {
               </span>
             </div>
             <div className="text-xs text-slate-400 mt-1 flex flex-wrap items-center gap-4">
-              <span>Status: <strong className="text-brand-emerald">{profile?.status}</strong></span>
+              <span>Status: <strong className="text-brand-cyan">{profile?.status}</strong></span>
               <span>Discord ID: <span className="font-mono text-slate-300">{profile?.discord_id || "Connected"}</span></span>
               <span>Referral Code: <span className="font-mono text-brand-cyan">{profile?.referral_code}</span></span>
             </div>
@@ -181,7 +189,7 @@ export default function ProfileAndAccountsPage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-brand-emerald" />
+            <ShieldCheck className="w-5 h-5 text-brand-cyan" />
             Connected Social Media Accounts ({accounts.length})
           </h2>
           <span className="text-xs text-slate-500">Supported: TikTok, Instagram, YouTube</span>
@@ -218,7 +226,7 @@ export default function ProfileAndAccountsPage() {
                           {acc.platform}
                         </span>
                         {isVerified ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-emerald/15 text-brand-emerald border border-brand-emerald/30">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-cyan/15 text-brand-cyan border border-brand-cyan/30">
                             VERIFIED
                           </span>
                         ) : (
@@ -242,7 +250,7 @@ export default function ProfileAndAccountsPage() {
 
                     <button
                       onClick={() => handleDisconnect(acc.id)}
-                      title="Disconnect Account"
+                      title="Delete Account Permanently"
                       className="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-slate-900 transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -367,7 +375,7 @@ export default function ProfileAndAccountsPage() {
                   onClick={() => copyToClipboard(verifyingAccount.verification_code || "clipearn-81fa2b")}
                   className="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 flex items-center gap-1.5 transition-colors"
                 >
-                  {copied ? <Check className="w-3.5 h-3.5 text-brand-emerald" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copied ? <Check className="w-3.5 h-3.5 text-brand-cyan" /> : <Copy className="w-3.5 h-3.5" />}
                   <span>{copied ? "Copied" : "Copy"}</span>
                 </button>
               </div>
@@ -390,7 +398,7 @@ export default function ProfileAndAccountsPage() {
                 type="button"
                 onClick={handleVerifyBio}
                 disabled={checkingBio}
-                className="px-6 py-2.5 rounded-xl bg-brand-emerald text-black font-bold text-xs flex items-center gap-2 hover:opacity-90 disabled:opacity-50"
+                className="px-6 py-2.5 rounded-xl bg-brand-cyan text-black font-bold text-xs flex items-center gap-2 hover:opacity-90 disabled:opacity-50"
               >
                 {checkingBio ? <Loader2 className="w-4 h-4 animate-spin text-black" /> : null}
                 <span>Verify Now</span>

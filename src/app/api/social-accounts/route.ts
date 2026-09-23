@@ -9,7 +9,10 @@ export async function GET() {
   try {
     const user = await requireAuth();
     const accounts = await prisma.socialAccount.findMany({
-      where: { user_id: user.id },
+      where: {
+        user_id: user.id,
+        verification_status: { not: VerificationStatus.DISCONNECTED },
+      },
       orderBy: { created_at: "desc" },
     });
 

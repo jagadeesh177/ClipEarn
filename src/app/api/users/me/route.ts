@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
-import { SubmissionStatus } from "@prisma/client";
+import { SubmissionStatus, VerificationStatus } from "@prisma/client";
 
 export async function GET() {
   try {
@@ -9,7 +9,10 @@ export async function GET() {
 
     const [socialAccounts, campaignsCount, submissions, ledgerSum] = await Promise.all([
       prisma.socialAccount.findMany({
-        where: { user_id: user.id },
+        where: {
+          user_id: user.id,
+          verification_status: { not: VerificationStatus.DISCONNECTED },
+        },
         orderBy: { created_at: "desc" },
       }),
       prisma.campaignMembership.count({
