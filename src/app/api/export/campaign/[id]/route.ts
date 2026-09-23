@@ -173,6 +173,12 @@ export async function GET(
       },
     });
   } catch (err: any) {
+    if (err?.message === "UNAUTHORIZED") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (err?.message === "FORBIDDEN") {
+      return NextResponse.json({ error: "Forbidden: Manager or Admin access required" }, { status: 403 });
+    }
     return NextResponse.json({ error: err?.message || "Failed to export campaign sheet" }, { status: 500 });
   }
 }

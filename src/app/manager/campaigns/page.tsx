@@ -232,43 +232,52 @@ export default function ManagerCampaignsPage() {
               </thead>
               <tbody className="divide-y divide-slate-800/60 font-medium">
                 {campaigns.map((camp) => {
+                  const usedBudget = Number(camp.used_budget) || 0;
+                  const totalBudget = Number(camp.total_budget) || 1;
                   const budgetPercent = Math.min(
                     100,
-                    Math.round((camp.used_budget / camp.total_budget) * 100)
+                    Math.round((usedBudget / totalBudget) * 100)
                   );
+                  const platforms: string[] = Array.isArray(camp.allowed_platforms)
+                    ? camp.allowed_platforms
+                    : [];
 
                   return (
                     <tr key={camp.id} className="hover:bg-slate-900/40 transition-colors">
                       <td className="py-4 pr-3">
-                        <div className="font-bold text-white text-sm">{camp.name}</div>
-                        <div className="flex gap-1 mt-1">
-                          {camp.allowed_platforms.map((p: string) => (
-                            <span
-                              key={p}
-                              className="px-1.5 py-0.2 rounded bg-slate-800 text-[9px] font-semibold text-slate-300"
-                            >
-                              {p}
-                            </span>
-                          ))}
+                        <div className="font-bold text-white text-sm">{camp.name || "Untitled Campaign"}</div>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {platforms.length > 0 ? (
+                            platforms.map((p: string) => (
+                              <span
+                                key={p}
+                                className="px-1.5 py-0.2 rounded bg-slate-800 text-[9px] font-semibold text-slate-300"
+                              >
+                                {p}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-[9px] text-slate-500">All Platforms</span>
+                          )}
                         </div>
                       </td>
 
                       <td className="py-4 pr-3 text-brand-emerald font-semibold">
-                        {camp.brand_name}
+                        {camp.brand_name || "N/A"}
                       </td>
 
                       <td className="py-4 pr-3 font-mono font-bold text-brand-cyan">
-                        ${camp.cpm.toFixed(2)}
+                        ${(Number(camp.cpm) || 0).toFixed(2)}
                       </td>
 
                       <td className="py-4 pr-3 min-w-[170px] max-w-[210px]">
                         <div className="space-y-2">
                           <div className="flex justify-between text-xs">
                             <span className="text-white font-bold">
-                              ${camp.used_budget.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              ${usedBudget.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                             <span className="text-slate-400">
-                              ${camp.total_budget.toLocaleString()}
+                              ${(Number(camp.total_budget) || 0).toLocaleString()}
                             </span>
                           </div>
                           <div className="w-full h-2 bg-slate-800/80 rounded-full overflow-hidden">
@@ -282,10 +291,10 @@ export default function ManagerCampaignsPage() {
 
                       <td className="py-4 pr-3">
                         <span className="text-slate-200 font-bold">
-                          {camp.eligible_views.toLocaleString()}
+                          {(Number(camp.eligible_views) || 0).toLocaleString()}
                         </span>
                         <span className="text-[10px] text-slate-500 block">
-                          {camp.submissions_count} submissions
+                          {camp.submissions_count ?? camp._count?.submissions ?? 0} submissions
                         </span>
                       </td>
 
