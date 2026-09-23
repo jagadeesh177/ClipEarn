@@ -17,9 +17,9 @@ import {
 import { clientCache } from "@/lib/clientCache";
 
 export default function ProfileAndAccountsPage() {
-  const [profile, setProfile] = useState<any>(null);
-  const [accounts, setAccounts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<any>(() => clientCache.get("clipper_user_profile"));
+  const [accounts, setAccounts] = useState<any[]>(() => clientCache.get("clipper_social_accounts") || []);
+  const [loading, setLoading] = useState(() => !clientCache.get("clipper_user_profile"));
 
   // Add account modal
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -40,9 +40,14 @@ export default function ProfileAndAccountsPage() {
       fetch("/api/social-accounts").then((r) => r.json()),
     ])
       .then(([profRes, accRes]) => {
-        if (profRes.data) setProfile(profRes.data);
+        if (profRes.data) {
+          setProfile(profRes.data);
+          clientCache.set("clipper_user_profile", profRes.data);
+        }
         if (accRes.data) {
-          setAccounts(accRes.data.filter((a: any) => a.verification_status !== "DISCONNECTED"));
+          const verified = accRes.data.filter((a: any) => a.verification_status !== "DISCONNECTED");
+          setAccounts(verified);
+          clientCache.set("clipper_social_accounts", verified);
         }
         setLoading(false);
       })

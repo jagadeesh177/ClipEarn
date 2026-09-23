@@ -41,14 +41,16 @@ export async function GET(
       }
     }
 
-    const minViews = campaign.minimum_views_for_payout;
+    const minViews = campaign.minimum_views_for_payout || 0;
+    const qualifiesForPayout = minViews > 0 ? eligibleViews >= minViews : true;
     const viewsRemainingForPayout = Math.max(0, minViews - eligibleViews);
-    const progressPercent = Math.min(100, Math.round((eligibleViews / minViews) * 100));
+    const progressPercent = minViews > 0 ? Math.min(100, Math.round((eligibleViews / minViews) * 100)) : 100;
+    const displayEarnings = qualifiesForPayout ? totalEarnings : 0;
 
     return NextResponse.json({
       data: {
         totalViews,
-        totalEarnings,
+        totalEarnings: displayEarnings,
         clipsSubmitted,
         approvedClips,
         eligibleViews,

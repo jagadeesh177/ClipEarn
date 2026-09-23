@@ -154,13 +154,14 @@ export async function syncSubmissionViews(submissionId: string): Promise<SyncRes
     const qualifiesForPayout = minPayoutViews > 0 ? totalPotentialEligible >= minPayoutViews : true;
 
     const cpmRate = Number(campaign.cpm);
-    let rawEarningsDelta = qualifiesForPayout ? (deltaEligibleViews / 1000) * cpmRate : 0;
+    const eligibleViewsToCredit = qualifiesForPayout ? Math.max(0, totalPotentialEligible - previousEligible) : 0;
+    let rawEarningsDelta = (eligibleViewsToCredit / 1000) * cpmRate;
 
     // Check budget cap
     const currentUsedBudget = Number(campaign.used_budget);
     const totalBudget = Number(campaign.total_budget);
     let finalEarningsDelta = rawEarningsDelta;
-    let actualEligibleDelta = deltaEligibleViews;
+    let actualEligibleDelta = eligibleViewsToCredit;
 
     if (qualifiesForPayout && currentUsedBudget + rawEarningsDelta > totalBudget) {
       finalEarningsDelta = Math.max(0, totalBudget - currentUsedBudget);

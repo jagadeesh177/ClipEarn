@@ -3,16 +3,19 @@
 import React, { useState, useEffect } from "react";
 import { Share2, Copy, Check, Users, Gift, CheckCircle2, Clock, Sparkles } from "lucide-react";
 
+import { clientCache } from "@/lib/clientCache";
+
 export default function ReferralsPage() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<any>(() => clientCache.get("clipper_referrals"));
   const [copied, setCopied] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !clientCache.get("clipper_referrals"));
 
   useEffect(() => {
     fetch("/api/referrals")
       .then((res) => res.json())
       .then((json) => {
         setData(json);
+        clientCache.set("clipper_referrals", json);
         setLoading(false);
       })
       .catch(() => setLoading(false));

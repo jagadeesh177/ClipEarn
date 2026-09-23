@@ -70,6 +70,83 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
         }
       })
       .catch(() => {});
+
+    // 1. Prefetch Next.js routes so clicking tabs is 0ms instant
+    const routesToPrefetch = [
+      "/clipper/dashboard",
+      "/clipper/campaigns",
+      "/clipper/submissions",
+      "/clipper/earnings",
+      "/clipper/profile",
+      "/clipper/referrals",
+      "/clipper/notifications",
+      "/clipper/guidelines",
+    ];
+    routesToPrefetch.forEach((r) => {
+      try {
+        router.prefetch(r);
+      } catch {}
+    });
+
+    // 2. Pre-warm data cache in the background on initial load
+    if (!clientCache.get("clipper_campaigns_list")) {
+      fetch("/api/campaigns?limit=50")
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.data) clientCache.set("clipper_campaigns_list", d.data);
+        })
+        .catch(() => {});
+    }
+
+    if (!clientCache.get("clipper_submissions_list")) {
+      fetch("/api/submissions")
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.data) clientCache.set("clipper_submissions_list", d.data);
+        })
+        .catch(() => {});
+    }
+
+    if (!clientCache.get("clipper_user_profile")) {
+      fetch("/api/users/me")
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.data) {
+            clientCache.set("clipper_user_profile", d.data);
+            if (d.data.socialAccounts) {
+              clientCache.set("clipper_social_accounts", d.data.socialAccounts);
+            }
+          }
+        })
+        .catch(() => {});
+    }
+
+    if (!clientCache.get("clipper_earnings_payouts")) {
+      fetch("/api/payouts")
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.data) clientCache.set("clipper_earnings_payouts", d.data);
+        })
+        .catch(() => {});
+    }
+
+    if (!clientCache.get("clipper_perf_30d")) {
+      fetch("/api/clipper/performance?range=30d")
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.data) clientCache.set("clipper_perf_30d", d.data);
+        })
+        .catch(() => {});
+    }
+
+    if (!clientCache.get("clipper_referrals")) {
+      fetch("/api/referrals")
+        .then((r) => r.json())
+        .then((d) => {
+          if (d) clientCache.set("clipper_referrals", d);
+        })
+        .catch(() => {});
+    }
   }, [router]);
 
   const toggleTheme = (newTheme: "dark" | "light") => {

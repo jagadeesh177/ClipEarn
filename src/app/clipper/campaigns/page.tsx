@@ -218,11 +218,14 @@ export default function BrowseCampaignsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {campaigns.map((camp) => {
-            const usedBudgetNum = Number(camp.used_budget) || 0;
+            const currentViewsNum = Number(camp.total_views || camp.eligible_views || 0);
+            const minViewsPayout = Number(camp.minimum_views_for_payout) || 0;
+            // Only once views reach min views for payout does budget used increase; otherwise view progress increases while budget used stays 0
+            const hasReachedMinViews = minViewsPayout > 0 ? currentViewsNum >= minViewsPayout : true;
+            const usedBudgetNum = hasReachedMinViews ? (Number(camp.used_budget) || 0) : 0;
             const totalBudgetNum = Number(camp.total_budget) || 10000;
             const budgetPercent = Math.min(100, Math.round((usedBudgetNum / totalBudgetNum) * 100));
 
-            const currentViewsNum = Number(camp.total_views || camp.eligible_views || 0);
             const maxViewsNum = Number(camp.max_payable_views) || Math.floor((totalBudgetNum / (Number(camp.cpm) || 1)) * 1000);
             const viewsPercent = maxViewsNum > 0 ? Math.min(100, Math.round((currentViewsNum / maxViewsNum) * 100)) : 0;
 

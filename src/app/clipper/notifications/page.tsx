@@ -3,18 +3,28 @@
 import React, { useState, useEffect } from "react";
 import { Bell, CheckCheck, Clock, CheckCircle2, XCircle, DollarSign, Info } from "lucide-react";
 
+import { clientCache } from "@/lib/clientCache";
+
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [notifications, setNotifications] = useState<any[]>(() => clientCache.get("clipper_notifications_list") || []);
+  const [unreadCount, setUnreadCount] = useState<number>(() => clientCache.get("clipper_unread_count") || 0);
+  const [loading, setLoading] = useState(() => !clientCache.get("clipper_notifications_list"));
 
   const loadNotifications = () => {
-    setLoading(true);
+    if (!notifications.length && !clientCache.get("clipper_notifications_list")) {
+      setLoading(true);
+    }
     fetch("/api/notifications")
       .then((res) => res.json())
       .then((data) => {
-        if (data.data) setNotifications(data.data);
-        if (data.unreadCount !== undefined) setUnreadCount(data.unreadCount);
+        if (data.data) {
+          setNotifications(data.data);
+          clientCache.set("clipper_notifications_list", data.data);
+        }
+        if (data.unreadCount !== undefined) {
+          setUnreadCount(data.unreadCount);
+          clientCache.set("clipper_unread_count", data.unreadCount);
+        }
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -47,7 +57,7 @@ export default function NotificationsPage() {
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, read_at: new Date() } : n))
       );
-      setUnreadCount((c) => Math.max(0, c - 1));
+      setUnreadCount((c: number) => Math.max(0, c - 1));
     } catch {}
   };
 

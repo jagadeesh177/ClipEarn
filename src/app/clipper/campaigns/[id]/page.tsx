@@ -60,24 +60,30 @@ function DiscordIcon({ className = "w-4 h-4" }: { className?: string }) {
   );
 }
 
+import { clientCache } from "@/lib/clientCache";
+
 export default function CampaignDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const campaignId = params.id as string;
 
-  const [campaign, setCampaign] = useState<any>(null);
-  const [myStats, setMyStats] = useState<any>(null);
-  const [socialAccounts, setSocialAccounts] = useState<any[]>([]);
-  const [leaderboard, setLeaderboard] = useState<any[]>([]);
-  const [mySubmissions, setMySubmissions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cachedCamp = clientCache.get(`clipper_camp_${campaignId}`) ||
+    (clientCache.get("clipper_campaigns_list") || []).find((c: any) => c.id === campaignId);
+
+  const [campaign, setCampaign] = useState<any>(() => cachedCamp || null);
+  const [myStats, setMyStats] = useState<any>(() => clientCache.get(`clipper_camp_stats_${campaignId}`));
+  const [socialAccounts, setSocialAccounts] = useState<any[]>(() => clientCache.get("clipper_social_accounts") || []);
+  const [leaderboard, setLeaderboard] = useState<any[]>(() => clientCache.get(`clipper_camp_lead_${campaignId}`) || []);
+  const [mySubmissions, setMySubmissions] = useState<any[]>(() =>
+    (clientCache.get("clipper_submissions_list") || []).filter((s: any) => s.campaign_id === campaignId)
+  );
+  const [loading, setLoading] = useState(() => !cachedCamp);
 
   // Active Tab: "submissions" | "stats" | "leaderboard"
   const [activeTab, setActiveTab] = useState<"submissions" | "stats" | "leaderboard">("submissions");
 
   // Submit clip state
   const [postUrl, setPostUrl] = useState("");
-  const [termsAgreed, setTermsAgreed] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -114,9 +120,18 @@ export default function CampaignDetailsPage() {
       fetch("/api/social-accounts").then((r) => r.json()),
     ])
       .then(([campRes, statsRes, leadRes, subsRes, socialRes]) => {
-        if (campRes.data) setCampaign(campRes.data);
-        if (statsRes.data) setMyStats(statsRes.data);
-        if (leadRes.data) setLeaderboard(leadRes.data);
+        if (campRes.data) {
+          setCampaign(campRes.data);
+          clientCache.set(`clipper_camp_${campaignId}`, campRes.data);
+        }
+        if (statsRes.data) {
+          setMyStats(statsRes.data);
+          clientCache.set(`clipper_camp_stats_${campaignId}`, statsRes.data);
+        }
+        if (leadRes.data) {
+          setLeaderboard(leadRes.data);
+          clientCache.set(`clipper_camp_lead_${campaignId}`, leadRes.data);
+        }
         if (subsRes.data) setMySubmissions(subsRes.data);
         if (socialRes.data) {
           const verified = socialRes.data.filter((a: any) => a.verification_status === "VERIFIED");
@@ -680,7 +695,7 @@ export default function CampaignDetailsPage() {
               <div className="flex justify-between items-center pt-1 border-t border-slate-800/60">
                 <span className="text-slate-400">Min. Views for Payout</span>
                 <span className="font-semibold text-white">
-                  {(campaign.minimum_views_for_payout || 100000).toLocaleString()} views
+                  {minViewsPayout.toLocaleString()} views
                 </span>
               </div>
             </div>
