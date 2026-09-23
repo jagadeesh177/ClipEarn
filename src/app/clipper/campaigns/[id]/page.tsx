@@ -24,6 +24,7 @@ import {
   HelpCircle,
   X,
   ChevronRight,
+  ArrowRight,
 } from "lucide-react";
 
 // Platform Icons
@@ -73,7 +74,9 @@ export default function CampaignDetailsPage() {
 
   const [campaign, setCampaign] = useState<any>(() => cachedCamp || null);
   const [myStats, setMyStats] = useState<any>(() => clientCache.get(`clipper_camp_stats_${campaignId}`));
+  const [allSocialAccounts, setAllSocialAccounts] = useState<any[]>(() => clientCache.get("clipper_all_social_accounts") || []);
   const [socialAccounts, setSocialAccounts] = useState<any[]>(() => clientCache.get("clipper_social_accounts") || []);
+  const [selectedAccountId, setSelectedAccountId] = useState<string>("");
   const [leaderboard, setLeaderboard] = useState<any[]>(() => clientCache.get(`clipper_camp_lead_${campaignId}`) || []);
   const [mySubmissions, setMySubmissions] = useState<any[]>(() =>
     (clientCache.get("clipper_submissions_list") || []).filter((s: any) => s.campaign_id === campaignId)
@@ -105,12 +108,67 @@ export default function CampaignDetailsPage() {
     return null;
   }, [postUrl]);
 
-  const matchedAccount = useMemo(() => {
-    if (!detectedPlatform) return null;
-    return socialAccounts.find(
-      (a) => a.platform === detectedPlatform && a.verification_status === "VERIFIED"
-    );
-  }, [detectedPlatform, socialAccounts]);
+  const platformAccounts = useMemo(() => {
+    if (!detectedPlatform) return [];
+    return allSocialAccounts.filter((a: any) => a.platform === detectedPlatform);
+  }, [detectedPlatform, allSocialAccounts]);
+
+  const verifiedPlatformAccounts = useMemo(() => {
+    return platformAccounts.filter((a: any) => a.verification_status === "VERIFIED");
+  }, [platformAccounts]);
+
+  const activeAccount = useMemo(() => {
+    if (selectedAccountId) {
+      const found = platformAccounts.find((a: any) => a.id === selectedAccountId);
+      if (found) return found;
+    }
+    return verifiedPlatformAccounts[0] || platformAccounts[0] || null;
+  }, [selectedAccountId, platformAccounts, verifiedPlatformAccounts]);
+
+  const extractedUrlHandle = useMemo(() => {
+    if (!postUrl.trim() || !detectedPlatform) return null;
+    try {
+      const parsed = new URL(postUrl.trim());
+      const pathname = parsed.pathname;
+      if (detectedPlatform === "TIKTOK") {
+        const m = pathname.match(/@([^/?#&]+)/);
+        if (m) return m[1].replace(/^@/, "").toLowerCase();
+      } else if (detectedPlatform === "INSTAGRAM") {
+        const parts = pathname.split("/").filter(Boolean);
+        const reserved = new Set([
+          "p",
+          "reel",
+          "reels",
+          "stories",
+          "tv",
+          "explore",
+          "direct",
+          "accounts",
+          "api",
+          "about",
+          "legal",
+          "developer",
+        ]);
+        if (parts.length >= 2 && !reserved.has(parts[0].toLowerCase())) {
+          return parts[0].replace(/^@/, "").toLowerCase();
+        }
+      } else if (detectedPlatform === "YOUTUBE") {
+        const m = pathname.match(/@([^/?#&]+)/);
+        if (m) return m[1].replace(/^@/, "").toLowerCase();
+      }
+    } catch {}
+    return null;
+  }, [postUrl, detectedPlatform]);
+
+  const isAuthorMismatch = useMemo(() => {
+    if (!extractedUrlHandle || !activeAccount) return false;
+    const cleanActiveHandle = activeAccount.username.toLowerCase().replace(/^@/, "").trim();
+    return cleanActiveHandle !== extractedUrlHandle.trim();
+  }, [extractedUrlHandle, activeAccount]);
+
+  const hasVerifiedAccount = Boolean(activeAccount && activeAccount.verification_status === "VERIFIED");
+  const hasUnverifiedAccount = Boolean(activeAccount && activeAccount.verification_status !== "VERIFIED");
+  const hasNoAccount = Boolean(detectedPlatform && platformAccounts.length === 0);
 
   const loadData = () => {
     Promise.all([
@@ -135,8 +193,11 @@ export default function CampaignDetailsPage() {
         }
         if (subsRes.data) setMySubmissions(subsRes.data);
         if (socialRes.data) {
+          setAllSocialAccounts(socialRes.data);
+          clientCache.set("clipper_all_social_accounts", socialRes.data);
           const verified = socialRes.data.filter((a: any) => a.verification_status === "VERIFIED");
           setSocialAccounts(verified);
+          clientCache.set("clipper_social_accounts", verified);
         }
         setLoading(false);
       })
@@ -150,6 +211,32 @@ export default function CampaignDetailsPage() {
   const handleSubmitClip = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError("");
+
+    if (!detectedPlatform) {
+      setSubmitError("Please enter a valid TikTok, Instagram Reel, or YouTube Shorts link.");
+      return;
+    }
+
+    if (!hasVerifiedAccount || !activeAccount) {
+      if (hasUnverifiedAccount) {
+        setSubmitError(
+          `Your ${detectedPlatform} account (@${activeAccount?.username}) is not verified yet. Only verified social accounts can submit clips. Please complete bio verification first.`
+        );
+      } else {
+        setSubmitError(
+          `No verified ${detectedPlatform} account found. You must connect and verify your ${detectedPlatform} account in Profile & Accounts before submitting clips.`
+        );
+      }
+      return;
+    }
+
+    if (isAuthorMismatch) {
+      setSubmitError(
+        `This clip belongs to @${extractedUrlHandle}, but your verified ${detectedPlatform} account is @${activeAccount.username}. You can only submit clips published by your verified account.`
+      );
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -158,6 +245,7 @@ export default function CampaignDetailsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           campaign_id: campaignId,
+          social_account_id: activeAccount.id,
           post_url: postUrl.trim(),
         }),
       });
@@ -346,6 +434,93 @@ export default function CampaignDetailsPage() {
             )}
 
             <form onSubmit={handleSubmitClip} className="space-y-4">
+              {/* Account Status / Validation Banner */}
+              {detectedPlatform && (
+                <div className="space-y-2">
+                  {hasVerifiedAccount && activeAccount && (
+                    <div className="p-3.5 rounded-xl bg-slate-900/90 border border-emerald-500/30 flex items-center justify-between text-xs animate-fadeIn">
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <div>
+                          <span className="text-slate-400">Submitting with verified account: </span>
+                          <span className="font-bold text-white">@{activeAccount.username}</span>
+                        </div>
+                      </div>
+                      {verifiedPlatformAccounts.length > 1 ? (
+                        <select
+                          value={activeAccount.id}
+                          onChange={(e) => setSelectedAccountId(e.target.value)}
+                          className="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white"
+                        >
+                          {verifiedPlatformAccounts.map((a: any) => (
+                            <option key={a.id} value={a.id}>@{a.username}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold text-[11px]">
+                          Verified ✓
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {isAuthorMismatch && (
+                    <div className="p-3.5 rounded-xl bg-red-500/15 border border-red-500/40 text-xs text-red-300 flex items-start gap-2 animate-fadeIn">
+                      <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                      <div>
+                        <strong className="block text-red-400 font-bold">Account Mismatch Detected</strong>
+                        <span>
+                          This clip belongs to <strong>@{extractedUrlHandle}</strong>, but your verified {detectedPlatform} account is <strong>@{activeAccount?.username}</strong>. You can only submit clips published by your verified account.
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {hasUnverifiedAccount && activeAccount && (
+                    <div className="p-3.5 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-xs space-y-2 animate-fadeIn">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-yellow-400 font-bold">
+                          <AlertCircle className="w-4 h-4 shrink-0" />
+                          <span>Unverified Account: @{activeAccount.username}</span>
+                        </div>
+                        <span className="px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/40 font-semibold text-[11px]">
+                          Pending Verification
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-300 leading-relaxed">
+                        Your {detectedPlatform} account is not verified yet. Clip submissions from unverified accounts cannot be accepted. Please place your verification code in your {detectedPlatform} bio to verify ownership.
+                      </p>
+                      <Link
+                        href="/clipper/profile"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-bold text-xs transition-colors"
+                      >
+                        <span>Verify @{activeAccount.username} Bio Code</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
+                  )}
+
+                  {hasNoAccount && (
+                    <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-xs space-y-2 animate-fadeIn">
+                      <div className="flex items-center gap-2 text-red-400 font-bold">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        <span>No {detectedPlatform} Account Connected</span>
+                      </div>
+                      <p className="text-[11px] text-slate-300 leading-relaxed">
+                        Only verified accounts can submit clips. You have not connected a {detectedPlatform} account yet. Please connect and verify your account first.
+                      </p>
+                      <Link
+                        href="/clipper/profile"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-bold text-xs transition-colors"
+                      >
+                        <span>Connect &amp; Verify {detectedPlatform}</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Input + Submit Button Row */}
               <div className="flex flex-col sm:flex-row gap-2.5">
                 <input
@@ -362,17 +537,57 @@ export default function CampaignDetailsPage() {
 
                 <button
                   type="submit"
-                  disabled={submitting || !postUrl.trim()}
-                  className="px-6 py-3 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-bold text-xs sm:text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-md shadow-cyan-500/20 shrink-0"
+                  disabled={submitting || !postUrl.trim() || !hasVerifiedAccount || isAuthorMismatch}
+                  className="px-6 py-3 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-bold text-xs sm:text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md shadow-cyan-500/20 shrink-0"
                 >
                   {submitting ? (
                     <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
                   ) : (
                     <Send className="w-4 h-4 text-slate-950" />
                   )}
-                  <span>Submit</span>
+                  <span>
+                    {isAuthorMismatch
+                      ? "Handle Mismatch"
+                      : hasUnverifiedAccount
+                      ? "Account Not Verified"
+                      : hasNoAccount
+                      ? "Connect Account"
+                      : "Submit"}
+                  </span>
                 </button>
               </div>
+
+              {/* Connected accounts chips guide below input */}
+              {!detectedPlatform && (
+                <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-slate-400">
+                  <span className="font-semibold text-slate-500">Your connected accounts:</span>
+                  {(campaign?.allowed_platforms || ["TIKTOK", "INSTAGRAM", "YOUTUBE"]).map((plt: string) => {
+                    const acc = allSocialAccounts.find((a: any) => a.platform === plt && a.verification_status === "VERIFIED");
+                    const unv = allSocialAccounts.find((a: any) => a.platform === plt && a.verification_status !== "VERIFIED");
+                    if (acc) {
+                      return (
+                        <span key={plt} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-medium">
+                          <ShieldCheck className="w-3 h-3" />
+                          {plt}: @{acc.username}
+                        </span>
+                      );
+                    }
+                    if (unv) {
+                      return (
+                        <span key={plt} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 font-medium">
+                          <AlertCircle className="w-3 h-3" />
+                          {plt}: @{unv.username} (Unverified)
+                        </span>
+                      );
+                    }
+                    return (
+                      <span key={plt} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-slate-500">
+                        {plt}: (Not connected)
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
             </form>
           </div>
 

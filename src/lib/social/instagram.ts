@@ -371,6 +371,7 @@ export class InstagramProvider implements SocialProvider {
       if (metrics) {
         return {
           ...fallback,
+          author_username: metrics.author || fallback.author_username,
           current_views: metrics.views || fallback.current_views,
           likes: metrics.likes !== undefined ? metrics.likes : fallback.likes,
           comments: metrics.comments !== undefined ? metrics.comments : fallback.comments,
@@ -390,14 +391,14 @@ export class InstagramProvider implements SocialProvider {
       try {
         const metrics = await this.fetchPublicMetrics(postUrl);
         if (metrics && (metrics.views > 0 || metrics.likes > 0)) {
-          return metrics;
+          return { views: metrics.views, likes: metrics.likes, comments: metrics.comments };
         }
       } catch {}
     }
     return this.mockFallback.getVideoMetrics(platformPostId);
   }
 
-  private async fetchPublicMetrics(postUrl: string): Promise<{ views: number; likes: number; comments: number } | null> {
+  private async fetchPublicMetrics(postUrl: string): Promise<{ views: number; likes: number; comments: number; author?: string } | null> {
     try {
       const res = await fetch(postUrl, {
         headers: {
@@ -413,6 +414,17 @@ export class InstagramProvider implements SocialProvider {
       let likes = 0;
       let comments = 0;
       let views = 0;
+      let author: string | undefined = undefined;
+
+      // 1. Check if URL path includes username (e.g. instagram.com/username/reel/CODE/)
+      try {
+        const parsed = new URL(postUrl.trim());
+        const parts = parsed.pathname.split("/").filter(Boolean);
+        const reserved = new Set(["p", "reel", "reels", "stories", "tv", "explore", "direct", "accounts", "api"]);
+        if (parts.length >= 2 && !reserved.has(parts[0].toLowerCase())) {
+          author = parts[0].replace(/^@/, "");
+        }
+      } catch {}
 
       const metaMatch =
         html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']*)["']/i) ||
@@ -427,6 +439,23 @@ export class InstagramProvider implements SocialProvider {
         if (likesMatch) likes = this.parseCount(likesMatch[1]);
         if (commentsMatch) comments = this.parseCount(commentsMatch[1]);
         if (viewsMatch) views = this.parseCount(viewsMatch[1]);
+
+        // Extract author from description if available: "... comments - username on ..."
+        if (!author) {
+          const aMatch = text.match(/[-–—]\s*([a-zA-Z0-9_.]+)\s+on/i);
+          if (aMatch) author = aMatch[1].replace(/^@/, "");
+        }
+      }
+
+      if (!author) {
+        const titleMatch =
+          html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']*)["']/i) ||
+          html.match(/<title>([^<]*)<\/title>/i);
+        if (titleMatch) {
+          const tText = titleMatch[1];
+          const m = tText.match(/^([a-zA-Z0-9_.]+)\s+on\s+Instagram/i) || tText.match(/@([a-zA-Z0-9_.]+)/);
+          if (m) author = m[1].replace(/^@/, "");
+        }
       }
 
       if (!likes) {
@@ -448,11 +477,11 @@ export class InstagramProvider implements SocialProvider {
         if (viewCountMatch) views = parseInt(viewCountMatch[1], 10);
       }
 
-      if (views > 0 || likes > 0 || comments > 0) {
+      if (views > 0 || likes > 0 || comments > 0 || author) {
         if (views === 0 && likes > 0) {
           views = Math.round(likes * 14.5);
         }
-        return { views, likes, comments };
+        return { views, likes, comments, author };
       }
     } catch {}
     return null;

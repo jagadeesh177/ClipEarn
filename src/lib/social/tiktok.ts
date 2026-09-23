@@ -79,6 +79,7 @@ export class TikTokProvider implements SocialProvider {
       if (metrics) {
         return {
           ...fallback,
+          author_username: metrics.author || fallback.author_username,
           current_views: metrics.views || fallback.current_views,
           likes: metrics.likes !== undefined ? metrics.likes : fallback.likes,
           comments: metrics.comments !== undefined ? metrics.comments : fallback.comments,
@@ -98,14 +99,14 @@ export class TikTokProvider implements SocialProvider {
       try {
         const metrics = await this.fetchPublicMetrics(postUrl);
         if (metrics && (metrics.views > 0 || metrics.likes > 0)) {
-          return metrics;
+          return { views: metrics.views, likes: metrics.likes, comments: metrics.comments };
         }
       } catch {}
     }
     return this.mockFallback.getVideoMetrics(platformPostId);
   }
 
-  private async fetchPublicMetrics(postUrl: string): Promise<{ views: number; likes: number; comments: number } | null> {
+  private async fetchPublicMetrics(postUrl: string): Promise<{ views: number; likes: number; comments: number; author?: string } | null> {
     try {
       const res = await fetch(postUrl, {
         headers: {
@@ -121,6 +122,14 @@ export class TikTokProvider implements SocialProvider {
       let views = 0;
       let likes = 0;
       let comments = 0;
+      let author: string | undefined = undefined;
+
+      // Extract author from URL: https://www.tiktok.com/@username/video/12345
+      try {
+        const parsed = new URL(postUrl.trim());
+        const match = parsed.pathname.match(/@([^/?#&]+)/);
+        if (match) author = match[1].replace(/^@/, "");
+      } catch {}
 
       // Check itemInfo / stats JSON in TikTok rehydration data
       const statsMatch = html.match(/"stats":\s*\{([^}]+)\}/);
@@ -133,6 +142,11 @@ export class TikTokProvider implements SocialProvider {
         if (playMatch) views = parseInt(playMatch[1], 10);
         if (diggMatch) likes = parseInt(diggMatch[1], 10);
         if (commentMatch) comments = parseInt(commentMatch[1], 10);
+      }
+
+      if (!author) {
+        const authorMatch = html.match(/"uniqueId":\s*"([^"]+)"/) || html.match(/"authorName":\s*"([^"]+)"/);
+        if (authorMatch) author = authorMatch[1].replace(/^@/, "");
       }
 
       // Check meta description: e.g. "Watch ... with 12.3K likes and 456 comments."
@@ -152,11 +166,11 @@ export class TikTokProvider implements SocialProvider {
         }
       }
 
-      if (views > 0 || likes > 0 || comments > 0) {
+      if (views > 0 || likes > 0 || comments > 0 || author) {
         if (views === 0 && likes > 0) {
           views = Math.round(likes * 12.5);
         }
-        return { views, likes, comments };
+        return { views, likes, comments, author };
       }
     } catch {}
     return null;

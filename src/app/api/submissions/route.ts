@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
-import { detectPlatformFromUrl, getSocialProvider } from "@/lib/social";
+import { detectPlatformFromUrl, getSocialProvider, extractAccountFromUrl } from "@/lib/social";
 import { CampaignStatus, SubmissionStatus, VerificationStatus } from "@prisma/client";
 import { logAuditEvent } from "@/lib/audit";
 import { flagSuspiciousActivity } from "@/lib/fraud";
@@ -156,16 +156,42 @@ export async function POST(request: Request) {
       });
     }
 
-    // 4. Auto-bind to Verified Social Account for detectedPlatform
+    // 4. Validate and Bind Social Account (ONLY VERIFIED ACCOUNTS ALLOWED)
     let account = null;
+
     if (social_account_id) {
       account = await prisma.socialAccount.findUnique({
         where: { id: social_account_id },
       });
-    }
 
-    // If no social_account_id passed or account doesn't match detectedPlatform, find verified account
-    if (!account || account.platform !== detectedPlatform || account.user_id !== user.id) {
+      if (!account || account.user_id !== user.id) {
+        return NextResponse.json(
+          { error: "Selected social account was not found or does not belong to your ClipEarn profile." },
+          { status: 404 }
+        );
+      }
+
+      if (account.platform !== detectedPlatform) {
+        return NextResponse.json(
+          { error: `The selected account (@${account.username}) is for ${account.platform}, but your video link is from ${detectedPlatform}.` },
+          { status: 400 }
+        );
+      }
+
+      if (account.verification_status !== VerificationStatus.VERIFIED) {
+        await flagSuspiciousActivity({
+          userId: user.id,
+          type: "UNVERIFIED_ACCOUNT_SUBMISSION_ATTEMPT",
+          description: `User attempted to submit clip using unverified ${detectedPlatform} account @${account.username} (status: ${account.verification_status})`,
+        });
+
+        return NextResponse.json(
+          { error: `Your ${detectedPlatform} account (@${account.username}) is not verified yet (status: ${account.verification_status}). Only verified social accounts can submit clips. Please place your verification code in your bio to verify ownership.` },
+          { status: 400 }
+        );
+      }
+    } else {
+      // Find the verified account for this platform
       account = await prisma.socialAccount.findFirst({
         where: {
           user_id: user.id,
@@ -173,25 +199,56 @@ export async function POST(request: Request) {
           verification_status: VerificationStatus.VERIFIED,
         },
       });
+
+      if (!account) {
+        // Check if user has an unverified account for this platform to provide precise error
+        const unverified = await prisma.socialAccount.findFirst({
+          where: {
+            user_id: user.id,
+            platform: detectedPlatform,
+          },
+        });
+
+        if (unverified) {
+          await flagSuspiciousActivity({
+            userId: user.id,
+            type: "UNVERIFIED_ACCOUNT_SUBMISSION_ATTEMPT",
+            description: `User attempted to submit ${detectedPlatform} clip while account @${unverified.username} is unverified (status: ${unverified.verification_status})`,
+          });
+
+          return NextResponse.json(
+            { error: `Your ${detectedPlatform} account (@${unverified.username}) is not verified yet. Only verified social accounts can submit clips. Please complete bio verification in Profile & Accounts first.` },
+            { status: 400 }
+          );
+        }
+
+        return NextResponse.json(
+          { error: `No verified ${detectedPlatform} account found. You must connect and verify your ${detectedPlatform} account in Profile & Accounts before submitting clips.` },
+          { status: 400 }
+        );
+      }
     }
 
-    if (!account) {
+    const verifiedHandle = account.username.toLowerCase().replace(/^@/, "").trim();
+
+    // 5. Author Matching Check: Prevent submitting clips belonging to other accounts
+    const urlAuthor = extractAccountFromUrl(trimmedUrl, detectedPlatform);
+    if (urlAuthor && urlAuthor !== verifiedHandle) {
+      await flagSuspiciousActivity({
+        userId: user.id,
+        type: "ACCOUNT_MISMATCH_SUBMISSION_ATTEMPT",
+        description: `User submitted clip belonging to @${urlAuthor} while verified account is @${account.username}`,
+      });
+
       return NextResponse.json(
         {
-          error: `No verified ${detectedPlatform} account found. Please connect and verify your ${detectedPlatform} handle with your bio code in Profile & Accounts first.`
+          error: `This clip belongs to @${urlAuthor}, but your verified ${detectedPlatform} account is @${account.username}. You can only submit clips published by your own verified account.`
         },
         { status: 400 }
       );
     }
 
-    if (account.verification_status !== VerificationStatus.VERIFIED) {
-      return NextResponse.json(
-        { error: `Your ${detectedPlatform} account (@${account.username}) is not verified yet. Please add your bio code in Profile & Accounts.` },
-        { status: 400 }
-      );
-    }
-
-    // 5. Parse Platform Post ID
+    // 6. Parse Platform Post ID
     const provider = getSocialProvider(detectedPlatform);
     const platformPostId = provider.parsePostId(trimmedUrl);
 
@@ -199,7 +256,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Could not extract video identifier from the provided URL." }, { status: 400 });
     }
 
-    // 6. Check Duplicate Video (Anti-fraud Constraint)
+    // 7. Check Duplicate Video (Anti-fraud Constraint)
     const existingSubmission = await prisma.submission.findUnique({
       where: {
         campaign_id_platform_platform_post_id: {
@@ -223,12 +280,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // 7. Fetch Initial Video Metadata (Views, Likes, Comments)
+    // 8. Fetch Initial Video Metadata (Views, Likes, Comments) & Validate Author
     let initialViews = 0;
     let initialLikes = 0;
     let initialComments = 0;
+    let videoMeta = null;
     try {
-      const videoMeta = await provider.getVideo(trimmedUrl);
+      videoMeta = await provider.getVideo(trimmedUrl);
       initialViews = videoMeta.current_views || 0;
       initialLikes = videoMeta.likes || 0;
       initialComments = videoMeta.comments || 0;
@@ -236,6 +294,25 @@ export async function POST(request: Request) {
       initialViews = 0;
       initialLikes = 0;
       initialComments = 0;
+    }
+
+    // If provider extracted an author handle from the clip page/API, enforce match
+    if (videoMeta?.author_username) {
+      const metaAuthor = videoMeta.author_username.toLowerCase().replace(/^@/, "").trim();
+      if (metaAuthor && metaAuthor !== verifiedHandle) {
+        await flagSuspiciousActivity({
+          userId: user.id,
+          type: "AUTHOR_MISMATCH_METADATA",
+          description: `Video metadata reported author @${videoMeta.author_username} which does not match verified account @${account.username}`,
+        });
+
+        return NextResponse.json(
+          {
+            error: `This clip was published by @${videoMeta.author_username}, which does not match your verified ${detectedPlatform} account (@${account.username}). You can only submit clips from your verified account.`
+          },
+          { status: 400 }
+        );
+      }
     }
 
     // 8. Create Submission & Baseline Snapshot in Transaction

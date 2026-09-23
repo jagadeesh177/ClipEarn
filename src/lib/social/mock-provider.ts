@@ -80,10 +80,32 @@ export class MockSocialProvider implements SocialProvider {
     const initialLikes = Math.round(initialViews * (0.045 + (Math.abs(hash % 30) / 1000)));
     const initialComments = Math.round(initialViews * (0.003 + (Math.abs(hash % 20) / 10000))) + 5;
 
+    let authorUsername: string | undefined = undefined;
+    try {
+      const parsed = new URL(postUrl.trim());
+      const host = parsed.hostname.toLowerCase();
+      const pathname = parsed.pathname;
+
+      if (this.platform === Platform.TIKTOK || host.includes("tiktok.com")) {
+        const m = pathname.match(/@([^/?#&]+)/);
+        if (m) authorUsername = m[1].replace(/^@/, "");
+      } else if (this.platform === Platform.INSTAGRAM || host.includes("instagram.com")) {
+        const parts = pathname.split("/").filter(Boolean);
+        const reserved = new Set(["p", "reel", "reels", "stories", "tv", "explore", "direct", "accounts", "api"]);
+        if (parts.length >= 2 && !reserved.has(parts[0].toLowerCase())) {
+          authorUsername = parts[0].replace(/^@/, "");
+        }
+      } else if (this.platform === Platform.YOUTUBE || host.includes("youtube.com") || host.includes("youtu.be")) {
+        const m = pathname.match(/@([^/?#&]+)/);
+        if (m) authorUsername = m[1].replace(/^@/, "");
+      }
+    } catch {}
+
     return {
       platform: this.platform,
       platform_post_id: postId,
       post_url: postUrl,
+      author_username: authorUsername,
       current_views: initialViews,
       likes: initialLikes,
       comments: initialComments,
