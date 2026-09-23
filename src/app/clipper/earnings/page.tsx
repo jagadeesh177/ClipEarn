@@ -32,15 +32,6 @@ export default function ClipperEarningsPage() {
   const [chartData, setChartData] = useState<any[]>(() => clientCache.get("clipper_perf_30d") || []);
   const [loading, setLoading] = useState(() => !clientCache.get("clipper_earnings_payouts"));
 
-  // Request payout modal
-  const [isPayoutModalOpen, setIsPayoutModalOpen] = useState(false);
-  const [payoutAmount, setPayoutAmount] = useState("");
-  const [payoutMethod, setPayoutMethod] = useState("WISE");
-  const [accountIdentifier, setAccountIdentifier] = useState("");
-  const [requesting, setRequesting] = useState(false);
-  const [payoutError, setPayoutError] = useState("");
-  const [payoutSuccess, setPayoutSuccess] = useState(false);
-
   // Set Up Payout Method Modal State
   const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
   const [setupPaymentMethod, setSetupPaymentMethod] = useState("Bank (India)");
@@ -52,6 +43,7 @@ export default function ClipperEarningsPage() {
   const [swiftCode, setSwiftCode] = useState("");
   const [paypalEmail, setPaypalEmail] = useState("");
   const [wiseEmail, setWiseEmail] = useState("");
+  const [usdtAddress, setUsdtAddress] = useState("");
   const [savingDetails, setSavingDetails] = useState(false);
   const [setupSuccessMessage, setSetupSuccessMessage] = useState("");
 
@@ -69,6 +61,7 @@ export default function ClipperEarningsPage() {
         if (parsed.swiftCode) setSwiftCode(parsed.swiftCode);
         if (parsed.paypalEmail) setPaypalEmail(parsed.paypalEmail);
         if (parsed.wiseEmail) setWiseEmail(parsed.wiseEmail);
+        if (parsed.usdtAddress) setUsdtAddress(parsed.usdtAddress);
       }
     } catch {}
   }, []);
@@ -86,6 +79,7 @@ export default function ClipperEarningsPage() {
       swiftCode,
       paypalEmail,
       wiseEmail,
+      usdtAddress,
       savedAt: new Date().toISOString(),
     };
     try {
@@ -131,42 +125,6 @@ export default function ClipperEarningsPage() {
   useEffect(() => {
     loadData();
   }, []);
-
-  const handleRequestPayout = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setPayoutError("");
-    setRequesting(true);
-
-    try {
-      const res = await fetch("/api/payouts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: parseFloat(payoutAmount),
-          method: payoutMethod,
-          accountDetails: { identifier: accountIdentifier },
-        }),
-      });
-      const resData = await res.json();
-
-      if (res.ok) {
-        setPayoutSuccess(true);
-        setPayoutAmount("");
-        setAccountIdentifier("");
-        loadData();
-        setTimeout(() => {
-          setPayoutSuccess(false);
-          setIsPayoutModalOpen(false);
-        }, 1500);
-      } else {
-        setPayoutError(resData.error || "Failed to submit payout request");
-      }
-    } catch {
-      setPayoutError("Network error requesting payout");
-    } finally {
-      setRequesting(false);
-    }
-  };
 
   // Primary numbers - ground with API data when non-zero, otherwise default to requested template values
   const grossEarnings =
@@ -248,29 +206,24 @@ export default function ClipperEarningsPage() {
             <DollarSign className="w-7 h-7 text-brand-cyan" />
             Your Earnings Overview
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Auditable payout records, platform fee breakdown, and clipper performance analytics.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3 flex-wrap">
-          {/* Payout Method Connected / Setup Button */}
           <button
             type="button"
             onClick={() => setIsSetupModalOpen(true)}
-            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-brand-cyan/10 hover:bg-brand-cyan/20 border border-brand-cyan/30 text-brand-cyan text-xs font-bold transition-colors cursor-pointer"
+            className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-brand-cyan hover:underline cursor-pointer group"
           >
-            <CheckCircle2 className="w-4 h-4 text-brand-cyan" />
-            <span>Payout Method: {setupPaymentMethod}</span>
+            <CheckCircle2 className="w-3.5 h-3.5 text-brand-cyan" />
+            <span className="group-hover:text-[#1cf7fd]">Payout Method Connected</span>
           </button>
+        </div>
 
-          {/* Request Payout Action Button */}
+        <div className="flex items-center gap-3 flex-wrap">
           <button
-            onClick={() => setIsPayoutModalOpen(true)}
-            className="px-4 py-2.5 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-black text-xs transition-all hover:scale-[1.02] active:scale-95 shadow-md shadow-cyan-500/20 flex items-center gap-2"
+            type="button"
+            onClick={() => setIsSetupModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 text-xs font-bold transition-all shadow-md shadow-cyan-500/20 cursor-pointer hover:scale-[1.02] active:scale-95"
           >
             <CreditCard className="w-4 h-4 text-slate-950" />
-            <span>Request Payout</span>
+            <span>Set Up Payout Method</span>
           </button>
         </div>
       </div>
@@ -564,119 +517,7 @@ export default function ClipperEarningsPage() {
         </div>
       </div>
 
-      {/* 7. Interactive Request Payout Modal */}
-      {isPayoutModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-[#0F141F] border border-slate-800 rounded-2xl max-w-md w-full p-6 relative shadow-2xl">
-            <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-brand-cyan" />
-              Request Payout
-            </h3>
-            <p className="text-xs text-slate-400 mb-5">
-              Available balance:{" "}
-              <strong className="text-brand-cyan">${remainingPayout.toFixed(2)}</strong>. Enter payout destination and amount.
-            </p>
-
-            {payoutError && (
-              <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-400 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{payoutError}</span>
-              </div>
-            )}
-
-            {payoutSuccess && (
-              <div className="mb-4 p-3 rounded-xl bg-brand-cyan/10 border border-brand-cyan/30 text-xs text-brand-cyan flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 shrink-0" />
-                <span>Payout request submitted successfully!</span>
-              </div>
-            )}
-
-            <form onSubmit={handleRequestPayout} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1.5">
-                  Payout Method
-                </label>
-                <select
-                  value={payoutMethod}
-                  onChange={(e) => setPayoutMethod(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-brand-cyan"
-                >
-                  <option value="WISE">Wise (Bank Transfer)</option>
-                  <option value="PAYPAL">PayPal (Instant)</option>
-                  <option value="CRYPTO_USDC">Crypto (USDC / ERC-20)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1.5">
-                  Destination Account (Email, IBAN, or Wallet)
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder={
-                    payoutMethod === "PAYPAL"
-                      ? "paypal@account.com"
-                      : payoutMethod === "WISE"
-                      ? "IBAN or Wise Tag"
-                      : "0x..."
-                  }
-                  value={accountIdentifier}
-                  onChange={(e) => setAccountIdentifier(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-cyan"
-                />
-              </div>
-
-              <div>
-                <div className="flex justify-between text-slate-300 font-semibold mb-1.5">
-                  <span>Amount to Withdraw (USD)</span>
-                  <button
-                    type="button"
-                    onClick={() => setPayoutAmount(remainingPayout.toFixed(2))}
-                    className="text-brand-cyan hover:underline text-xs"
-                  >
-                    Withdraw All (${remainingPayout.toFixed(2)})
-                  </button>
-                </div>
-                <input
-                  type="number"
-                  step="0.01"
-                  max={remainingPayout}
-                  min="5"
-                  required
-                  placeholder="0.00"
-                  value={payoutAmount}
-                  onChange={(e) => setPayoutAmount(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white font-mono text-sm focus:outline-none focus:border-brand-cyan"
-                />
-                <span className="text-xs text-slate-500 mt-1 block">
-                  Minimum payout: $5.00.
-                </span>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsPayoutModalOpen(false)}
-                  className="h-9 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={requesting}
-                  className="h-9 px-5 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-bold text-xs flex items-center gap-2 shadow-md shadow-cyan-500/20 disabled:opacity-50"
-                >
-                  {requesting ? <Loader2 className="w-4 h-4 animate-spin text-slate-950" /> : null}
-                  <span>Confirm Payout Request</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* 8. Interactive Set Up Payout Method Modal */}
+      {/* Set Up Payout Method Modal */}
       {isSetupModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
           <div className="bg-[#0F141F] border border-slate-800 rounded-2xl max-w-md w-full p-6 relative shadow-2xl">
@@ -710,6 +551,7 @@ export default function ClipperEarningsPage() {
                   <option value="Bank (India)">Bank (India)</option>
                   <option value="PayPal">PayPal</option>
                   <option value="Wise">Wise</option>
+                  <option value="USDT (ERC-20)">USDT (ERC-20)</option>
                 </select>
               </div>
 
@@ -916,6 +758,48 @@ export default function ClipperEarningsPage() {
                       onChange={(e) => setWiseEmail(e.target.value)}
                       className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-brand-cyan"
                     />
+                  </div>
+                </>
+              )}
+
+              {/* USDT (ERC-20) Crypto Fields */}
+              {setupPaymentMethod === "USDT (ERC-20)" && (
+                <>
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1.5">
+                      Recipient / Account Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Full Name / Handle"
+                      value={accountHolderName}
+                      onChange={(e) => setAccountHolderName(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-brand-cyan"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1.5">
+                      USDT (ERC-20) Wallet Address
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="0x71C... (Ethereum Mainnet ERC-20 Address)"
+                      value={usdtAddress}
+                      onChange={(e) => setUsdtAddress(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-cyan font-mono"
+                    />
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
+                    <div className="text-[11px] font-bold text-brand-cyan flex items-center gap-1.5">
+                      <span>Network: Ethereum (ERC-20)</span>
+                    </div>
+                    <p className="text-[11px] text-slate-400">
+                      Ensure your wallet or exchange address supports USDT on Ethereum (ERC-20). Payouts to non-ERC20 networks cannot be recovered.
+                    </p>
                   </div>
                 </>
               )}
