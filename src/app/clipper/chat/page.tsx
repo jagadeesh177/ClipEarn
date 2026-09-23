@@ -5,53 +5,15 @@ import { MessageSquare, Send, Hash, Users, Sparkles, Shield, User } from "lucide
 
 export default function ClipEarnChatPage() {
   const [activeChannel, setActiveChannel] = useState("general-chat");
-  const [messages, setMessages] = useState([
-    {
-      id: "1",
-      channel: "general-chat",
-      user: "Sriraam",
-      badge: "Top Clipper #1",
-      avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=Sriraam",
-      text: "Just hit 120k views on the Steve Wynn #2 campaign! Adding dynamic captions made a huge retention difference.",
-      time: "10:14 AM",
-    },
-    {
-      id: "2",
-      channel: "general-chat",
-      user: "DemoClipper",
-      badge: "Clipper",
-      avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
-      text: "Awesome! What font are you using for the kinetic captions?",
-      time: "10:18 AM",
-    },
-    {
-      id: "3",
-      channel: "general-chat",
-      user: "DemoManager",
-      badge: "Staff",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
-      text: "Friendly reminder to all clippers on the Steve Wynn campaign: remember to include #SteveWynn and #BusinessStrategy in captions to pass review smoothly!",
-      time: "10:25 AM",
-    },
-    {
-      id: "4",
-      channel: "payout-support",
-      user: "Andrew",
-      badge: "Clipper",
-      avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=Andrew",
-      text: "How quickly do PayPal payouts process once approved?",
-      time: "11:02 AM",
-    },
-    {
-      id: "5",
-      channel: "payout-support",
-      user: "DemoManager",
-      badge: "Staff",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
-      text: "PayPal payouts are generally batch-processed twice daily, typically completing within 24 hours.",
-      time: "11:15 AM",
-    },
-  ]);
+  const [messages, setMessages] = useState<Array<{
+    id: string;
+    channel: string;
+    user: string;
+    badge: string;
+    avatar: string;
+    text: string;
+    time: string;
+  }>>([]);
 
   const [inputMessage, setInputMessage] = useState("");
 
@@ -130,33 +92,41 @@ export default function ClipEarnChatPage() {
 
         {/* Message Stream */}
         <div className="flex-1 p-4 overflow-y-auto space-y-4">
-          {channelMessages.map((msg) => (
-            <div key={msg.id} className="flex items-start gap-3 group">
-              <img
-                src={msg.avatar}
-                alt="Avatar"
-                className="w-9 h-9 rounded-xl border border-slate-700 bg-slate-800 object-cover shrink-0 mt-0.5"
-              />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-bold text-white">{msg.user}</span>
-                  <span
-                    className={`px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider ${
-                      msg.badge === "Staff"
-                        ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
-                        : msg.badge.includes("Top")
-                        ? "bg-yellow-400/20 text-yellow-400 border border-yellow-400/30"
-                        : "bg-slate-800 text-slate-400"
-                    }`}
-                  >
-                    {msg.badge}
-                  </span>
-                  <span className="text-[10px] text-slate-500">{msg.time}</span>
-                </div>
-                <p className="text-xs text-slate-300 leading-relaxed break-words">{msg.text}</p>
-              </div>
+          {channelMessages.length === 0 ? (
+            <div className="h-full min-h-[280px] flex flex-col items-center justify-center text-center p-8 text-slate-500">
+              <MessageSquare className="w-10 h-10 text-slate-600 mb-2" />
+              <p className="text-sm font-bold text-white">No messages yet</p>
+              <p className="text-xs text-slate-400 mt-1">Be the first to say hello in #{activeChannel}!</p>
             </div>
-          ))}
+          ) : (
+            channelMessages.map((msg) => (
+              <div key={msg.id} className="flex items-start gap-3 group">
+                <img
+                  src={msg.avatar}
+                  alt="Avatar"
+                  className="w-9 h-9 rounded-xl border border-slate-700 bg-slate-800 object-cover shrink-0 mt-0.5"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-bold text-white">{msg.user}</span>
+                    <span
+                      className={`px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider ${
+                        msg.badge === "Staff"
+                          ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
+                          : msg.badge.includes("Top")
+                          ? "bg-yellow-400/20 text-yellow-400 border border-yellow-400/30"
+                          : "bg-slate-800 text-slate-400"
+                      }`}
+                    >
+                      {msg.badge}
+                    </span>
+                    <span className="text-[10px] text-slate-500">{msg.time}</span>
+                  </div>
+                  <p className="text-xs text-slate-300 leading-relaxed break-words">{msg.text}</p>
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
         {/* Message Input Bar */}
