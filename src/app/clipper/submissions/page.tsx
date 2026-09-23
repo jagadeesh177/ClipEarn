@@ -99,6 +99,16 @@ export default function MySubmissionsPage() {
     return socialAccounts.find((a) => a.platform === detectedPlatform);
   }, [detectedPlatform, socialAccounts]);
 
+  const cleanPostUrl = (rawUrl: string) => {
+    try {
+      const url = new URL(rawUrl);
+      const cleanPath = url.pathname.replace(/\/$/, "");
+      return `${url.hostname.replace(/^www\./, "")}${cleanPath}`;
+    } catch {
+      return rawUrl;
+    }
+  };
+
   const handleQuickSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError("");
@@ -180,7 +190,7 @@ export default function MySubmissionsPage() {
   };
 
   return (
-    <div className="space-y-8 animate-fadeIn">
+    <div className="space-y-8 pb-16 animate-fadeIn">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
         <div>
@@ -224,9 +234,9 @@ export default function MySubmissionsPage() {
                 return (
                   <span
                     key={p}
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                    className={`px-2.5 py-1 rounded-md text-xs font-semibold border ${
                       verified
-                        ? "bg-brand-emerald/10 text-brand-emerald border-brand-emerald/30"
+                        ? "bg-brand-cyan/10 text-brand-cyan border-brand-cyan/30"
                         : "bg-slate-900 text-slate-500 border-slate-800"
                     }`}
                   >
@@ -248,15 +258,15 @@ export default function MySubmissionsPage() {
           )}
 
           {submitSuccess && (
-            <div className="p-3 rounded-xl bg-brand-emerald/10 border border-brand-emerald/30 text-xs text-brand-emerald flex items-center gap-2">
+            <div className="p-3 rounded-xl bg-brand-cyan/10 border border-brand-cyan/30 text-xs text-brand-cyan flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
               <span>{submitSuccess}</span>
             </div>
           )}
 
-          <form onSubmit={handleQuickSubmit} className="space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="sm:col-span-1">
+          <form onSubmit={handleQuickSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
                 <label className="block text-slate-300 font-semibold text-xs mb-1.5">
                   Select Campaign
                 </label>
@@ -273,66 +283,66 @@ export default function MySubmissionsPage() {
                 </select>
               </div>
 
-              <div className="sm:col-span-2">
+              <div>
                 <label className="block text-slate-300 font-semibold text-xs mb-1.5">
                   Published Video URL
                 </label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </span>
-                    <input
-                      type="url"
-                      required
-                      placeholder="Paste TikTok, Instagram Reel, or YouTube Shorts public URL..."
-                      value={quickUrl}
-                      onChange={(e) => {
-                        setQuickUrl(e.target.value);
-                        if (submitError) setSubmitError("");
-                      }}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-cyan"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={submittingClip || !quickUrl.trim()}
-                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand-cyan to-brand-emerald text-black font-black text-xs transition-all hover:opacity-95 disabled:opacity-50 flex items-center gap-1.5 shrink-0"
-                  >
-                    {submittingClip ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                    <span>{submittingClip ? "Submitting..." : "Submit Clip"}</span>
-                  </button>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </span>
+                  <input
+                    type="url"
+                    required
+                    placeholder="Paste TikTok, Instagram Reel, or YouTube Shorts public URL..."
+                    value={quickUrl}
+                    onChange={(e) => {
+                      setQuickUrl(e.target.value);
+                      if (submitError) setSubmitError("");
+                    }}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-cyan"
+                  />
                 </div>
               </div>
             </div>
 
-            {/* Dynamic auto-binding pill */}
-            <div className="text-[11px] text-slate-400 pt-0.5">
-              {detectedPlatform ? (
-                matchedAccount ? (
-                  <span className="text-brand-emerald font-semibold flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-brand-emerald shrink-0" />
-                    <span>
-                      Detected {detectedPlatform} clip &bull; Auto-bound to verified handle: <strong className="text-white">@{matchedAccount.username}</strong>
+            {/* Dynamic auto-binding pill and Submit button aligned directly */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+              <div className="text-xs text-slate-400">
+                {detectedPlatform ? (
+                  matchedAccount ? (
+                    <span className="text-brand-cyan font-semibold flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-brand-cyan shrink-0" />
+                      <span>
+                        Detected {detectedPlatform} clip &bull; Auto-bound to verified handle: <strong className="text-white">@{matchedAccount.username}</strong>
+                      </span>
                     </span>
-                  </span>
+                  ) : (
+                    <span className="text-yellow-400 font-semibold flex items-center gap-1.5">
+                      <AlertCircle className="w-3.5 h-3.5 text-yellow-400 shrink-0" />
+                      <span>
+                        Detected {detectedPlatform} link, but you have no verified {detectedPlatform} account.{" "}
+                        <Link href="/clipper/profile" className="text-brand-cyan underline font-bold ml-1">
+                          Verify Account &rarr;
+                        </Link>
+                      </span>
+                    </span>
+                  )
                 ) : (
-                  <span className="text-yellow-400 font-semibold flex items-center gap-1.5">
-                    <AlertCircle className="w-3.5 h-3.5 text-yellow-400 shrink-0" />
-                    <span>
-                      Detected {detectedPlatform} link, but you have no verified {detectedPlatform} account.{" "}
-                      <Link href="/clipper/profile" className="text-brand-cyan underline font-bold ml-1">
-                        Verify Account &rarr;
-                      </Link>
-                    </span>
+                  <span className="text-slate-400">
+                    Paste any public link. Verified social handle binds automatically without dropdown selection.
                   </span>
-                )
-              ) : (
-                <span className="text-slate-500">
-                  Paste any public link. Verified social handle binds automatically without dropdown selection.
-                </span>
-              )}
+                )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={submittingClip || !quickUrl.trim()}
+                className="h-10 px-6 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-bold text-xs transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2 shrink-0 shadow-md shadow-cyan-500/20"
+              >
+                {submittingClip ? <Loader2 className="w-4 h-4 animate-spin text-slate-950" /> : <Send className="w-4 h-4 text-slate-950" />}
+                <span>{submittingClip ? "Submitting..." : "Submit Clip"}</span>
+              </button>
             </div>
           </form>
         </div>
@@ -394,13 +404,13 @@ export default function MySubmissionsPage() {
                 {/* Left side details */}
                 <div className="space-y-2 max-w-xl">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="px-2.5 py-0.5 rounded bg-slate-800 text-[10px] font-bold text-slate-300">
+                    <span className="px-2.5 py-1 rounded bg-slate-800 text-xs font-semibold text-slate-300">
                       {sub.platform}
                     </span>
                     <span className="text-xs text-slate-400 font-medium">@{sub.account_username}</span>
                     <span className="text-slate-600">&bull;</span>
-                    <span className="text-xs font-bold text-brand-emerald">{sub.campaign_name}</span>
-                    <span className="text-[10px] text-slate-500 font-mono">(${sub.cpm.toFixed(2)} CPM)</span>
+                    <span className="text-xs font-bold text-brand-cyan">{sub.campaign_name}</span>
+                    <span className="text-xs text-slate-500 font-mono">(${sub.cpm.toFixed(2)} CPM)</span>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -408,10 +418,11 @@ export default function MySubmissionsPage() {
                       href={sub.post_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-sm font-bold text-white hover:text-brand-cyan transition-colors truncate max-w-md flex items-center gap-1.5"
+                      title={sub.post_url}
+                      className="text-xs sm:text-sm font-semibold text-white hover:text-brand-cyan transition-colors flex items-center gap-1.5 break-all"
                     >
-                      <span className="truncate">{sub.post_url}</span>
-                      <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                      <span>{cleanPostUrl(sub.post_url)}</span>
+                      <ExternalLink className="w-3.5 h-3.5 shrink-0 text-slate-400" />
                     </a>
                   </div>
 
@@ -433,7 +444,7 @@ export default function MySubmissionsPage() {
                 {/* Right side metrics and status */}
                 <div className="flex flex-wrap items-center gap-6 self-end lg:self-center">
                   <div className="text-right">
-                    <span className="text-[11px] text-slate-500 uppercase tracking-wider block font-semibold">
+                    <span className="text-xs text-slate-500 uppercase tracking-wider block font-semibold">
                       Current Views
                     </span>
                     <span className="text-base font-bold text-white">
@@ -448,7 +459,7 @@ export default function MySubmissionsPage() {
                   </div>
 
                   <div className="text-right">
-                    <span className="text-[11px] text-slate-500 uppercase tracking-wider block font-semibold">
+                    <span className="text-xs text-slate-500 uppercase tracking-wider block font-semibold">
                       Eligible Views
                     </span>
                     <span className="text-base font-bold text-slate-200">
@@ -457,7 +468,7 @@ export default function MySubmissionsPage() {
                   </div>
 
                   <div className="text-right">
-                    <span className="text-[11px] text-slate-500 uppercase tracking-wider block font-semibold">
+                    <span className="text-xs text-slate-500 uppercase tracking-wider block font-semibold">
                       Earnings
                     </span>
                     <span className="text-lg font-black text-brand-cyan">
@@ -467,28 +478,29 @@ export default function MySubmissionsPage() {
 
                   <div className="min-w-[130px] text-right">
                     {isApproved && (
-                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-brand-emerald/15 text-brand-emerald border border-brand-emerald/30">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider bg-brand-cyan/10 text-brand-cyan border border-brand-cyan/30 pointer-events-none select-none">
                         <CheckCircle2 className="w-3.5 h-3.5" />
-                        APPROVED
+                        Approved
                       </span>
                     )}
 
                     {isPending && (
-                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-yellow-400/15 text-yellow-400 border border-yellow-400/30">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider bg-yellow-400/10 text-yellow-400 border border-yellow-400/30 pointer-events-none select-none">
                         <Clock className="w-3.5 h-3.5" />
-                        PENDING
+                        Pending
                       </span>
                     )}
 
                     {isAppealed && (
-                      <div className="flex flex-col items-end gap-1">
-                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                      <div className="flex flex-col items-end gap-1.5">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider bg-purple-500/10 text-purple-300 border border-purple-500/30 pointer-events-none select-none">
                           <Clock className="w-3.5 h-3.5 text-purple-400" />
-                          APPEALED
+                          Appealed
                         </span>
                         <button
+                          type="button"
                           onClick={() => setSelectedAppeal(sub)}
-                          className="text-[10px] text-purple-400 hover:text-purple-300 underline font-medium"
+                          className="h-8 px-3 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-xs font-semibold transition-colors flex items-center gap-1"
                         >
                           View Appeal
                         </button>
@@ -496,25 +508,28 @@ export default function MySubmissionsPage() {
                     )}
 
                     {isRejected && (
-                      <div className="flex flex-col items-end gap-1.5">
-                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-red-500/15 text-red-400 border border-red-500/30">
+                      <div className="flex flex-col items-end gap-2">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider bg-red-500/10 text-red-400 border border-red-500/30 pointer-events-none select-none">
                           <XCircle className="w-3.5 h-3.5" />
-                          REJECTED
+                          Rejected
                         </span>
                         <div className="flex items-center gap-2">
                           {sub.rejection_reason && (
                             <button
+                              type="button"
                               onClick={() => setSelectedReason(sub.rejection_reason)}
-                              className="text-[10px] text-slate-400 hover:text-white underline"
+                              className="h-8 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs font-semibold transition-colors flex items-center gap-1"
                             >
-                              Reason
+                              <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
+                              <span>Reason</span>
                             </button>
                           )}
                           <button
+                            type="button"
                             onClick={() => handleOpenAppeal(sub)}
-                            className="px-2.5 py-1 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-[10px] font-bold transition-colors"
+                            className="h-8 px-3 rounded-lg bg-brand-cyan/15 hover:bg-brand-cyan/25 text-brand-cyan border border-brand-cyan/40 text-xs font-semibold transition-colors flex items-center gap-1"
                           >
-                            Appeal Clip
+                            <span>Appeal Clip</span>
                           </button>
                         </div>
                       </div>
@@ -543,8 +558,9 @@ export default function MySubmissionsPage() {
             </p>
             <div className="flex justify-end">
               <button
+                type="button"
                 onClick={() => setSelectedReason(null)}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs"
+                className="h-9 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs"
               >
                 Close
               </button>
@@ -563,6 +579,7 @@ export default function MySubmissionsPage() {
                 Appeal Clip Rejection
               </h3>
               <button
+                type="button"
                 onClick={() => setAppealingSubmission(null)}
                 className="text-slate-400 hover:text-white p-1"
               >
@@ -589,7 +606,7 @@ export default function MySubmissionsPage() {
             )}
 
             {appealSuccess && (
-              <div className="p-3 rounded-xl bg-brand-emerald/10 border border-brand-emerald/30 text-xs text-brand-emerald mb-4 flex items-center gap-2">
+              <div className="p-3 rounded-xl bg-brand-cyan/10 border border-brand-cyan/30 text-xs text-brand-cyan mb-4 flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
                 <span>{appealSuccess}</span>
               </div>
@@ -606,9 +623,9 @@ export default function MySubmissionsPage() {
                   placeholder="Explain why this clip should be reconsidered (e.g. hashtags added, audio fixed, clip conforms to guidelines, timestamp proof)..."
                   value={appealExplanation}
                   onChange={(e) => setAppealExplanation(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-purple-400"
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-cyan"
                 />
-                <span className="text-[11px] text-slate-500 mt-1 block">
+                <span className="text-xs text-slate-400 mt-1 block">
                   Staff managers will re-evaluate your clip link alongside your explanation.
                 </span>
               </div>
@@ -618,16 +635,16 @@ export default function MySubmissionsPage() {
                   type="button"
                   disabled={submittingAppeal}
                   onClick={() => setAppealingSubmission(null)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs"
+                  className="h-9 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingAppeal || !appealExplanation.trim()}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-brand-cyan text-black font-black text-xs transition-opacity hover:opacity-95 disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-purple-500/20"
+                  className="h-9 px-5 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-bold text-xs transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 flex items-center gap-2 shadow-md shadow-cyan-500/20"
                 >
-                  {submittingAppeal ? <Loader2 className="w-4 h-4 animate-spin text-black" /> : <Send className="w-4 h-4" />}
+                  {submittingAppeal ? <Loader2 className="w-4 h-4 animate-spin text-slate-950" /> : <Send className="w-4 h-4 text-slate-950" />}
                   <span>{submittingAppeal ? "Submitting Appeal..." : "Submit Appeal to Managers"}</span>
                 </button>
               </div>
@@ -646,6 +663,7 @@ export default function MySubmissionsPage() {
                 Appeal Under Review
               </h3>
               <button
+                type="button"
                 onClick={() => setSelectedAppeal(null)}
                 className="text-slate-400 hover:text-white"
               >
@@ -655,19 +673,19 @@ export default function MySubmissionsPage() {
 
             <div className="space-y-3 text-xs">
               <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20">
-                <span className="text-[11px] font-bold text-red-400 uppercase tracking-wider block mb-1">
+                <span className="text-xs font-bold text-red-400 uppercase tracking-wider block mb-1">
                   Original Rejection Reason
                 </span>
                 <p className="text-slate-300">{selectedAppeal.rejection_reason || "None recorded"}</p>
               </div>
 
               <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
-                <span className="text-[11px] font-bold text-purple-400 uppercase tracking-wider block mb-1">
+                <span className="text-xs font-bold text-purple-400 uppercase tracking-wider block mb-1">
                   Your Submitted Appeal Justification
                 </span>
                 <p className="text-slate-200">{selectedAppeal.appeal_reason || "Pending justification"}</p>
                 {selectedAppeal.appealed_at && (
-                  <span className="text-[10px] text-slate-500 block mt-2">
+                  <span className="text-xs text-slate-400 block mt-2">
                     Appealed on {new Date(selectedAppeal.appealed_at).toLocaleString()}
                   </span>
                 )}
@@ -676,8 +694,9 @@ export default function MySubmissionsPage() {
 
             <div className="flex justify-end pt-2">
               <button
+                type="button"
                 onClick={() => setSelectedAppeal(null)}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs"
+                className="h-9 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs"
               >
                 Close
               </button>

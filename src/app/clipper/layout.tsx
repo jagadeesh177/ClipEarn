@@ -13,14 +13,10 @@ import {
   DollarSign,
   Share2,
   BookOpen,
-  Trophy,
   MessageSquare,
-  Zap,
   LogOut,
   Menu,
   X,
-  Sun,
-  Moon,
   HelpCircle,
   ExternalLink,
   MessageCircle,
@@ -32,7 +28,6 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
-  const [lightMode, setLightMode] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
 
   useEffect(() => {
@@ -75,17 +70,10 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
     { label: "Referrals", href: "/clipper/referrals", icon: Share2 },
   ];
 
-  const allNav = [
-    { label: "Guidelines", href: "/clipper/guidelines", icon: BookOpen },
-    { label: "Leaderboard", href: "/clipper/leaderboard", icon: Trophy },
-    { label: "ClipEarn Chat", href: "/clipper/chat", icon: MessageSquare },
-    { label: "ClipEarn Marketplace", href: "/clipper/marketplace", icon: Zap },
-  ];
-
   const userInitial = user?.username ? user.username.charAt(0).toUpperCase() : "A";
 
   return (
-    <div className={`min-h-screen ${lightMode ? "bg-slate-900" : "bg-[#070A0F]"} text-slate-100 flex flex-col md:flex-row relative`}>
+    <div className="min-h-screen bg-[#070A0F] text-slate-100 flex flex-col md:flex-row relative">
       {/* Mobile Topbar */}
       <div className="md:hidden flex items-center justify-between p-4 bg-[#0A0F1D] border-b border-slate-800 sticky top-0 z-40">
         <ClipEarnLogo size="sm" href="/clipper/dashboard" />
@@ -124,7 +112,7 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
-        <div className="p-5 overflow-y-auto">
+        <div className="p-5 overflow-y-auto flex-1 min-h-0">
           {/* Logo */}
           <div className="pb-5 border-b border-slate-800/60">
             <ClipEarnLogo size="md" href="/clipper/dashboard" />
@@ -133,7 +121,7 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
           {/* PERSONAL Group */}
           <div className="mt-5">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3">
-              PERSONAL
+              CREATOR WORKSPACE
             </span>
             <div className="mt-2 space-y-1">
               {personalNav.map((item) => {
@@ -164,38 +152,10 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
               })}
             </div>
           </div>
-
-          {/* ALL Group */}
-          <div className="mt-5">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3">
-              ALL
-            </span>
-            <div className="mt-2 space-y-1">
-              {allNav.map((item) => {
-                const Icon = item.icon;
-                const isActive = pathname === item.href;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                      isActive
-                        ? "bg-brand-cyan text-slate-950 font-bold shadow-md shadow-cyan-500/25"
-                        : "text-slate-400 hover:text-white hover:bg-slate-900/80"
-                    }`}
-                  >
-                    <Icon className={`w-4 h-4 ${isActive ? "text-slate-950 stroke-[2.2]" : "text-slate-400"}`} />
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
         </div>
 
         {/* User Card at bottom of sidebar matching brand cyan */}
-        <div className="p-4 border-t border-slate-800/80 bg-[#080C14]">
+        <div className="p-4 border-t border-slate-800/80 bg-[#080C14] shrink-0">
           <div className="flex items-center gap-3">
             {/* Circular initial avatar in bright cyan circle */}
             <div className="w-10 h-10 rounded-full bg-brand-cyan text-slate-950 font-black text-sm flex items-center justify-center shrink-0 shadow-sm">
@@ -213,16 +173,7 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
           </div>
 
           {/* Action buttons */}
-          <div className="mt-3 space-y-1.5">
-            <button
-              type="button"
-              onClick={() => setLightMode(!lightMode)}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white text-xs font-semibold transition-colors"
-            >
-              {lightMode ? <Moon className="w-3.5 h-3.5 text-yellow-400" /> : <Sun className="w-3.5 h-3.5 text-yellow-400" />}
-              <span>{lightMode ? "Dark Mode" : "Light Mode"}</span>
-            </button>
-
+          <div className="mt-3">
             <button
               type="button"
               onClick={handleLogout}
@@ -235,8 +186,8 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+      {/* Main Content Area with padding at bottom for floating elements */}
+      <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 pb-28 max-w-7xl mx-auto w-full">
         {children}
       </main>
 
