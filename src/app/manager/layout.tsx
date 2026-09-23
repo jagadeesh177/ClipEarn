@@ -160,17 +160,23 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
         </div>
 
         {/* Manager User & Worker Trigger */}
-        <div className="p-5 border-t border-slate-800/80 bg-[#080C17] space-y-3">
+        <div className="p-5 border-t border-slate-800/80 bg-[#080C17] space-y-3.5">
           {/* Worker Sync Button */}
-          <button
-            onClick={handleTriggerSync}
-            disabled={syncingViews}
-            className="w-full py-2 px-3 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 text-slate-400 hover:text-slate-200 border border-slate-800 hover:border-slate-700 text-xs font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50 group"
-            title="Trigger 8-Hour View Sync Worker Manually"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 text-slate-500 group-hover:text-brand-cyan transition-colors ${syncingViews ? "animate-spin text-brand-cyan" : ""}`} />
-            <span>{syncingViews ? "Syncing Views..." : "Trigger View Worker"}</span>
-          </button>
+          <div className="space-y-1.5">
+            <span className="text-xs font-semibold text-slate-400 px-1 tracking-normal">
+              System Utilities
+            </span>
+            <button
+              type="button"
+              onClick={handleTriggerSync}
+              disabled={syncingViews}
+              className="w-full py-2.5 px-3 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 text-xs font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-50 group shadow-sm active:scale-[0.98]"
+              title="Trigger 8-Hour View Sync Worker Manually"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-slate-400 group-hover:text-brand-cyan transition-colors ${syncingViews ? "animate-spin text-brand-cyan" : ""}`} />
+              <span>{syncingViews ? "Syncing Views..." : "Trigger View Worker"}</span>
+            </button>
+          </div>
 
           <div className="flex items-center justify-between pt-2 border-t border-slate-800/60">
             <div className="flex items-center gap-2.5">
