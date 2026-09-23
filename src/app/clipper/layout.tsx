@@ -30,6 +30,7 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
   const [user, setUser] = useState<any>(() => clientCache.get("clipper_user_me"));
   const [unreadNotifications, setUnreadNotifications] = useState<number>(() => clientCache.get("clipper_unread_count") || 0);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
 
   useEffect(() => {
     // Keep strictly dark (pure black) theme
@@ -281,14 +282,22 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
         {/* Sidebar Footer with User Info */}
         <div className="p-5 pb-6 border-t border-slate-800/80 bg-[#080C14] shrink-0 space-y-3.5">
           <div className="flex items-center gap-3">
-            {/* Circular initial avatar in bright cyan circle */}
-            <div className="w-10 h-10 rounded-full bg-brand-cyan text-slate-950 font-black text-sm flex items-center justify-center shrink-0 shadow-sm">
-              {userInitial}
-            </div>
+            {user?.avatar_url && !avatarError ? (
+              <img
+                src={user.avatar_url}
+                alt={user?.username || "Avatar"}
+                onError={() => setAvatarError(true)}
+                className="w-10 h-10 rounded-full object-cover border border-slate-700 bg-slate-800 shrink-0 shadow-sm"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-brand-cyan text-slate-950 font-black text-sm flex items-center justify-center shrink-0 shadow-sm">
+                {userInitial}
+              </div>
+            )}
 
             <div className="overflow-hidden flex-1 min-w-0">
               <div className="text-xs font-bold text-white truncate">
-                {user?.username || "Anya"}
+                {user?.username || "Clipper"}
               </div>
               <span className="inline-block px-2 py-0.5 rounded-full bg-brand-cyan/15 border border-brand-cyan/30 text-xs font-semibold text-brand-cyan">
                 Clipper
