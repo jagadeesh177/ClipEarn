@@ -23,6 +23,7 @@ import {
   MessageSquare,
   HelpCircle,
   X,
+  ChevronRight,
 } from "lucide-react";
 
 // Platform Icons
@@ -252,16 +253,35 @@ export default function CampaignDetailsPage() {
 
   return (
     <div className="space-y-6 animate-fadeIn pb-12">
-      {/* Top Header Section matching screenshot */}
+      {/* Top Header Section */}
       <div className="space-y-3">
+        {/* Breadcrumb Navigation - establishes clear hierarchy */}
+        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-slate-400">
+          <Link
+            href="/clipper/campaigns"
+            className="hover:text-brand-cyan transition-colors flex items-center gap-1.5"
+          >
+            <Compass className="w-3.5 h-3.5" />
+            <span>Browse Campaigns</span>
+          </Link>
+          <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
+          <span className="text-slate-200 font-medium truncate max-w-xs">{campaign.name}</span>
+        </nav>
+
         <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
           {campaign.name}
         </h1>
 
         <div className="text-xs text-slate-400 space-y-1">
-          <p className="font-semibold text-slate-300">{campaign.brand_name || campaign.name}</p>
+          {campaign.brand_name && campaign.brand_name.trim().toLowerCase() !== campaign.name.trim().toLowerCase() ? (
+            <p className="font-semibold text-slate-300">Brand: {campaign.brand_name}</p>
+          ) : (
+            <p className="text-slate-400 font-medium">Verified Campaign</p>
+          )}
           <p className="text-slate-400">
-            {campaign.description || `Clip ${campaign.name} & earn $${Number(campaign.cpm).toFixed(2)} per 1,000 views.`}
+            {campaign.description && campaign.description.trim().toLowerCase() !== campaign.name.trim().toLowerCase()
+              ? campaign.description
+              : `Clip content & earn $${Number(campaign.cpm).toFixed(2)} per 1,000 views.`}
           </p>
         </div>
 
@@ -269,7 +289,7 @@ export default function CampaignDetailsPage() {
         <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400 font-medium pt-1">
           <div className="flex items-center gap-1.5">
             <Calendar className="w-3.5 h-3.5 text-slate-500" />
-            <span>TBD</span>
+            <span>Active</span>
           </div>
 
           <div className="flex items-center gap-1.5 text-slate-300">
@@ -283,19 +303,15 @@ export default function CampaignDetailsPage() {
           </div>
         </div>
 
-        {/* Action button & Submissions pill row */}
-        <div className="flex items-center gap-3 pt-2">
+        {/* Action button row */}
+        <div className="pt-2">
           <Link
             href="/clipper/campaigns"
-            className="px-4 py-2 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-cyan-500/20 active:scale-[0.98]"
+            className="px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white font-semibold text-xs inline-flex items-center gap-1.5 transition-colors active:scale-[0.98]"
           >
-            <ArrowLeft className="w-3.5 h-3.5 stroke-[2.5]" />
+            <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back to Campaigns</span>
           </Link>
-
-          <span className="px-4 py-2 rounded-xl bg-brand-cyan text-slate-950 font-bold text-xs">
-            Submissions
-          </span>
         </div>
       </div>
 
@@ -439,18 +455,39 @@ export default function CampaignDetailsPage() {
 
                           {/* Link and Date */}
                           <div className="min-w-0 flex-1">
-                            <a
-                              href={sub.post_url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-xs text-white hover:text-brand-cyan font-mono truncate block"
-                              title={sub.post_url}
-                            >
-                              {sub.post_url}
-                            </a>
-                            <span className="text-[11px] text-slate-500 mt-0.5 block">
-                              {formattedDate}
-                            </span>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-xs font-bold text-white">
+                                {sub.platform === "INSTAGRAM"
+                                  ? "Instagram Reel"
+                                  : sub.platform === "TIKTOK"
+                                  ? "TikTok Clip"
+                                  : "YouTube Short"}
+                              </span>
+                              {sub.account_username && (
+                                <span className="text-xs text-slate-400 font-medium">
+                                  @{sub.account_username.replace(/^@/, "")}
+                                </span>
+                              )}
+                              <a
+                                href={sub.post_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                aria-label={`View submitted ${sub.platform || "clip"} on external site`}
+                                className="inline-flex items-center gap-1 text-xs text-brand-cyan hover:underline font-semibold"
+                              >
+                                <span>View Post</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+                              <span>Submitted {formattedDate}</span>
+                              {sub.platform_post_id && (
+                                <>
+                                  <span className="text-slate-600">&bull;</span>
+                                  <span className="font-mono text-xs text-slate-500">ID: {sub.platform_post_id}</span>
+                                </>
+                              )}
+                            </div>
                           </div>
                         </div>
 
@@ -485,7 +522,7 @@ export default function CampaignDetailsPage() {
                               </span>
                               <button
                                 onClick={() => handleOpenAppeal(sub)}
-                                className="px-2.5 py-0.5 rounded-lg bg-slate-800 hover:bg-brand-cyan hover:text-black text-brand-cyan text-[11px] font-bold transition-colors"
+                                className="px-2.5 py-1 rounded-lg border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors"
                               >
                                 Appeal
                               </button>
@@ -632,10 +669,10 @@ export default function CampaignDetailsPage() {
 
         {/* Right Column (4 cols on large screens) matching screenshot */}
         <div className="lg:col-span-4 space-y-5">
-          {/* CAMPAIGN DETAILS Card */}
+          {/* Campaign Details Card */}
           <div className="p-5 sm:p-6 rounded-2xl bg-[#0D131D] border border-slate-800/80 shadow-xl space-y-4 text-xs">
-            <h3 className="font-bold text-slate-400 uppercase tracking-wider text-[11px]">
-              CAMPAIGN DETAILS
+            <h3 className="text-xs font-semibold text-slate-300">
+              Campaign Details
             </h3>
 
             <div className="space-y-3.5">
@@ -700,10 +737,10 @@ export default function CampaignDetailsPage() {
             </div>
           </div>
 
-          {/* SUPPORTED PLATFORMS Card matching screenshot */}
+          {/* Supported Platforms Card */}
           <div className="p-5 sm:p-6 rounded-2xl bg-[#0D131D] border border-slate-800/80 shadow-xl space-y-3.5">
-            <h3 className="font-bold text-slate-400 uppercase tracking-wider text-[11px]">
-              SUPPORTED PLATFORMS
+            <h3 className="text-xs font-semibold text-slate-300">
+              Supported Platforms
             </h3>
 
             <div className="grid grid-cols-2 gap-2 text-xs font-semibold">
@@ -744,10 +781,10 @@ export default function CampaignDetailsPage() {
               </div>
               <div>
                 <h3 className="font-bold text-white text-xs">Join Clipper Discord</h3>
-                <p className="text-[11px] text-slate-400">Official ClipEarn Community</p>
+                <p className="text-xs text-slate-400">Official ClipEarn Community</p>
               </div>
             </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
+            <p className="text-xs text-slate-400 leading-relaxed">
               Connect with fellow clippers, get viral hooks &amp; content ideas, and get direct 24/7 campaign support.
             </p>
             <a
@@ -819,7 +856,7 @@ export default function CampaignDetailsPage() {
                 <button
                   type="button"
                   onClick={() => setAppealModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-colors"
+                  className="px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition-colors"
                 >
                   Cancel
                 </button>

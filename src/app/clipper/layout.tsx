@@ -214,7 +214,7 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
             <div className="mt-2.5 space-y-1.5">
               {personalNav.map((item) => {
                 const Icon = item.icon;
-                const isActive = pathname === item.href || (item.href === "/clipper/campaigns" && pathname.startsWith("/clipper/campaigns"));
+                const isActive = pathname === item.href;
                 return (
                   <Link
                     key={item.href}
