@@ -19,15 +19,15 @@ const config: Config = {
         },
         brand: {
           cyan: "#00F2FE",
-          teal: "#1cf7fd",
-          emerald: "#1cf7fd",
-          neon: "#1cf7fd",
+          teal: "#00F2FE",
+          emerald: "#00F2FE",
+          neon: "#00F2FE",
           dark: "#05080E",
           surface: "#0A0F1D",
         },
         status: {
           pending: "#EAB308",
-          approved: "#1cf7fd",
+          approved: "#00F2FE",
           rejected: "#EF4444",
           paused: "#64748B",
         }

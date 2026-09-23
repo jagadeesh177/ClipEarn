@@ -80,7 +80,7 @@ export default function ClipperMarketplacePage() {
       <div className="pb-4 border-b border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-2.5">
-            <Zap className="w-7 h-7 text-[#00DF82]" />
+            <Zap className="w-7 h-7 text-brand-cyan" />
             ClipEarn Marketplace
           </h1>
           <p className="text-sm text-slate-400 mt-1">
@@ -88,7 +88,7 @@ export default function ClipperMarketplacePage() {
           </p>
         </div>
 
-        <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
+        <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-brand-cyan/10 border border-brand-cyan/30 text-brand-cyan text-xs font-bold">
           <Sparkles className="w-4 h-4" />
           <span>All Resources Free for Verified Clippers</span>
         </div>
@@ -101,7 +101,7 @@ export default function ClipperMarketplacePage() {
             key={c.id}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
               i === 0
-                ? "bg-[#00DF82] text-slate-950 shadow-md shadow-emerald-500/20"
+                ? "bg-brand-cyan text-slate-950 shadow-md shadow-cyan-500/25"
                 : "bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800"
             }`}
           >
@@ -120,7 +120,7 @@ export default function ClipperMarketplacePage() {
             <div>
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-[#00DF82] border border-emerald-500/30 uppercase tracking-wider">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-cyan/15 text-brand-cyan border border-brand-cyan/30 uppercase tracking-wider">
                     {item.badge}
                   </span>
                   <span className="text-xs text-slate-400 font-medium">{item.category}</span>
@@ -132,7 +132,7 @@ export default function ClipperMarketplacePage() {
                 </div>
               </div>
 
-              <h3 className="text-base font-bold text-white mt-2.5 group-hover:text-[#00DF82] transition-colors">
+              <h3 className="text-base font-bold text-white mt-2.5 group-hover:text-brand-cyan transition-colors">
                 {item.title}
               </h3>
               <p className="text-xs text-slate-400 mt-2 line-clamp-2 leading-relaxed">
@@ -148,7 +148,7 @@ export default function ClipperMarketplacePage() {
 
               <button
                 onClick={() => alert(`Download initiated: ${item.title}`)}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-[#00DF82] hover:text-slate-950 text-white font-bold text-xs transition-colors flex items-center gap-1.5"
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-brand-cyan hover:text-slate-950 text-white font-bold text-xs transition-colors flex items-center gap-1.5"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Get Free</span>

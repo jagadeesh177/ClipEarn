@@ -49,7 +49,7 @@ function DiscordIcon({ className = "w-4 h-4" }: { className?: string }) {
   );
 }
 
-// Helpers for formatted currency and views matching competitor
+// Format numbers
 function formatBudgetK(val: number): string {
   if (val >= 1_000_000) {
     return `$${(val / 1_000_000).toFixed(1)}M`;
@@ -121,7 +121,6 @@ export default function BrowseCampaignsPage() {
   const handleDiscordClick = (camp: any, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // If campaign requirements or info contains a discord link, open it, else open main discord
     window.open("https://discord.gg/clipearn", "_blank");
   };
 
@@ -137,7 +136,7 @@ export default function BrowseCampaignsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && fetchCampaigns()}
-            className="w-full bg-[#0D131D] border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-[#00DF82] transition-colors"
+            className="w-full bg-[#0D131D] border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-cyan transition-colors"
           />
         </div>
 
@@ -149,7 +148,7 @@ export default function BrowseCampaignsPage() {
               onClick={() => setSelectedPlatform(plat)}
               className={`px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap text-xs font-bold ${
                 selectedPlatform === plat
-                  ? "bg-[#00DF82] text-slate-950 shadow-sm"
+                  ? "bg-brand-cyan text-slate-950 shadow-sm"
                   : "text-slate-400 hover:text-white"
               }`}
             >
@@ -159,7 +158,7 @@ export default function BrowseCampaignsPage() {
         </div>
       </div>
 
-      {/* Campaign Cards Grid matching Competitor (3-Column Layout) */}
+      {/* Campaign Cards Grid matching Competitor (3-Column Layout in Brand Cyan) */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {[1, 2, 3, 4, 5, 6].map((n) => (
@@ -215,7 +214,7 @@ export default function BrowseCampaignsPage() {
                             }}
                           />
                         ) : (
-                          <span className="text-[#00DF82] font-black">
+                          <span className="text-brand-cyan font-black">
                             {(camp.brand_name || camp.name).charAt(0).toUpperCase()}
                           </span>
                         )}
@@ -225,20 +224,20 @@ export default function BrowseCampaignsPage() {
                       <div className="min-w-0">
                         <Link
                           href={`/clipper/campaigns/${camp.id}`}
-                          className="font-bold text-white text-sm sm:text-base hover:text-[#00DF82] transition-colors truncate block"
+                          className="font-bold text-white text-sm sm:text-base hover:text-brand-cyan transition-colors truncate block"
                           title={camp.name}
                         >
                           {camp.name}
                         </Link>
-                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-[#00DF82] border border-emerald-500/30 uppercase tracking-wider inline-block mt-0.5">
+                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-brand-cyan/15 text-brand-cyan border border-brand-cyan/30 uppercase tracking-wider inline-block mt-0.5">
                           {camp.status || "ACTIVE"}
                         </span>
                       </div>
                     </div>
 
                     {/* Avg review badge */}
-                    <div className="shrink-0 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-950/40 text-[#00DF82] border border-emerald-800/40 text-[11px] font-medium">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#00DF82]" />
+                    <div className="shrink-0 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-cyan-950/40 text-brand-cyan border border-cyan-800/40 text-[11px] font-medium">
+                      <span className="w-1.5 h-1.5 rounded-full bg-brand-cyan" />
                       <span>Avg review: {reviewDays}d</span>
                     </div>
                   </div>
@@ -276,7 +275,7 @@ export default function BrowseCampaignsPage() {
                     </div>
                   </div>
 
-                  {/* Dual Progress Bars matching Competitor */}
+                  {/* Dual Progress Bars */}
                   <div className="mt-5 space-y-3.5">
                     {/* Progress Bar 1: Budget Used */}
                     <div>
@@ -288,7 +287,7 @@ export default function BrowseCampaignsPage() {
                       </div>
                       <div className="w-full h-1.5 bg-slate-800/90 rounded-full overflow-hidden mt-1.5">
                         <div
-                          className="h-full bg-amber-400 rounded-full transition-all duration-500"
+                          className="h-full bg-brand-cyan rounded-full transition-all duration-500"
                           style={{ width: `${budgetPercent}%` }}
                         />
                       </div>
@@ -305,7 +304,7 @@ export default function BrowseCampaignsPage() {
                         </div>
                         <div className="w-full h-1.5 bg-slate-800/90 rounded-full overflow-hidden mt-1.5">
                           <div
-                            className="h-full bg-amber-400 rounded-full transition-all duration-500"
+                            className="h-full bg-blue-500 rounded-full transition-all duration-500"
                             style={{ width: `${viewsPercent}%` }}
                           />
                         </div>
@@ -314,7 +313,7 @@ export default function BrowseCampaignsPage() {
                   </div>
                 </div>
 
-                {/* Bottom Action Row: Discord Button + Join Campaign CTA */}
+                {/* Bottom Action Row: Discord Button + Join Campaign CTA in Brand Cyan */}
                 <div className="mt-5 pt-4 border-t border-slate-800/60 flex items-center gap-2.5">
                   {/* Discord Button */}
                   <button
@@ -331,9 +330,9 @@ export default function BrowseCampaignsPage() {
                   {camp.is_joined ? (
                     <Link
                       href={`/clipper/campaigns/${camp.id}`}
-                      className="flex-1 py-2.5 px-3 rounded-xl bg-[#00DF82]/15 hover:bg-[#00DF82]/25 border border-[#00DF82]/30 text-[#00DF82] font-bold text-xs flex items-center justify-center gap-1.5 transition-colors text-center"
+                      className="flex-1 py-2.5 px-3 rounded-xl bg-brand-cyan/15 hover:bg-brand-cyan/25 border border-brand-cyan/30 text-brand-cyan font-bold text-xs flex items-center justify-center gap-1.5 transition-colors text-center"
                     >
-                      <Check className="w-4 h-4 text-[#00DF82]" />
+                      <Check className="w-4 h-4 text-brand-cyan" />
                       <span>Joined &bull; Submit Clip</span>
                     </Link>
                   ) : (
@@ -341,7 +340,7 @@ export default function BrowseCampaignsPage() {
                       type="button"
                       onClick={(e) => handleJoin(camp.id, e)}
                       disabled={joiningId === camp.id}
-                      className="flex-1 py-2.5 px-3 rounded-xl bg-[#00DF82] hover:bg-[#00c874] text-slate-950 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all shadow-md shadow-emerald-500/20 active:scale-[0.98]"
+                      className="flex-1 py-2.5 px-3 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all shadow-md shadow-cyan-500/20 active:scale-[0.98]"
                     >
                       {joiningId === camp.id ? (
                         <>

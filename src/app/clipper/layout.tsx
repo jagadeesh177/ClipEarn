@@ -96,7 +96,7 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
           >
             <Bell className="w-5 h-5" />
             {unreadNotifications > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#00DF82] text-black font-bold text-[10px] rounded-full flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-brand-cyan text-black font-bold text-[10px] rounded-full flex items-center justify-center">
                 {unreadNotifications}
               </span>
             )}
@@ -146,7 +146,7 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
                     onClick={() => setMobileMenuOpen(false)}
                     className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                       isActive
-                        ? "bg-[#00DF82] text-slate-950 font-bold shadow-md shadow-emerald-500/20"
+                        ? "bg-brand-cyan text-slate-950 font-bold shadow-md shadow-cyan-500/25"
                         : "text-slate-400 hover:text-white hover:bg-slate-900/80"
                     }`}
                   >
@@ -155,7 +155,7 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
                       <span>{item.label}</span>
                     </div>
                     {item.badge && item.badge > 0 ? (
-                      <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${isActive ? "bg-slate-950 text-[#00DF82]" : "bg-[#00DF82] text-black"}`}>
+                      <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${isActive ? "bg-slate-950 text-brand-cyan" : "bg-brand-cyan text-black"}`}>
                         {item.badge}
                       </span>
                     ) : null}
@@ -181,7 +181,7 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
                     onClick={() => setMobileMenuOpen(false)}
                     className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                       isActive
-                        ? "bg-[#00DF82] text-slate-950 font-bold shadow-md shadow-emerald-500/20"
+                        ? "bg-brand-cyan text-slate-950 font-bold shadow-md shadow-cyan-500/25"
                         : "text-slate-400 hover:text-white hover:bg-slate-900/80"
                     }`}
                   >
@@ -194,11 +194,11 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
           </div>
         </div>
 
-        {/* User Card at bottom of sidebar matching competitor */}
+        {/* User Card at bottom of sidebar matching brand cyan */}
         <div className="p-4 border-t border-slate-800/80 bg-[#080C14]">
           <div className="flex items-center gap-3">
-            {/* Circular initial avatar in bright green circle */}
-            <div className="w-10 h-10 rounded-full bg-[#00DF82] text-slate-950 font-black text-sm flex items-center justify-center shrink-0 shadow-sm">
+            {/* Circular initial avatar in bright cyan circle */}
+            <div className="w-10 h-10 rounded-full bg-brand-cyan text-slate-950 font-black text-sm flex items-center justify-center shrink-0 shadow-sm">
               {userInitial}
             </div>
 
@@ -206,13 +206,13 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
               <div className="text-xs font-bold text-white truncate">
                 {user?.username || "Anya"}
               </div>
-              <span className="inline-block px-1.5 py-0.2 rounded bg-emerald-500/15 border border-emerald-500/30 text-[9px] font-bold text-[#00DF82] uppercase tracking-wider">
+              <span className="inline-block px-1.5 py-0.2 rounded bg-brand-cyan/15 border border-brand-cyan/30 text-[9px] font-bold text-brand-cyan uppercase tracking-wider">
                 CLIPPER
               </span>
             </div>
           </div>
 
-          {/* Action buttons matching competitor */}
+          {/* Action buttons */}
           <div className="mt-3 space-y-1.5">
             <button
               type="button"
@@ -240,11 +240,11 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
         {children}
       </main>
 
-      {/* Floating "Need help?" Button matching competitor screenshot */}
+      {/* Floating "Need help?" Button in Brand Cyan */}
       <div className="fixed bottom-6 right-6 z-40">
         <button
           onClick={() => setHelpOpen(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#00DF82] hover:bg-[#00c874] text-slate-950 font-bold text-xs sm:text-sm shadow-xl shadow-emerald-500/25 transition-all hover:scale-105 active:scale-95"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-bold text-xs sm:text-sm shadow-xl shadow-cyan-500/25 transition-all hover:scale-105 active:scale-95"
         >
           <MessageCircle className="w-4 h-4 fill-slate-950" />
           <span>Need help?</span>
@@ -257,7 +257,7 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
           <div className="bg-[#0D131D] border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-[#00DF82]/10 text-[#00DF82]">
+                <div className="p-2 rounded-xl bg-brand-cyan/10 text-brand-cyan">
                   <HelpCircle className="w-5 h-5" />
                 </div>
                 <div>
@@ -278,14 +278,14 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
                 href="https://discord.gg/clipearn"
                 target="_blank"
                 rel="noreferrer"
-                className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-[#00DF82]/40 flex items-center justify-between transition-colors group"
+                className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-brand-cyan/40 flex items-center justify-between transition-colors group"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-[#5865F2]/20 flex items-center justify-center text-[#5865F2]">
                     <MessageSquare className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="font-bold text-white block group-hover:text-[#00DF82]">
+                    <span className="font-bold text-white block group-hover:text-brand-cyan">
                       Join Creator Discord
                     </span>
                     <span className="text-[11px] text-slate-400">
@@ -299,14 +299,14 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
               <Link
                 href="/clipper/guidelines"
                 onClick={() => setHelpOpen(false)}
-                className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-[#00DF82]/40 flex items-center justify-between transition-colors group"
+                className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-brand-cyan/40 flex items-center justify-between transition-colors group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center text-[#00DF82]">
+                  <div className="w-8 h-8 rounded-lg bg-brand-cyan/20 flex items-center justify-center text-brand-cyan">
                     <BookOpen className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="font-bold text-white block group-hover:text-[#00DF82]">
+                    <span className="font-bold text-white block group-hover:text-brand-cyan">
                       Clipping Guidelines & Rules
                     </span>
                     <span className="text-[11px] text-slate-400">
