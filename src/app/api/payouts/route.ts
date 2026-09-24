@@ -5,7 +5,7 @@ import { getClipperEarningsSummary, requestPayout } from "@/lib/payout/engine";
 
 export async function GET() {
   try {
-    const user = await requireAuth();
+    const user = await requireAuth({ allowSuspended: true });
 
     const [summary, payouts, ledger] = await Promise.all([
       getClipperEarningsSummary(user.id),

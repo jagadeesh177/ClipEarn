@@ -133,7 +133,12 @@ function ProfileAndAccountsContent() {
         setVerificationError("");
         setVerificationSuccess(false);
       } else {
-        setAddError(data.error || "Failed to connect account");
+        const rawErr = data.error || "Failed to connect account";
+        setAddError(
+          rawErr.startsWith("ACCOUNT_SUSPENDED:")
+            ? `Account Suspended: ${rawErr.replace("ACCOUNT_SUSPENDED:", "").trim()}`
+            : rawErr
+        );
       }
     } catch {
       setAddError("Network error connecting account");
@@ -167,9 +172,12 @@ function ProfileAndAccountsContent() {
           setVerificationSuccess(false);
         }, 1800);
       } else {
+        const rawErr = data.error;
         setVerificationError(
-          data.error ||
-          "The verification code was not found in the Instagram bio. Please make sure the exact code is present in your bio and try again."
+          rawErr && rawErr.startsWith("ACCOUNT_SUSPENDED:")
+            ? `Account Suspended: ${rawErr.replace("ACCOUNT_SUSPENDED:", "").trim()}`
+            : rawErr ||
+              "The verification code was not found in the Instagram bio. Please make sure the exact code is present in your bio and try again."
         );
       }
     } catch {

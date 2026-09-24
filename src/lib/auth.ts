@@ -138,7 +138,7 @@ export async function getSessionUser(): Promise<User | null> {
       },
     });
 
-    if (!user || user.status === UserStatus.BANNED || user.status === UserStatus.SUSPENDED) {
+    if (!user || user.status === UserStatus.BANNED) {
       return null;
     }
 
@@ -166,21 +166,21 @@ export async function getSessionUser(): Promise<User | null> {
   }
 }
 
-export async function requireAuth(): Promise<User> {
+export async function requireAuth(options?: { allowSuspended?: boolean }): Promise<User> {
   const user = await getSessionUser();
   if (!user) {
     throw new Error("UNAUTHORIZED");
   }
-  if (user.status === UserStatus.SUSPENDED) {
-    throw new Error("ACCOUNT_SUSPENDED");
+  if (!options?.allowSuspended && user.status === UserStatus.SUSPENDED) {
+    throw new Error(`ACCOUNT_SUSPENDED: ${user.suspension_reason || "Account has been suspended by management."}`);
   }
   return user;
 }
 
-export async function requireRole(allowedRoles: UserRole[]): Promise<User> {
-  const user = await requireAuth();
-  if (user.status !== UserStatus.ACTIVE) {
-    throw new Error("ACCOUNT_SUSPENDED");
+export async function requireRole(allowedRoles: UserRole[], options?: { allowSuspended?: boolean }): Promise<User> {
+  const user = await requireAuth(options);
+  if (!options?.allowSuspended && user.status !== UserStatus.ACTIVE) {
+    throw new Error(`ACCOUNT_SUSPENDED: ${user.suspension_reason || "Account has been suspended by management."}`);
   }
   if (!allowedRoles.includes(user.role)) {
     throw new Error("FORBIDDEN");

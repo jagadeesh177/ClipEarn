@@ -257,7 +257,12 @@ export default function CampaignDetailsPage() {
         loadData();
         setTimeout(() => setSubmitSuccess(false), 5000);
       } else {
-        setSubmitError(data.error || "Failed to submit clip");
+        const rawErr = data.error || "Failed to submit clip";
+        setSubmitError(
+          rawErr.startsWith("ACCOUNT_SUSPENDED:")
+            ? `Account Suspended: ${rawErr.replace("ACCOUNT_SUSPENDED:", "").trim()}`
+            : rawErr
+        );
       }
     } catch {
       setSubmitError("Network error submitting clip");

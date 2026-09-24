@@ -10,12 +10,17 @@ function ClipperLoginContent() {
   const searchParams = useSearchParams();
   const refCode = searchParams.get("ref");
   const errorParam = searchParams.get("error");
+  const reasonParam = searchParams.get("reason");
 
   const [errorMessage, setErrorMessage] = useState(
     errorParam === "oauth_failed"
       ? "Discord authentication failed. Please try again."
       : errorParam === "missing_code"
       ? "Authorization code missing."
+      : errorParam === "account_suspended"
+      ? reasonParam
+        ? `Account Suspended: "${reasonParam}"`
+        : "Your account has been suspended by management."
       : ""
   );
 

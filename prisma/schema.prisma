@@ -91,6 +91,8 @@ model User {
   avatar_url            String?
   role                  UserRole              @default(CLIPPER)
   status                UserStatus            @default(ACTIVE)
+  suspension_reason     String?
+  suspended_at          DateTime?
   referral_code         String                @unique
   referred_by_id        String?
   created_at            DateTime              @default(now())

@@ -1,13 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Users, Search, ShieldAlert, ShieldCheck, Video, DollarSign, Eye, Trash2 } from "lucide-react";
+import { Users, Search, ShieldAlert, ShieldCheck, Video, DollarSign, Eye, Trash2, X } from "lucide-react";
 
 export default function ManagerClippersPage() {
   const [clippers, setClippers] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [suspendingClipper, setSuspendingClipper] = useState<{ id: string; username: string } | null>(null);
+  const [suspensionReason, setSuspensionReason] = useState("");
+  const [submittingSuspension, setSubmittingSuspension] = useState(false);
 
   const loadClippers = () => {
     setLoading(true);
@@ -24,31 +27,77 @@ export default function ManagerClippersPage() {
     loadClippers();
   }, []);
 
-  const handleToggleStatus = async (userId: string, currentStatus: string) => {
-    const nextStatus = currentStatus === "ACTIVE" ? "SUSPENDED" : "ACTIVE";
-    if (
-      !confirm(
-        `Are you sure you want to ${nextStatus === "SUSPENDED" ? "SUSPEND" : "ACTIVATE"} this clipper?`
-      )
-    )
+  const handleInitiateSuspend = (clipper: any) => {
+    setSuspendingClipper({ id: clipper.id, username: clipper.username });
+    setSuspensionReason("");
+  };
+
+  const handleConfirmSuspend = async () => {
+    if (!suspendingClipper) return;
+    if (!suspensionReason.trim()) {
+      alert("Please enter a reason for suspending this clipper.");
       return;
+    }
 
     try {
-      setUpdatingId(userId);
+      setSubmittingSuspension(true);
       const res = await fetch("/api/manager/clippers", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, status: nextStatus }),
+        body: JSON.stringify({
+          userId: suspendingClipper.id,
+          status: "SUSPENDED",
+          reason: suspensionReason.trim(),
+        }),
       });
+      const data = await res.json();
       if (res.ok) {
         setClippers((prev) =>
-          prev.map((c) => (c.id === userId ? { ...c, status: nextStatus } : c))
+          prev.map((c) =>
+            c.id === suspendingClipper.id
+              ? { ...c, status: "SUSPENDED", suspension_reason: suspensionReason.trim(), suspended_at: new Date() }
+              : c
+          )
         );
+        setSuspendingClipper(null);
+        setSuspensionReason("");
       } else {
-        alert("Failed to update user status");
+        alert(data.error || "Failed to suspend clipper");
       }
     } catch {
-      alert("Network error");
+      alert("Network error while suspending clipper");
+    } finally {
+      setSubmittingSuspension(false);
+    }
+  };
+
+  const handleReactivate = async (clipper: any) => {
+    if (!confirm(`Are you sure you want to lift the suspension for @${clipper.username}?`)) return;
+
+    try {
+      setUpdatingId(clipper.id);
+      const res = await fetch("/api/manager/clippers", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: clipper.id,
+          status: "ACTIVE",
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setClippers((prev) =>
+          prev.map((c) =>
+            c.id === clipper.id
+              ? { ...c, status: "ACTIVE", suspension_reason: null, suspended_at: null }
+              : c
+          )
+        );
+      } else {
+        alert(data.error || "Failed to re-activate clipper");
+      }
+    } catch {
+      alert("Network error while re-activating clipper");
     } finally {
       setUpdatingId(null);
     }
@@ -174,30 +223,43 @@ export default function ManagerClippersPage() {
                     </td>
 
                     <td className="py-4 pr-3">
-                      <span
-                        className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                          c.status === "ACTIVE"
-                            ? "bg-brand-emerald/15 text-brand-emerald border border-brand-emerald/30"
-                            : "bg-red-500/15 text-red-400 border border-red-500/30"
-                        }`}
-                      >
-                        {c.status}
-                      </span>
+                      <div className="space-y-1">
+                        <span
+                          className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                            c.status === "ACTIVE"
+                              ? "bg-brand-emerald/15 text-brand-emerald border border-brand-emerald/30"
+                              : "bg-red-500/15 text-red-400 border border-red-500/30"
+                          }`}
+                        >
+                          {c.status}
+                        </span>
+                        {c.status === "SUSPENDED" && c.suspension_reason && (
+                          <div className="text-[10px] text-slate-400 max-w-[180px] truncate" title={c.suspension_reason}>
+                            <span className="text-red-400 font-semibold">Reason:</span> {c.suspension_reason}
+                          </div>
+                        )}
+                      </div>
                     </td>
 
                     <td className="py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleToggleStatus(c.id, c.status)}
-                          disabled={updatingId === c.id}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                            c.status === "ACTIVE"
-                              ? "bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/30"
-                              : "bg-brand-emerald/15 hover:bg-brand-emerald/25 text-brand-emerald border border-brand-emerald/30"
-                          }`}
-                        >
-                          {c.status === "ACTIVE" ? "Suspend" : "Re-activate"}
-                        </button>
+                        {c.status === "ACTIVE" ? (
+                          <button
+                            onClick={() => handleInitiateSuspend(c)}
+                            disabled={updatingId === c.id}
+                            className="px-3 py-1.5 rounded-lg text-xs font-bold transition-colors bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/30"
+                          >
+                            Suspend
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleReactivate(c)}
+                            disabled={updatingId === c.id}
+                            className="px-3 py-1.5 rounded-lg text-xs font-bold transition-colors bg-brand-emerald/15 hover:bg-brand-emerald/25 text-brand-emerald border border-brand-emerald/30"
+                          >
+                            Re-activate
+                          </button>
+                        )}
                         <button
                           onClick={() => handleDeleteClipper(c.id, c.username)}
                           disabled={updatingId === c.id}
@@ -215,6 +277,101 @@ export default function ManagerClippersPage() {
           </div>
         )}
       </div>
+
+      {/* Suspension Modal with Required Reason */}
+      {suspendingClipper && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-[#0F141F] border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-red-500/15 text-red-400">
+                  <ShieldAlert className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">
+                    Suspend @{suspendingClipper.username}
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    State the reason why this clipper is being suspended
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSuspendingClipper(null)}
+                disabled={submittingSuspension}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-300">
+                <span className="font-bold text-white">Notice:</span> This suspension reason will be immediately displayed on the clipper&apos;s screen and notifications.
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                  Common Reasons:
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    "Submitting clips from unverified accounts",
+                    "Artificial or botting view activity detected",
+                    "Failure to follow campaign rules & hashtags",
+                    "Submitting copyright-infringing content",
+                  ].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setSuspensionReason(preset)}
+                      className={`text-[11px] px-2.5 py-1 rounded-lg border transition-all text-left ${
+                        suspensionReason === preset
+                          ? "bg-brand-cyan/20 border-brand-cyan text-brand-cyan font-bold"
+                          : "bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700"
+                      }`}
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                  Suspension Reason <span className="text-red-400">*</span>
+                </label>
+                <textarea
+                  rows={3}
+                  value={suspensionReason}
+                  onChange={(e) => setSuspensionReason(e.target.value)}
+                  placeholder="Explain why this clipper account is being suspended..."
+                  className="w-full bg-[#070A0F] border border-slate-800 rounded-xl p-3 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-red-500 transition-colors"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setSuspendingClipper(null)}
+                  disabled={submittingSuspension}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white bg-slate-900 hover:bg-slate-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmSuspend}
+                  disabled={submittingSuspension || !suspensionReason.trim()}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-red-600 hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-red-600/20 flex items-center gap-2"
+                >
+                  {submittingSuspension ? "Suspending..." : "Confirm Suspension"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

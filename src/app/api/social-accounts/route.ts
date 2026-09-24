@@ -7,7 +7,7 @@ import { flagSuspiciousActivity } from "@/lib/fraud";
 
 export async function GET() {
   try {
-    const user = await requireAuth();
+    const user = await requireAuth({ allowSuspended: true });
     const accounts = await prisma.socialAccount.findMany({
       where: {
         user_id: user.id,

@@ -8,7 +8,7 @@ import { flagSuspiciousActivity } from "@/lib/fraud";
 
 export async function GET(request: Request) {
   try {
-    const user = await requireAuth();
+    const user = await requireAuth({ allowSuspended: true });
     const { searchParams } = new URL(request.url);
     const campaignId = searchParams.get("campaign_id");
     const status = searchParams.get("status") as SubmissionStatus | null;

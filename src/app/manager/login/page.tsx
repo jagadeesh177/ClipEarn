@@ -38,7 +38,12 @@ function ManagerLoginContent() {
       setError("This Discord account is not linked to an authorized Campaign Manager. If this is your first time, please enter your invitation key below.");
       setShowInviteInput(true);
     } else if (errorParam === "account_suspended") {
-      setError("Your Campaign Manager access has been suspended or revoked by an administrator.");
+      const reason = searchParams.get("reason");
+      setError(
+        reason
+          ? `Your Campaign Manager access has been suspended: "${reason}"`
+          : "Your Campaign Manager access has been suspended or revoked by an administrator."
+      );
     } else if (errorParam === "key_invalid") {
       setError("The invitation key is invalid or has expired.");
       setShowInviteInput(true);

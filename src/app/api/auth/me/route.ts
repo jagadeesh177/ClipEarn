@@ -16,6 +16,8 @@ export async function GET() {
       role: user.role,
       avatar_url: user.avatar_url,
       status: user.status,
+      suspension_reason: user.suspension_reason,
+      suspended_at: user.suspended_at,
       referral_code: user.referral_code,
       social_accounts: (user as any).social_accounts || [],
     },

@@ -53,6 +53,8 @@ export async function GET(request: Request) {
         discord_id: c.discord_id,
         avatar_url: c.avatar_url,
         status: c.status,
+        suspension_reason: c.suspension_reason,
+        suspended_at: c.suspended_at,
         referral_code: c.referral_code,
         connected_accounts_count: c.social_accounts.length,
         verified_accounts_count: c.social_accounts.filter((a) => a.verification_status === "VERIFIED").length,
@@ -75,23 +77,46 @@ export async function GET(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const manager = await requireRole([UserRole.MANAGER, UserRole.ADMIN]);
-    const { userId, status } = await request.json();
+    const { userId, status, reason } = await request.json();
 
     if (!userId || !status) {
       return NextResponse.json({ error: "User ID and status are required." }, { status: 400 });
     }
 
+    if (status === "SUSPENDED" && (!reason || !reason.trim())) {
+      return NextResponse.json({ error: "Please provide a reason for suspending this clipper." }, { status: 400 });
+    }
+
+    const isSuspending = status === "SUSPENDED";
+    const cleanedReason = isSuspending ? reason.trim() : null;
+
     const updated = await prisma.user.update({
       where: { id: userId },
-      data: { status: status as UserStatus },
+      data: {
+        status: status as UserStatus,
+        suspension_reason: cleanedReason,
+        suspended_at: isSuspending ? new Date() : null,
+      },
     });
+
+    // Notify clipper about their status change
+    await prisma.notification.create({
+      data: {
+        user_id: userId,
+        type: isSuspending ? "ACCOUNT_SUSPENDED" : "ACCOUNT_REACTIVATED",
+        title: isSuspending ? "Account Suspended" : "Account Re-activated",
+        message: isSuspending
+          ? `Your account has been suspended by management. Reason: ${cleanedReason}`
+          : "Your account suspension has been lifted. You can now participate in campaigns and submit clips.",
+      },
+    }).catch(() => {});
 
     await logAuditEvent({
       actorId: manager.id,
-      action: `USER_STATUS_${status}`,
+      action: isSuspending ? "USER_STATUS_SUSPENDED" : "USER_STATUS_ACTIVE",
       targetType: "USER",
       targetId: userId,
-      newValue: { status },
+      newValue: { status, reason: cleanedReason },
     });
 
     return NextResponse.json({ success: true, user: updated });

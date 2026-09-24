@@ -5,7 +5,7 @@ import { format, subDays, startOfDay, eachDayOfInterval } from "date-fns";
 
 export async function GET(request: Request) {
   try {
-    const user = await requireAuth();
+    const user = await requireAuth({ allowSuspended: true });
     const { searchParams } = new URL(request.url);
     const range = searchParams.get("range") || "30d"; // 7d, 30d, 90d
 

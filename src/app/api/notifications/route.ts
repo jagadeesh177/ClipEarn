@@ -4,7 +4,7 @@ import { requireAuth } from "@/lib/auth";
 
 export async function GET() {
   try {
-    const user = await requireAuth();
+    const user = await requireAuth({ allowSuspended: true });
 
     const [notifications, unreadCount] = await Promise.all([
       prisma.notification.findMany({
@@ -31,7 +31,7 @@ export async function GET() {
 
 export async function PATCH(request: Request) {
   try {
-    const user = await requireAuth();
+    const user = await requireAuth({ allowSuspended: true });
     const { notificationId, markAll } = await request.json();
 
     if (markAll) {

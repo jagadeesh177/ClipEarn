@@ -130,14 +130,16 @@ export async function GET(request: Request) {
         return NextResponse.redirect(new URL("/manager/login?error=not_authorized", request.url));
       }
       if (user.status === UserStatus.SUSPENDED || user.status === UserStatus.BANNED) {
-        return NextResponse.redirect(new URL("/manager/login?error=account_suspended", request.url));
+        const reason = user.suspension_reason ? `&reason=${encodeURIComponent(user.suspension_reason)}` : "";
+        return NextResponse.redirect(new URL(`/manager/login?error=account_suspended${reason}`, request.url));
       }
     }
 
     // 3. First-Time Manager Invitation Check:
     if (requestedRole === "MANAGER" && isManagerInvite) {
       if (user && (user.status === UserStatus.SUSPENDED || user.status === UserStatus.BANNED)) {
-        return NextResponse.redirect(new URL("/manager/login?error=account_suspended", request.url));
+        const reason = user.suspension_reason ? `&reason=${encodeURIComponent(user.suspension_reason)}` : "";
+        return NextResponse.redirect(new URL(`/manager/login?error=account_suspended${reason}`, request.url));
       }
     }
 
