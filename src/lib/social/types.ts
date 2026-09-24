@@ -58,6 +58,8 @@ export interface NormalizedMetrics {
   authorDisplayName?: string;
   authorPlatformUserId?: string;
   rawDetails?: Record<string, any>;
+  errorCode?: string;
+  errorMessage?: string;
   error?: string;
 }
 

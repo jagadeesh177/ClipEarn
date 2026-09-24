@@ -11,7 +11,7 @@
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
     "prisma:seed": "node -r ts-node/register prisma/seed.ts",
-    "test": "node --loader ts-node/esm tests/run-all.ts"
+    "test": "npx tsx tests/run-all.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

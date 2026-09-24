@@ -31,8 +31,8 @@ export async function syncSubmissionViews(submissionId: string): Promise<SyncRes
     throw new Error(`Submission ${submissionId} not found`);
   }
 
-  // Only approved submissions can earn or track views
-  if (submission.status !== SubmissionStatus.APPROVED) {
+  // Skip rejected submissions from automatic tracking
+  if (submission.status === SubmissionStatus.REJECTED) {
     return {
       submissionId,
       previousViews: submission.current_views,
@@ -44,18 +44,21 @@ export async function syncSubmissionViews(submissionId: string): Promise<SyncRes
   }
 
   const campaign = submission.campaign;
+  const isApproved = submission.status === SubmissionStatus.APPROVED;
 
-  // Check if campaign is active and budget is remaining
-  const remainingBudget = Number(campaign.total_budget) - Number(campaign.used_budget);
-  if (remainingBudget <= 0 || campaign.status !== CampaignStatus.ACTIVE) {
-    return {
-      submissionId,
-      previousViews: submission.current_views,
-      newViews: submission.current_views,
-      eligibleViewsDelta: 0,
-      earningsDelta: 0,
-      status: "BUDGET_EXHAUSTED",
-    };
+  // Check if campaign is active and budget is remaining (only required for approved earning submissions)
+  if (isApproved) {
+    const remainingBudget = Number(campaign.total_budget) - Number(campaign.used_budget);
+    if (remainingBudget <= 0 || campaign.status !== CampaignStatus.ACTIVE) {
+      return {
+        submissionId,
+        previousViews: submission.current_views,
+        newViews: submission.current_views,
+        eligibleViewsDelta: 0,
+        earningsDelta: 0,
+        status: "BUDGET_EXHAUSTED",
+      };
+    }
   }
 
   // Decrypt social account access token if available
@@ -206,7 +209,34 @@ export async function syncSubmissionViews(submissionId: string): Promise<SyncRes
       });
     }
 
-    // 2. Calculate baseline for eligible views based on campaign mode
+    // 2. If submission is not yet approved (PENDING, APPEALED), update observed metrics only without generating earnings
+    if (!isApproved) {
+      await tx.submission.update({
+        where: { id: submission.id },
+        data: {
+          current_views: latestViews,
+          current_likes: latestLikes,
+          current_comments: latestComments,
+          current_shares: latestShares,
+          current_saves: latestSaves,
+          last_view_update: new Date(),
+          last_sync_status: "SUCCESS",
+          last_sync_error: null,
+          last_successful_sync: new Date(),
+        },
+      });
+
+      return {
+        submissionId: submission.id,
+        previousViews: submission.current_views,
+        newViews: latestViews,
+        eligibleViewsDelta: 0,
+        earningsDelta: 0,
+        status: "SUCCESS",
+      };
+    }
+
+    // 3. Calculate baseline for eligible views based on campaign mode (Approved submissions ONLY)
     let baselineViews = 0;
     const snapshots = submission.view_snapshots;
 
@@ -343,9 +373,9 @@ export async function syncAllApprovedSubmissions(options?: {
   const intervalHours = options?.intervalHours ?? 8;
   const cutoffTime = new Date(Date.now() - intervalHours * 60 * 60 * 1000);
 
-  const approvedSubmissions = await prisma.submission.findMany({
+  const trackableSubmissions = await prisma.submission.findMany({
     where: {
-      status: SubmissionStatus.APPROVED,
+      status: { in: [SubmissionStatus.APPROVED, SubmissionStatus.PENDING, SubmissionStatus.APPEALED] },
       campaign: {
         status: CampaignStatus.ACTIVE,
       },
@@ -362,7 +392,7 @@ export async function syncAllApprovedSubmissions(options?: {
   });
 
   const results: SyncResult[] = [];
-  for (const sub of approvedSubmissions) {
+  for (const sub of trackableSubmissions) {
     try {
       const result = await syncSubmissionViews(sub.id);
       results.push(result);

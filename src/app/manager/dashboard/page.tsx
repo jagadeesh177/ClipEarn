@@ -415,7 +415,7 @@ export default function ManagerDashboardPage() {
               {(data.totalLikes || 0).toLocaleString()}
             </div>
             <span className="text-xs text-slate-400 mt-1 block">
-              Likes across platforms
+              Complete across all 3 platforms
             </span>
           </div>
 
@@ -427,7 +427,7 @@ export default function ManagerDashboardPage() {
               {(data.totalComments || 0).toLocaleString()}
             </div>
             <span className="text-xs text-slate-400 mt-1 block">
-              Audience conversations
+              Complete across all 3 platforms
             </span>
           </div>
 
@@ -439,7 +439,7 @@ export default function ManagerDashboardPage() {
               {(data.totalShares || 0).toLocaleString()}
             </div>
             <span className="text-xs text-slate-400 mt-1 block">
-              Viral shares &amp; reposts
+              TikTok &amp; Instagram (N/A on YouTube)
             </span>
           </div>
 
@@ -451,7 +451,7 @@ export default function ManagerDashboardPage() {
               {(data.totalSaves || 0).toLocaleString()}
             </div>
             <span className="text-xs text-slate-400 mt-1 block">
-              Bookmarks &amp; saved clips
+              Instagram saves (N/A on TikTok &amp; YouTube)
             </span>
           </div>
         </div>

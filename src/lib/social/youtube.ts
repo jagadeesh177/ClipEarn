@@ -255,6 +255,8 @@ export class YouTubeProvider implements SocialProvider {
           }
 
           // YouTube Data API v3 does not expose shares or saves
+          const oembedHandle = await this.fetchAuthorHandleFromOembed(videoId);
+
           return {
             views,
             likes,
@@ -268,136 +270,81 @@ export class YouTubeProvider implements SocialProvider {
             isPrivate,
             authorPlatformUserId,
             authorDisplayName,
+            authorUsername: oembedHandle || undefined,
           };
         }
-      } catch {}
+      } catch (err: any) {
+        return {
+          views: null,
+          likes: null,
+          comments: null,
+          shares: null,
+          saves: null,
+          fetchedAt: new Date(),
+          platform: Platform.YOUTUBE,
+          platformVideoId: videoId,
+          isAvailable: false,
+          isPrivate: false,
+          errorCode: "YOUTUBE_API_ERROR",
+          errorMessage: err?.message || "Error calling YouTube Data API",
+        };
+      }
     }
 
-    // Fallback: public metrics via oEmbed / page
-    const publicMetrics = await this.fetchPublicMetrics(videoId);
+    // When API key or OAuth token is not configured
+    const oembedHandle = await this.fetchAuthorHandleFromOembed(videoId);
     return {
-      views: publicMetrics.views,
-      likes: publicMetrics.likes,
-      comments: publicMetrics.comments,
+      views: null,
+      likes: null,
+      comments: null,
       shares: null,
       saves: null,
       fetchedAt: new Date(),
       platform: Platform.YOUTUBE,
       platformVideoId: videoId,
-      isAvailable: true,
+      isAvailable: false,
       isPrivate: false,
-      authorUsername: publicMetrics.author,
-      authorDisplayName: publicMetrics.displayName,
+      authorUsername: oembedHandle || undefined,
+      errorCode: "YOUTUBE_API_KEY_REQUIRED",
+      errorMessage: "YouTube Data API v3 key (GOOGLE_API_KEY or YOUTUBE_API_KEY) is required to fetch official metrics.",
     };
   }
 
   async getVideo(postUrl: string): Promise<VideoMetadata> {
     const videoId = this.parsePostId(postUrl) || postUrl;
-    const apiKey = process.env.GOOGLE_API_KEY;
+    const norm = await this.getNormalizedMetrics(videoId);
 
-    // 1. If Google API Key is provided, try official YouTube Data API v3
-    if (apiKey && videoId) {
-      try {
-        const res = await fetch(
-          `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${videoId}&key=${apiKey}`,
-          { signal: AbortSignal.timeout(6000) }
-        );
-        const data = await res.json();
-        const item = data.items?.[0];
-        if (item) {
-          let authorHandle = "";
-          // Fetch channel customUrl / handle if channelId exists
-          if (item.snippet?.channelId) {
-            try {
-              const chRes = await fetch(
-                `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${item.snippet.channelId}&key=${apiKey}`,
-                { signal: AbortSignal.timeout(4000) }
-              );
-              const chData = await chRes.json();
-              const customUrl = chData.items?.[0]?.snippet?.customUrl;
-              if (customUrl) {
-                authorHandle = customUrl.replace(/^@/, "");
-              }
-            } catch {}
-          }
-
-          // If no handle from API, try oEmbed author_url
-          if (!authorHandle) {
-            authorHandle = await this.fetchAuthorHandleFromOembed(videoId);
-          }
-
-          const channelTitle = item.snippet?.channelTitle;
-          const cleanAuthorHandle = authorHandle && !/\s/.test(authorHandle) ? authorHandle : undefined;
-
-          return {
-            platform: Platform.YOUTUBE,
-            platform_post_id: videoId,
-            post_url: postUrl,
-            author_platform_user_id: item.snippet?.channelId,
-            author_username: cleanAuthorHandle,
-            author_display_name: channelTitle,
-            current_views: parseInt(item.statistics?.viewCount || "0", 10),
-            likes: item.statistics?.likeCount != null ? parseInt(item.statistics.likeCount, 10) : null,
-            comments: item.statistics?.commentCount != null ? parseInt(item.statistics.commentCount, 10) : null,
-            shares: null,
-            saves: null,
-            is_available: true,
-            is_private: false,
-          };
-        }
-      } catch {}
-    }
-
-    // 2. Fetch public metrics & handle from YouTube oEmbed and HTML
-    const publicMetrics = await this.fetchPublicMetrics(videoId);
     return {
       platform: Platform.YOUTUBE,
       platform_post_id: videoId,
       post_url: postUrl,
-      author_username: publicMetrics.author,
-      author_display_name: publicMetrics.displayName,
-      current_views: publicMetrics.views,
-      likes: publicMetrics.likes,
-      comments: publicMetrics.comments,
+      author_username: norm.authorUsername,
+      author_display_name: norm.authorDisplayName,
+      author_platform_user_id: norm.authorPlatformUserId,
+      current_views: norm.views ?? 0,
+      likes: norm.likes,
+      comments: norm.comments,
       shares: null,
       saves: null,
-      is_available: true,
-      is_private: false,
+      is_available: norm.isAvailable,
+      is_private: norm.isPrivate,
     };
   }
 
   async getVideoViews(platformPostId: string): Promise<number> {
-    const metrics = await this.getVideoMetrics(platformPostId);
-    return metrics.views;
+    const metrics = await this.getNormalizedMetrics(platformPostId);
+    if (metrics.views != null) {
+      return metrics.views;
+    }
+    throw new Error(metrics.errorMessage || "Unable to fetch YouTube video views via official Data API v3.");
   }
 
   async getVideoMetrics(platformPostId: string): Promise<VideoMetrics> {
-    const apiKey = process.env.GOOGLE_API_KEY;
-    if (apiKey) {
-      try {
-        const res = await fetch(
-          `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${platformPostId}&key=${apiKey}`,
-          { signal: AbortSignal.timeout(6000) }
-        );
-        const data = await res.json();
-        const stats = data.items?.[0]?.statistics;
-        if (stats) {
-          return {
-            views: parseInt(stats.viewCount || "0", 10),
-            likes: stats.likeCount != null ? parseInt(stats.likeCount, 10) : null,
-            comments: stats.commentCount != null ? parseInt(stats.commentCount, 10) : null,
-            shares: null,
-            saves: null,
-          };
-        }
-      } catch {}
-    }
-
-    const publicMetrics = await this.fetchPublicMetrics(platformPostId);
+    const norm = await this.getNormalizedMetrics(platformPostId);
     return {
-      views: publicMetrics.views,
-      likes: publicMetrics.likes,
-      comments: publicMetrics.comments,
+      views: norm.views ?? 0,
+      likes: norm.likes,
+      comments: norm.comments,
       shares: null,
       saves: null,
     };
@@ -420,87 +367,5 @@ export class YouTubeProvider implements SocialProvider {
       }
     } catch {}
     return "";
-  }
-
-  private async fetchPublicMetrics(videoId: string): Promise<{ views: number; likes: number; comments: number; author?: string; displayName?: string }> {
-    let views = 0;
-    let likes = 0;
-    let comments = 0;
-    let author: string | undefined = undefined;
-    let channelTitle: string | undefined = undefined;
-
-    // 1. Fetch oEmbed - gets author_url (which has the true handle: https://www.youtube.com/@brendanarcade)
-    try {
-      const oRes = await fetch(
-        `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`,
-        { signal: AbortSignal.timeout(5000) }
-      );
-      if (oRes.ok) {
-        const oData = await oRes.json();
-        if (oData.author_url) {
-          const hMatch = oData.author_url.match(/@([^/?#&]+)/);
-          if (hMatch) {
-            author = hMatch[1].replace(/^@/, "").trim();
-          } else {
-            const cMatch = oData.author_url.match(/\/(?:c|user)\/([^/?#&]+)/);
-            if (cMatch) author = cMatch[1].trim();
-          }
-        }
-        if (oData.author_name) {
-          channelTitle = oData.author_name;
-        }
-      }
-    } catch {}
-
-    // 2. Fetch HTML page for views, likes, and fallback handle extraction
-    try {
-      const res = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-          "Accept-Language": "en-US,en;q=0.9",
-        },
-        signal: AbortSignal.timeout(7000),
-      });
-      if (res.ok) {
-        const html = await res.text();
-        const vMatch = html.match(/itemprop="interactionCount"\s+content="(\d+)"/i) ||
-                       html.match(/"viewCount":\s*"(\d+)"/i) ||
-                       html.match(/"viewCount":"(\d+)"/i);
-        if (vMatch) views = parseInt(vMatch[1], 10);
-
-        const lMatch = html.match(/"likeCount":\s*"(\d+)"/i) ||
-                       html.match(/"label":"([0-9,]+)\s*likes"/i);
-        if (lMatch) likes = parseInt(lMatch[1].replace(/,/g, ""), 10);
-
-        // If author handle was not in oembed, find handle from HTML
-        if (!author) {
-          const handleMatch =
-            html.match(/"canonicalChannelUrl":"https?:\/\/www\.youtube\.com\/@([^"/?#&]+)"/i) ||
-            html.match(/"channelUrl":"https?:\/\/www\.youtube\.com\/@([^"/?#&]+)"/i) ||
-            html.match(/"ownerProfileUrl":"https?:\/\/www\.youtube\.com\/@([^"/?#&]+)"/i) ||
-            html.match(/href="https?:\/\/www\.youtube\.com\/@([^"/?#&]+)"/i) ||
-            html.match(/"webCommandMetadata":{"url":"\/@([^"/?#&]+)"/i) ||
-            html.match(/<link itemprop="url" href="https?:\/\/www\.youtube\.com\/@([^"/?#&]+)"/i);
-
-          if (handleMatch) {
-            author = handleMatch[1].replace(/^@/, "").trim();
-          }
-        }
-
-        if (!channelTitle) {
-          const aMatch = html.match(/<link\s+itemprop="name"\s+content="([^"]+)"/i) ||
-                         html.match(/"ownerChannelName":"([^"]+)"/i);
-          if (aMatch) channelTitle = aMatch[1];
-        }
-      }
-    } catch {}
-
-    // Ensure author does not contain spaces (a handle cannot have spaces)
-    if (author && /\s/.test(author)) {
-      if (!channelTitle) channelTitle = author;
-      author = undefined;
-    }
-
-    return { views, likes, comments, author, displayName: channelTitle };
   }
 }

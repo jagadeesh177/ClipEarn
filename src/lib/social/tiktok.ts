@@ -275,268 +275,93 @@ export class TikTokProvider implements SocialProvider {
       } catch {}
     }
 
-    // 2. Fallback: fetch public metrics via oEmbed / web
-    const publicMetrics = await this.fetchPublicMetrics(resolvedUrl || videoIdOrUrl);
-    if (publicMetrics) {
-      views = publicMetrics.views;
-      likes = publicMetrics.likes;
-      comments = publicMetrics.comments;
-      shares = (publicMetrics as any).shares ?? null;
-    }
-
+    // When no access token or video query failed
+    const oembedData = await this.fetchOembedMetadata(resolvedUrl || videoIdOrUrl);
     return {
-      views,
-      likes,
-      comments,
-      shares,
+      views: null,
+      likes: null,
+      comments: null,
+      shares: null,
       saves: null, // Unsupported on TikTok
       fetchedAt: new Date(),
       platform: Platform.TIKTOK,
       platformVideoId: postId,
-      isAvailable: true,
+      isAvailable: false,
       isPrivate: false,
-      authorUsername: publicMetrics?.author,
-      authorDisplayName: publicMetrics?.displayName,
+      authorUsername: oembedData.authorUsername,
+      authorDisplayName: oembedData.authorDisplayName,
+      errorCode: "TIKTOK_OAUTH_REQUIRED",
+      errorMessage: "TikTok account must be connected with OAuth to query video metrics through the official Video Query API.",
     };
   }
 
   async getVideo(postUrl: string): Promise<VideoMetadata> {
     const resolvedUrl = await this.resolveCanonicalUrl(postUrl);
     const postId = this.parsePostId(resolvedUrl) || this.parsePostId(postUrl) || postUrl;
-    let authorUsername: string | undefined = undefined;
-
-    // 1. Try extracting handle from resolved or post URL: https://www.tiktok.com/@username/video/12345
-    for (const u of [resolvedUrl, postUrl]) {
-      try {
-        const parsed = new URL(u.trim());
-        const m = parsed.pathname.match(/@([^/?#&]+)/);
-        if (m) {
-          const raw = m[1].replace(/^@/, "").trim();
-          if (raw && !/\s/.test(raw)) {
-            authorUsername = raw;
-            break;
-          }
-        }
-      } catch {}
-    }
-
-    let views = 0;
-    let likes = 0;
-    let comments = 0;
-    let shares: number | null = null;
-    let authorDisplayName: string | undefined = undefined;
-
-    try {
-      const targetFetchUrl = resolvedUrl !== postUrl ? resolvedUrl : postUrl;
-      const metrics = await this.fetchPublicMetrics(targetFetchUrl);
-      if (metrics) {
-        views = metrics.views;
-        likes = metrics.likes;
-        comments = metrics.comments;
-        shares = (metrics as any).shares ?? null;
-        if (metrics.author && !/\s/.test(metrics.author)) {
-          authorUsername = metrics.author;
-        }
-        if (metrics.displayName) {
-          authorDisplayName = metrics.displayName;
-        }
-      }
-    } catch {}
-
-    // Ensure authorUsername is clean and strictly a handle (no spaces)
-    if (authorUsername && (/\s/.test(authorUsername) || !/^[a-zA-Z0-9_.-]+$/.test(authorUsername))) {
-      if (!authorDisplayName) authorDisplayName = authorUsername;
-      authorUsername = undefined;
-    }
+    const norm = await this.getNormalizedMetrics(resolvedUrl || postUrl);
 
     return {
       platform: Platform.TIKTOK,
       platform_post_id: postId,
       post_url: resolvedUrl || postUrl,
-      author_username: authorUsername,
-      author_display_name: authorDisplayName,
-      current_views: views,
-      likes,
-      comments,
-      shares,
+      author_username: norm.authorUsername,
+      author_display_name: norm.authorDisplayName,
+      current_views: norm.views ?? 0,
+      likes: norm.likes,
+      comments: norm.comments,
+      shares: norm.shares,
       saves: null,
-      is_available: true,
-      is_private: false,
+      is_available: norm.isAvailable,
+      is_private: norm.isPrivate,
     };
   }
 
   async getVideoViews(platformPostId: string): Promise<number> {
-    const metrics = await this.getVideoMetrics(platformPostId);
-    return metrics.views;
-  }
-
-  async getVideoMetrics(platformPostId: string, postUrl?: string): Promise<VideoMetrics> {
-    if (postUrl) {
-      try {
-        const metrics = await this.fetchPublicMetrics(postUrl);
-        if (metrics) {
-          return {
-            views: metrics.views,
-            likes: metrics.likes,
-            comments: metrics.comments,
-            shares: (metrics as any).shares ?? null,
-            saves: null,
-          };
-        }
-      } catch {}
+    const metrics = await this.getNormalizedMetrics(platformPostId);
+    if (metrics.views != null) {
+      return metrics.views;
     }
-    return { views: 0, likes: 0, comments: 0, shares: null, saves: null };
+    throw new Error(metrics.errorMessage || "Unable to fetch TikTok video views via official Video Query API.");
   }
 
-  private async fetchPublicMetrics(
+  async getVideoMetrics(platformPostId: string): Promise<VideoMetrics> {
+    const norm = await this.getNormalizedMetrics(platformPostId);
+    return {
+      views: norm.views ?? 0,
+      likes: norm.likes,
+      comments: norm.comments,
+      shares: norm.shares,
+      saves: null,
+    };
+  }
+
+  private async fetchOembedMetadata(
     postUrl: string
-  ): Promise<{ views: number; likes: number; comments: number; shares: number | null; author?: string; displayName?: string } | null> {
+  ): Promise<{ authorUsername?: string; authorDisplayName?: string; title?: string }> {
     try {
-      const res = await fetch(postUrl, {
-        redirect: "follow",
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-          "Accept-Language": "en-US,en;q=0.9",
-        },
-        cache: "no-store",
-        signal: AbortSignal.timeout(7000),
-      });
-      if (!res.ok) return null;
-      const html = await res.text();
+      const oRes = await fetch(
+        `https://www.tiktok.com/oembed?url=${encodeURIComponent(postUrl)}`,
+        { signal: AbortSignal.timeout(5000) }
+      );
+      if (oRes.ok) {
+        const oData = await oRes.json();
+        return {
+          authorUsername: oData.author_unique_id ? String(oData.author_unique_id).replace(/^@/, "").trim() : undefined,
+          authorDisplayName: oData.author_name ? String(oData.author_name).trim() : undefined,
+          title: oData.title ? String(oData.title).trim() : undefined,
+        };
+      }
+    } catch {}
 
-      let views = 0;
-      let likes = 0;
-      let comments = 0;
-      let shares: number | null = null;
-      let author: string | undefined = undefined;
-      let displayName: string | undefined = undefined;
+    // Fallback: extract handle from URL if present
+    try {
+      const parsed = new URL(postUrl.trim());
+      const m = parsed.pathname.match(/@([^/?#&]+)/);
+      if (m) {
+        return { authorUsername: m[1].replace(/^@/, "").trim() };
+      }
+    } catch {}
 
-      // Extract handle from final redirected URL: https://www.tiktok.com/@username/video/12345
-      const urlsToCheck = [res.url, postUrl].filter(Boolean);
-      for (const u of urlsToCheck) {
-        try {
-          const parsed = new URL(u);
-          const m = parsed.pathname.match(/@([^/?#&]+)/);
-          if (m) {
-            const raw = m[1].replace(/^@/, "").trim();
-            if (raw && !/\s/.test(raw)) {
-              author = raw;
-              break;
-            }
-          }
-        } catch {}
-      }
-
-      // 1. Try JSON-LD schema
-      const jsonLdMatch = html.match(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/i);
-      if (jsonLdMatch) {
-        try {
-          const ld = JSON.parse(jsonLdMatch[1]);
-          if (ld.interactionStatistic) {
-            const stats = Array.isArray(ld.interactionStatistic) ? ld.interactionStatistic : [ld.interactionStatistic];
-            for (const stat of stats) {
-              const count = parseInt(stat.userInteractionCount || "0", 10);
-              const type = stat.interactionType?.["@type"] || "";
-              if (type.includes("Watch") || type.includes("View")) views = count;
-              if (type.includes("Like")) likes = count;
-              if (type.includes("Comment")) comments = count;
-              if (type.includes("Share")) shares = count;
-            }
-          }
-          // Note: ld.author.url has the handle: https://www.tiktok.com/@brendanarcade
-          if (ld.author?.url && !author) {
-            const uMatch = String(ld.author.url).match(/@([^/?#&]+)/);
-            if (uMatch) {
-              const raw = uMatch[1].replace(/^@/, "").trim();
-              if (raw && !/\s/.test(raw)) author = raw;
-            }
-          }
-          // ld.author.name is display nickname
-          if (ld.author?.name) {
-            displayName = String(ld.author.name).trim();
-          }
-        } catch {}
-      }
-
-      // 2. Try universal data hydration script (__UNIVERSAL_DATA_FOR_REHYDRATION__)
-      const hydrationMatch = html.match(/<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>([\s\S]*?)<\/script>/i);
-      if (hydrationMatch) {
-        try {
-          const data = JSON.parse(hydrationMatch[1]);
-          const itemInfo = data?.["__DEFAULT_SCOPE__"]?.["webapp.video-detail"]?.itemInfo?.itemStruct;
-          if (itemInfo) {
-            if (itemInfo.stats) {
-              views = itemInfo.stats.playCount || views;
-              likes = itemInfo.stats.diggCount || likes;
-              comments = itemInfo.stats.commentCount || comments;
-              if (itemInfo.stats.shareCount != null) shares = itemInfo.stats.shareCount;
-            }
-            if (itemInfo.statsV2) {
-              views = parseInt(itemInfo.statsV2.playCount || "0", 10) || views;
-              likes = parseInt(itemInfo.statsV2.diggCount || "0", 10) || likes;
-              comments = parseInt(itemInfo.statsV2.commentCount || "0", 10) || comments;
-              if (itemInfo.statsV2.shareCount != null) {
-                shares = parseInt(itemInfo.statsV2.shareCount || "0", 10) || shares;
-              }
-            }
-            // itemInfo.author.uniqueId is the handle (e.g. brendanarcade)
-            if (itemInfo.author?.uniqueId) {
-              const raw = String(itemInfo.author.uniqueId).replace(/^@/, "").trim();
-              if (raw && !/\s/.test(raw)) author = raw;
-            }
-            if (itemInfo.author?.nickname) {
-              displayName = String(itemInfo.author.nickname).trim();
-            }
-          }
-        } catch {}
-      }
-
-      // 3. SIGI_STATE or __NEXT_DATA__
-      if (!author) {
-        const uMatch =
-          html.match(/"uniqueId":"([a-zA-Z0-9_.-]+)"/) ||
-          html.match(/"authorUniqueId":"([a-zA-Z0-9_.-]+)"/) ||
-          html.match(/property="og:url"\s+content="https?:\/\/(?:www\.)?tiktok\.com\/@([a-zA-Z0-9_.-]+)/i) ||
-          html.match(/content="https?:\/\/(?:www\.)?tiktok\.com\/@([a-zA-Z0-9_.-]+)[^"]*"\s+property="og:url"/i) ||
-          html.match(/<link[^>]*rel="canonical"[^>]*href="https?:\/\/(?:www\.)?tiktok\.com\/@([a-zA-Z0-9_.-]+)/i) ||
-          html.match(/property="al:ios:url"\s+content="[^"]*@([a-zA-Z0-9_.-]+)/i);
-        if (uMatch) {
-          author = uMatch[1].replace(/^@/, "").trim();
-        }
-      }
-
-      // 4. Fallback regexes for stats on raw HTML
-      if (!views) {
-        const playMatch = html.match(/"playCount":\s*(\d+)/) || html.match(/"play_count":\s*(\d+)/);
-        if (playMatch) views = parseInt(playMatch[1], 10);
-      }
-      if (!likes) {
-        const diggMatch = html.match(/"diggCount":\s*(\d+)/) || html.match(/"digg_count":\s*(\d+)/);
-        if (diggMatch) likes = parseInt(diggMatch[1], 10);
-      }
-      if (!comments) {
-        const commMatch = html.match(/"commentCount":\s*(\d+)/) || html.match(/"comment_count":\s*(\d+)/);
-        if (commMatch) comments = parseInt(commMatch[1], 10);
-      }
-      if (shares == null) {
-        const shareMatch = html.match(/"shareCount":\s*(\d+)/) || html.match(/"share_count":\s*(\d+)/);
-        if (shareMatch) shares = parseInt(shareMatch[1], 10);
-      }
-
-      // Ensure author has no spaces (a handle cannot have spaces)
-      if (author && /\s/.test(author)) {
-        if (!displayName) displayName = author;
-        author = undefined;
-      }
-
-      if (views > 0 || likes > 0 || comments > 0 || shares != null || author || displayName) {
-        return { views, likes, comments, shares, author, displayName };
-      }
-      return null;
-    } catch {
-      return null;
-    }
+    return {};
   }
 }

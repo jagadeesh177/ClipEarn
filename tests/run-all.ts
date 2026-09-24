@@ -1,6 +1,7 @@
 import { PrismaClient, UserRole, UserStatus, Platform, VerificationStatus, CampaignStatus, ViewEligibilityMode, SubmissionStatus, PayoutStatus } from "@prisma/client";
 import { syncSubmissionViews } from "../src/lib/earnings/engine";
 import { getClipperEarningsSummary, requestPayout } from "../src/lib/payout/engine";
+import { detectPlatformFromUrl, getSocialProvider, extractAccountFromUrl, isAuthorMatch } from "../src/lib/social";
 import assert from "assert";
 
 const prisma = new PrismaClient();
@@ -137,10 +138,11 @@ async function runTests() {
       },
     });
 
-    // Run sync worker on pending clip
+    // Run sync worker on pending clip: observed views can update, but earnings remain $0
     const syncRes = await syncSubmissionViews(pendingSub.id);
-    assert.strictEqual(syncRes.status, "SKIPPED");
+    assert(syncRes.status === "SUCCESS" || syncRes.status === "UNAVAILABLE");
     assert.strictEqual(syncRes.earningsDelta, 0);
+    assert.strictEqual(syncRes.eligibleViewsDelta, 0);
 
     // Clean up
     await prisma.submission.delete({ where: { id: pendingSub.id } });
@@ -221,6 +223,98 @@ async function runTests() {
     }
 
     assert(errorThrown, "Excessive payout request must be rejected server-side");
+  })();
+
+  // 3. Social Media Tracking & Platform Detection Tests
+  await test("Platform Detection: Correctly identifies YouTube, TikTok, and Instagram URLs", () => {
+    assert.strictEqual(detectPlatformFromUrl("https://www.youtube.com/shorts/dQw4w9WgXcQ"), Platform.YOUTUBE);
+    assert.strictEqual(detectPlatformFromUrl("https://youtu.be/dQw4w9WgXcQ"), Platform.YOUTUBE);
+    assert.strictEqual(detectPlatformFromUrl("https://www.tiktok.com/@creator/video/7345678901234567890"), Platform.TIKTOK);
+    assert.strictEqual(detectPlatformFromUrl("https://www.instagram.com/reel/C3x4y5z/"), Platform.INSTAGRAM);
+    assert.strictEqual(detectPlatformFromUrl("https://www.instagram.com/p/C3x4y5z/"), Platform.INSTAGRAM);
+    assert.strictEqual(detectPlatformFromUrl("https://example.com/other"), null);
+  })();
+
+  await test("Post ID Extraction: Correctly extracts video IDs across all platforms", () => {
+    const yt = getSocialProvider(Platform.YOUTUBE);
+    const tt = getSocialProvider(Platform.TIKTOK);
+    const ig = getSocialProvider(Platform.INSTAGRAM);
+
+    assert.strictEqual(yt.parsePostId("https://www.youtube.com/shorts/AbCdEfGh123"), "AbCdEfGh123");
+    assert.strictEqual(yt.parsePostId("https://youtu.be/AbCdEfGh123?si=xyz"), "AbCdEfGh123");
+    assert.strictEqual(tt.parsePostId("https://www.tiktok.com/@creator/video/7345678901234567890"), "7345678901234567890");
+    assert.strictEqual(ig.parsePostId("https://www.instagram.com/reel/C3x4y5z/"), "C3x4y5z");
+    assert.strictEqual(ig.parsePostId("https://www.instagram.com/p/C3x4y5z/"), "C3x4y5z");
+  })();
+
+  await test("Anti-Fraud Ownership: Detects author match vs mismatch", () => {
+    assert.strictEqual(isAuthorMatch("creator123", "creator123"), true);
+    assert.strictEqual(isAuthorMatch("@creator123", "creator123"), true);
+    assert.strictEqual(isAuthorMatch("creator123", "@creator123"), true);
+    assert.strictEqual(isAuthorMatch("other_person", "creator123"), false);
+  })();
+
+  await test("No Fake Zeros: Metric model preserves null for unsupported metrics", async () => {
+    const yt = getSocialProvider(Platform.YOUTUBE);
+    const tt = getSocialProvider(Platform.TIKTOK);
+
+    // Verify YouTube provider does NOT fake shares or saves
+    if (yt.getNormalizedMetrics) {
+      const ytMetrics = await yt.getNormalizedMetrics("https://www.youtube.com/shorts/AbCdEfGh123");
+      assert.strictEqual(ytMetrics.shares, null, "YouTube shares must be null (not 0)");
+      assert.strictEqual(ytMetrics.saves, null, "YouTube saves must be null (not 0)");
+    }
+
+    // Verify TikTok provider does NOT fake saves
+    if (tt.getNormalizedMetrics) {
+      const ttMetrics = await tt.getNormalizedMetrics("https://www.tiktok.com/@creator/video/7345678901234567890");
+      assert.strictEqual(ttMetrics.saves, null, "TikTok saves must be null (not 0)");
+    }
+  })();
+
+  await test("Historical Snapshots: Records all 5 metrics in view snapshots", async () => {
+    const verifiedAccount = await prisma.socialAccount.findFirst({
+      where: { user_id: testUser.id, verification_status: VerificationStatus.VERIFIED },
+    });
+
+    const testSub = await prisma.submission.create({
+      data: {
+        campaign_id: testCampaign.id,
+        user_id: testUser.id,
+        social_account_id: verifiedAccount!.id,
+        platform: Platform.INSTAGRAM,
+        post_url: `https://www.instagram.com/reel/snap_${Date.now()}/`,
+        platform_post_id: `snap_${Date.now()}`,
+        status: SubmissionStatus.PENDING,
+        current_views: 12500,
+        current_likes: 850,
+        current_comments: 42,
+        current_shares: 110,
+        current_saves: 65,
+      },
+    });
+
+    const snapshot = await prisma.viewSnapshot.create({
+      data: {
+        submission_id: testSub.id,
+        views: 12500,
+        likes: 850,
+        comments: 42,
+        shares: 110,
+        saves: 65,
+        source: "PLATFORM_API",
+      },
+    });
+
+    assert.strictEqual(snapshot.views, 12500);
+    assert.strictEqual(snapshot.likes, 850);
+    assert.strictEqual(snapshot.comments, 42);
+    assert.strictEqual(snapshot.shares, 110);
+    assert.strictEqual(snapshot.saves, 65);
+
+    // Clean up
+    await prisma.viewSnapshot.delete({ where: { id: snapshot.id } });
+    await prisma.submission.delete({ where: { id: testSub.id } });
   })();
 
   console.log("\n=========================================");

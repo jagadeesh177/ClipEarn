@@ -446,17 +446,7 @@ export class InstagramProvider implements SocialProvider {
       }
     } catch {}
 
-    // 3. Fallback: try public metrics / oEmbed to get author
-    if (!authorHandle) {
-      try {
-        const publicMetrics = await this.fetchPublicMetrics(videoIdOrUrl);
-        if (publicMetrics?.author) {
-          authorHandle = publicMetrics.author;
-        }
-      } catch {}
-    }
-
-    // 4. Match against account username
+    // 3. Match against account username
     if (authorHandle) {
       const match = isAuthorMatch(authorHandle, account.username);
       if (match) {
@@ -564,36 +554,10 @@ export class InstagramProvider implements SocialProvider {
       } catch {}
     }
 
-    // 2. Fallback: fetch public metrics
-    const publicMetrics = await this.fetchPublicMetrics(videoIdOrUrl);
-    if (publicMetrics) {
-      views = publicMetrics.views || null;
-      likes = publicMetrics.likes != null ? publicMetrics.likes : null;
-      comments = publicMetrics.comments != null ? publicMetrics.comments : null;
-    }
-
-    return {
-      views,
-      likes,
-      comments,
-      shares: null,
-      saves: null,
-      fetchedAt: new Date(),
-      platform: Platform.INSTAGRAM,
-      platformVideoId: shortcode,
-      isAvailable: true,
-      isPrivate: false,
-      authorUsername: publicMetrics?.author,
-    };
-  }
-
-  async getVideo(postUrl: string): Promise<VideoMetadata> {
-    const postId = this.parsePostId(postUrl) || postUrl;
+    // When no access token or media not found
     let authorUsername: string | undefined = undefined;
-
-    // Check URL path for author if available
     try {
-      const parsed = new URL(postUrl.trim());
+      const parsed = new URL(videoIdOrUrl.trim());
       const parts = parsed.pathname.split("/").filter(Boolean);
       const reserved = new Set(["p", "reel", "reels", "stories", "tv", "explore", "direct", "accounts", "api"]);
       if (parts.length >= 2 && !reserved.has(parts[0].toLowerCase())) {
@@ -601,246 +565,61 @@ export class InstagramProvider implements SocialProvider {
       }
     } catch {}
 
-    let views = 0;
-    let likes = 0;
-    let comments = 0;
+    return {
+      views: null,
+      likes: null,
+      comments: null,
+      shares: null,
+      saves: null,
+      fetchedAt: new Date(),
+      platform: Platform.INSTAGRAM,
+      platformVideoId: shortcode,
+      isAvailable: false,
+      isPrivate: false,
+      authorUsername: authorUsername || account?.username,
+      errorCode: !account?.access_token ? "INSTAGRAM_OAUTH_REQUIRED" : "INSTAGRAM_MEDIA_NOT_FOUND",
+      errorMessage: !account?.access_token
+        ? "Instagram Professional account must be connected with OAuth to query media insights via the official Graph API."
+        : "Reel not found under authorized Instagram account.",
+    };
+  }
 
-    try {
-      const metrics = await this.fetchPublicMetrics(postUrl);
-      if (metrics) {
-        views = metrics.views;
-        likes = metrics.likes;
-        comments = metrics.comments;
-        if (metrics.author) authorUsername = metrics.author;
-      }
-    } catch {}
+  async getVideo(postUrl: string): Promise<VideoMetadata> {
+    const shortcode = this.parsePostId(postUrl) || postUrl;
+    const norm = await this.getNormalizedMetrics(postUrl);
 
     return {
       platform: Platform.INSTAGRAM,
-      platform_post_id: postId,
+      platform_post_id: shortcode,
       post_url: postUrl,
-      author_username: authorUsername,
-      current_views: views,
-      likes,
-      comments,
-      shares: null,
-      saves: null,
-      is_available: true,
-      is_private: false,
+      author_username: norm.authorUsername,
+      current_views: norm.views ?? 0,
+      likes: norm.likes,
+      comments: norm.comments,
+      shares: norm.shares,
+      saves: norm.saves,
+      is_available: norm.isAvailable,
+      is_private: norm.isPrivate,
     };
   }
 
   async getVideoViews(platformPostId: string): Promise<number> {
-    const metrics = await this.getVideoMetrics(platformPostId);
-    return metrics.views;
+    const metrics = await this.getNormalizedMetrics(platformPostId);
+    if (metrics.views != null) {
+      return metrics.views;
+    }
+    throw new Error(metrics.errorMessage || "Unable to fetch Instagram Reel views via official Graph API.");
   }
 
-  async getVideoMetrics(platformPostId: string, postUrl?: string): Promise<VideoMetrics> {
-    if (postUrl) {
-      try {
-        const metrics = await this.fetchPublicMetrics(postUrl);
-        if (metrics) {
-          return {
-            views: metrics.views,
-            likes: metrics.likes,
-            comments: metrics.comments,
-            shares: null,
-            saves: null,
-          };
-        }
-      } catch {}
-    }
-    return { views: 0, likes: 0, comments: 0, shares: null, saves: null };
-  }
-
-  private async fetchPublicMetrics(postUrl: string): Promise<{ views: number; likes: number; comments: number; author?: string } | null> {
-    let likes = 0;
-    let comments = 0;
-    let views = 0;
-    let author: string | undefined = undefined;
-
-    // 1. Check if URL path includes username (e.g. instagram.com/username/reel/CODE/)
-    let shortcode = this.parsePostId(postUrl);
-    try {
-      const parsed = new URL(postUrl.trim());
-      const parts = parsed.pathname.split("/").filter(Boolean);
-      const reserved = new Set(["p", "reel", "reels", "stories", "tv", "explore", "direct", "accounts", "api"]);
-      if (parts.length >= 2 && !reserved.has(parts[0].toLowerCase())) {
-        author = parts[0].replace(/^@/, "");
-      }
-    } catch {}
-
-    // 2. Fetch directly with social crawler UA
-    try {
-      const res = await fetch(postUrl, {
-        headers: {
-          "User-Agent": "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
-          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-          "Accept-Language": "en-US,en;q=0.9",
-        },
-        cache: "no-store",
-        signal: AbortSignal.timeout(7000),
-      });
-
-      if (res.ok) {
-        const html = await res.text();
-
-        // A. Meta description / og:description
-        const metaMatch =
-          html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']*)["']/i) ||
-          html.match(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']*)["']/i);
-
-        if (metaMatch) {
-          const text = metaMatch[1];
-          const likesMatch = text.match(/([0-9,.]+[KMkm]?)\s+likes/i);
-          const commentsMatch = text.match(/([0-9,.]+[KMkm]?)\s+comments/i);
-          const viewsMatch = text.match(/([0-9,.]+[KMkm]?)\s*(?:views|view|plays|play|reproducciones|visualizaciones|aufrufe|vues)/i);
-
-          if (likesMatch) likes = this.parseCount(likesMatch[1]);
-          if (commentsMatch) comments = this.parseCount(commentsMatch[1]);
-          if (viewsMatch) views = this.parseCount(viewsMatch[1]);
-
-          // Extract author from description if available: "... comments - username on ..." or "... comments - Name (@username) on ..."
-          if (!author) {
-            const handleMatch = text.match(/\(@([a-zA-Z0-9_.]+)\)/) || text.match(/@([a-zA-Z0-9_.]+)/);
-            if (handleMatch) {
-              author = handleMatch[1].replace(/^@/, "");
-            } else {
-              const aMatch = text.match(/[-–—]\s*([a-zA-Z0-9_.]+)\s+on/i);
-              if (aMatch) author = aMatch[1].replace(/^@/, "");
-            }
-          }
-        }
-
-        // B. Embedded JSON owner check before title fallback
-        if (!author) {
-          const ownerMatch =
-            html.match(/"owner"\s*:\s*\{[^}]*"username"\s*:\s*"([a-zA-Z0-9_.]+)"/i) ||
-            html.match(/"user"\s*:\s*\{[^}]*"username"\s*:\s*"([a-zA-Z0-9_.]+)"/i) ||
-            html.match(/"owner_username"\s*:\s*"([a-zA-Z0-9_.]+)"/i);
-          if (ownerMatch) {
-            author = ownerMatch[1].replace(/^@/, "");
-          }
-        }
-
-        // C. Title fallback for author
-        if (!author) {
-          const titleMatch =
-            html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']*)["']/i) ||
-            html.match(/<title>([^<]*)<\/title>/i);
-          if (titleMatch) {
-            const tText = titleMatch[1];
-            const m = tText.match(/^([a-zA-Z0-9_.]+)\s+on\s+Instagram/i) || tText.match(/@([a-zA-Z0-9_.]+)/);
-            if (m) author = m[1].replace(/^@/, "");
-          }
-        }
-
-        // C. Embedded JSON-LD / schema.org VideoObject
-        if (!views) {
-          const jsonLdMatch = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/gi);
-          if (jsonLdMatch) {
-            for (const scriptTag of jsonLdMatch) {
-              const rawJson = scriptTag.replace(/<script[^>]*>|<\/script>/gi, "");
-              try {
-                const parsed = JSON.parse(rawJson);
-                if (parsed.interactionStatistic) {
-                  const stats = Array.isArray(parsed.interactionStatistic)
-                    ? parsed.interactionStatistic
-                    : [parsed.interactionStatistic];
-                  for (const st of stats) {
-                    if (st.interactionType && String(st.interactionType).includes("WatchAction") && st.userInteractionCount) {
-                      views = parseInt(String(st.userInteractionCount), 10) || views;
-                    }
-                    if (st.interactionType && String(st.interactionType).includes("LikeAction") && st.userInteractionCount && !likes) {
-                      likes = parseInt(String(st.userInteractionCount), 10) || likes;
-                    }
-                    if (st.interactionType && String(st.interactionType).includes("CommentAction") && st.userInteractionCount && !comments) {
-                      comments = parseInt(String(st.userInteractionCount), 10) || comments;
-                    }
-                  }
-                }
-              } catch {}
-            }
-          }
-        }
-
-        // D. Script state / embedded JSON patterns
-        if (!likes) {
-          const likeCountMatch =
-            html.match(/"edge_media_preview_like":\s*\{\s*"count":\s*(\d+)/) ||
-            html.match(/"edge_liked_by":\s*\{\s*"count":\s*(\d+)/) ||
-            html.match(/"like_count":\s*(\d+)/);
-          if (likeCountMatch) likes = parseInt(likeCountMatch[1], 10);
-        }
-        if (!comments) {
-          const commentCountMatch =
-            html.match(/"edge_media_to_comment":\s*\{\s*"count":\s*(\d+)/) ||
-            html.match(/"edge_media_to_parent_comment":\s*\{\s*"count":\s*(\d+)/) ||
-            html.match(/"comment_count":\s*(\d+)/);
-          if (commentCountMatch) comments = parseInt(commentCountMatch[1], 10);
-        }
-        if (!views) {
-          const viewCountMatch =
-            html.match(/"(?:video_view_count|video_play_count|play_count|view_count|ig_play_count|fb_play_count|playCount|viewCount)":\s*(\d+)/i) ||
-            html.match(/<meta[^>]*property=["']og:video:views["'][^>]*content=["'](\d+)["']/i);
-          if (viewCountMatch) views = parseInt(viewCountMatch[1], 10);
-        }
-      }
-    } catch {}
-
-    // 3. Fallback: Public mirror (imginn) if primary Instagram request was blocked or missing metrics/views
-    if (views === 0 || likes === 0 || comments === 0 || !author) {
-      if (shortcode) {
-        try {
-          const mirrorRes = await fetch(`https://imginn.com/p/${shortcode}/`, {
-            headers: {
-              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-              "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            },
-            signal: AbortSignal.timeout(5000),
-          });
-          if (mirrorRes.ok) {
-            const mHtml = await mirrorRes.text();
-
-            if (!likes) {
-              const mLikes = mHtml.match(/class="likes-count"[^>]*>[\s\S]*?<span>([0-9,.]+[KMkm]?)<\/span>/i);
-              if (mLikes) likes = this.parseCount(mLikes[1]);
-            }
-            if (!comments) {
-              const mComments = mHtml.match(/class="comments-count"[^>]*>[\s\S]*?<span>([0-9,.]+[KMkm]?)<\/span>/i);
-              if (mComments) comments = this.parseCount(mComments[1]);
-            }
-            if (!author) {
-              const mAuthor =
-                mHtml.match(/class="user"[^>]*>[\s\S]*?<a[^>]*href="\/([a-zA-Z0-9_.]+)\/"/i) ||
-                mHtml.match(/<a class="username"[^>]*href="\/([a-zA-Z0-9_.]+)\/"/i) ||
-                mHtml.match(/href="\/([a-zA-Z0-9_.]+)\/"[^>]*><h1/i) ||
-                mHtml.match(/<div class="fullname"[^>]*>[\s\S]*?<h1>([^<]+)<\/h1>/i);
-              if (mAuthor) author = mAuthor[1].trim().replace(/^@/, "");
-            }
-            if (!views) {
-              const mViews = mHtml.match(/class="views-count"[^>]*>[\s\S]*?<span>([0-9,.]+[KMkm]?)<\/span>/i) ||
-                             mHtml.match(/([0-9,.]+[KMkm]?)\s*(?:views|plays)/i);
-              if (mViews) views = this.parseCount(mViews[1]);
-            }
-          }
-        } catch {}
-      }
-    }
-
-    // Note: Do not fabricate view counts if hidden or unavailable on Instagram.
-    if (views > 0 || likes > 0 || comments > 0 || author) {
-      return { views, likes, comments, author };
-    }
-
-    return null;
-  }
-
-  private parseCount(str: string): number {
-    const clean = str.replace(/,/g, "").trim().toUpperCase();
-    if (clean.endsWith("K")) return Math.round(parseFloat(clean) * 1000);
-    if (clean.endsWith("M")) return Math.round(parseFloat(clean) * 1000000);
-    return parseInt(clean, 10) || 0;
+  async getVideoMetrics(platformPostId: string): Promise<VideoMetrics> {
+    const norm = await this.getNormalizedMetrics(platformPostId);
+    return {
+      views: norm.views ?? 0,
+      likes: norm.likes,
+      comments: norm.comments,
+      shares: norm.shares,
+      saves: norm.saves,
+    };
   }
 }
 

@@ -378,6 +378,8 @@ export async function POST(request: Request) {
     let initialComments: number | null = null;
     let initialShares: number | null = null;
     let initialSaves: number | null = null;
+    let initialSyncStatus = "SUCCESS";
+    let initialSyncError: string | null = null;
 
     try {
       if (provider.getNormalizedMetrics) {
@@ -386,11 +388,22 @@ export async function POST(request: Request) {
           username: account.username,
           access_token: decryptedToken,
         });
-        initialViews = norm.views ?? 0;
-        initialLikes = norm.likes ?? null;
-        initialComments = norm.comments ?? null;
-        initialShares = norm.shares ?? null;
-        initialSaves = norm.saves ?? null;
+        if (norm.views != null) {
+          initialViews = norm.views;
+          initialLikes = norm.likes ?? null;
+          initialComments = norm.comments ?? null;
+          initialShares = norm.shares ?? null;
+          initialSaves = norm.saves ?? null;
+          initialSyncStatus = "SUCCESS";
+        } else {
+          initialViews = 0;
+          initialLikes = norm.likes ?? null;
+          initialComments = norm.comments ?? null;
+          initialShares = norm.shares ?? null;
+          initialSaves = norm.saves ?? null;
+          initialSyncStatus = norm.errorCode || "UNAVAILABLE";
+          initialSyncError = norm.errorMessage || norm.error || "Unable to fetch official metrics from platform";
+        }
       } else {
         const videoMeta = await provider.getVideo(trimmedUrl, {
           platform_user_id: account.platform_user_id,
@@ -403,12 +416,14 @@ export async function POST(request: Request) {
         initialShares = videoMeta.shares ?? null;
         initialSaves = videoMeta.saves ?? null;
       }
-    } catch {
+    } catch (err: any) {
       initialViews = 0;
       initialLikes = null;
       initialComments = null;
       initialShares = null;
       initialSaves = null;
+      initialSyncStatus = "FAILED";
+      initialSyncError = err?.message || "Failed to fetch platform metrics";
     }
 
     // 10. Create Submission & Baseline Snapshot in Transaction
@@ -430,8 +445,9 @@ export async function POST(request: Request) {
           eligible_views: 0,
           current_earnings: 0,
           last_view_update: new Date(),
-          last_sync_status: "SUCCESS",
-          last_successful_sync: new Date(),
+          last_sync_status: initialSyncStatus,
+          last_sync_error: initialSyncError,
+          last_successful_sync: initialSyncStatus === "SUCCESS" ? new Date() : null,
         },
       });
 
@@ -471,7 +487,23 @@ export async function POST(request: Request) {
       newValue: { campaign_id, platform: detectedPlatform, platformPostId },
     });
 
-    return NextResponse.json({ success: true, submission }, { status: 201 });
+    return NextResponse.json(
+      {
+        success: true,
+        submission,
+        metrics: {
+          platform: submission.platform.toLowerCase(),
+          videoId: submission.platform_post_id,
+          views: submission.current_views,
+          likes: submission.current_likes,
+          comments: submission.current_comments,
+          shares: submission.current_shares,
+          saves: submission.current_saves,
+          lastFetchedAt: submission.last_view_update,
+        },
+      },
+      { status: 201 }
+    );
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || "Failed to submit clip" }, { status: 500 });
   }
