@@ -1,15 +1,18 @@
 import { Platform } from "@prisma/client";
 import { SocialProvider, SocialAccountData, VerificationResult, VideoMetadata } from "./types";
-import { MockSocialProvider } from "./mock-provider";
-
 import { verifySocialBio } from "./bio-verifier";
 
 export class TikTokProvider implements SocialProvider {
   public platform = Platform.TIKTOK;
-  private mockFallback = new MockSocialProvider(Platform.TIKTOK);
 
   parsePostId(postUrl: string): string | null {
-    return this.mockFallback.parsePostId(postUrl);
+    try {
+      const url = new URL(postUrl.trim());
+      const match = url.pathname.match(/video\/(\d+)/);
+      return match ? match[1] : url.pathname.split("/").pop() || null;
+    } catch {
+      return null;
+    }
   }
 
   async connect(code: string): Promise<SocialAccountData> {
@@ -17,7 +20,15 @@ export class TikTokProvider implements SocialProvider {
     const clientSecret = process.env.TIKTOK_CLIENT_SECRET;
 
     if (!clientKey || !clientSecret || clientKey === "your_tiktok_client_key") {
-      return this.mockFallback.connect(code);
+      const mockId = `tt_${Date.now()}`;
+      return {
+        platform: Platform.TIKTOK,
+        platform_user_id: mockId,
+        username: `tiktok_${mockId.slice(-6)}`,
+        profile_url: `https://www.tiktok.com/@tiktok_${mockId.slice(-6)}`,
+        access_token: `mock_tt_token_${code}`,
+        token_expires_at: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
+      };
     }
 
     try {
@@ -60,7 +71,15 @@ export class TikTokProvider implements SocialProvider {
         token_expires_at: new Date(Date.now() + (data.data.expires_in || 86400) * 1000),
       };
     } catch {
-      return this.mockFallback.connect(code);
+      const mockId = `tt_${Date.now()}`;
+      return {
+        platform: Platform.TIKTOK,
+        platform_user_id: mockId,
+        username: `tiktok_${mockId.slice(-6)}`,
+        profile_url: `https://www.tiktok.com/@tiktok_${mockId.slice(-6)}`,
+        access_token: `mock_tt_token_${code}`,
+        token_expires_at: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
+      };
     }
   }
 
@@ -69,24 +88,47 @@ export class TikTokProvider implements SocialProvider {
   }
 
   async getProfile(platformUserId: string) {
-    return this.mockFallback.getProfile(platformUserId);
+    return {
+      username: `tiktok_${platformUserId.slice(0, 8)}`,
+      profile_url: `https://www.tiktok.com/@${platformUserId}`,
+      bio: "",
+    };
   }
 
   async getVideo(postUrl: string): Promise<VideoMetadata> {
-    const fallback = await this.mockFallback.getVideo(postUrl);
+    const postId = this.parsePostId(postUrl) || postUrl;
+    let authorUsername: string | undefined = undefined;
+    try {
+      const parsed = new URL(postUrl.trim());
+      const m = parsed.pathname.match(/@([^/?#&]+)/);
+      if (m) authorUsername = m[1].replace(/^@/, "");
+    } catch {}
+
+    let views = 0;
+    let likes = 0;
+    let comments = 0;
+
     try {
       const metrics = await this.fetchPublicMetrics(postUrl);
       if (metrics) {
-        return {
-          ...fallback,
-          author_username: metrics.author || fallback.author_username,
-          current_views: metrics.views || fallback.current_views,
-          likes: metrics.likes !== undefined ? metrics.likes : fallback.likes,
-          comments: metrics.comments !== undefined ? metrics.comments : fallback.comments,
-        };
+        views = metrics.views;
+        likes = metrics.likes;
+        comments = metrics.comments;
+        if (metrics.author) authorUsername = metrics.author;
       }
     } catch {}
-    return fallback;
+
+    return {
+      platform: Platform.TIKTOK,
+      platform_post_id: postId,
+      post_url: postUrl,
+      author_username: authorUsername,
+      current_views: views,
+      likes,
+      comments,
+      is_available: true,
+      is_private: false,
+    };
   }
 
   async getVideoViews(platformPostId: string): Promise<number> {
@@ -98,12 +140,12 @@ export class TikTokProvider implements SocialProvider {
     if (postUrl) {
       try {
         const metrics = await this.fetchPublicMetrics(postUrl);
-        if (metrics && (metrics.views > 0 || metrics.likes > 0)) {
+        if (metrics) {
           return { views: metrics.views, likes: metrics.likes, comments: metrics.comments };
         }
       } catch {}
     }
-    return this.mockFallback.getVideoMetrics(platformPostId);
+    return { views: 0, likes: 0, comments: 0 };
   }
 
   private async fetchPublicMetrics(postUrl: string): Promise<{ views: number; likes: number; comments: number; author?: string } | null> {
@@ -115,6 +157,7 @@ export class TikTokProvider implements SocialProvider {
           "Accept-Language": "en-US,en;q=0.9",
         },
         cache: "no-store",
+        signal: AbortSignal.timeout(7000),
       });
       if (!res.ok) return null;
       const html = await res.text();
@@ -127,59 +170,75 @@ export class TikTokProvider implements SocialProvider {
       // Extract author from URL: https://www.tiktok.com/@username/video/12345
       try {
         const parsed = new URL(postUrl.trim());
-        const match = parsed.pathname.match(/@([^/?#&]+)/);
-        if (match) author = match[1].replace(/^@/, "");
+        const m = parsed.pathname.match(/@([^/?#&]+)/);
+        if (m) author = m[1].replace(/^@/, "");
       } catch {}
 
-      // Check itemInfo / stats JSON in TikTok rehydration data
-      const statsMatch = html.match(/"stats":\s*\{([^}]+)\}/);
-      if (statsMatch) {
-        const statsStr = statsMatch[1];
-        const playMatch = statsStr.match(/"playCount":\s*(\d+)/);
-        const diggMatch = statsStr.match(/"diggCount":\s*(\d+)/);
-        const commentMatch = statsStr.match(/"commentCount":\s*(\d+)/);
+      // 1. Try JSON-LD schema
+      const jsonLdMatch = html.match(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/i);
+      if (jsonLdMatch) {
+        try {
+          const ld = JSON.parse(jsonLdMatch[1]);
+          if (ld.interactionStatistic) {
+            const stats = Array.isArray(ld.interactionStatistic) ? ld.interactionStatistic : [ld.interactionStatistic];
+            for (const stat of stats) {
+              const count = parseInt(stat.userInteractionCount || "0", 10);
+              const type = stat.interactionType?.["@type"] || "";
+              if (type.includes("Watch") || type.includes("View")) views = count;
+              if (type.includes("Like")) likes = count;
+              if (type.includes("Comment")) comments = count;
+            }
+          }
+          if (ld.author?.name && !author) {
+            author = ld.author.name;
+          }
+        } catch {}
+      }
 
+      // 2. Try universal data hydration script (__UNIVERSAL_DATA_FOR_REHYDRATION__)
+      const hydrationMatch = html.match(/<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>([\s\S]*?)<\/script>/i);
+      if (hydrationMatch) {
+        try {
+          const data = JSON.parse(hydrationMatch[1]);
+          const itemInfo = data?.["__DEFAULT_SCOPE__"]?.["webapp.video-detail"]?.itemInfo?.itemStruct;
+          if (itemInfo) {
+            if (itemInfo.stats) {
+              views = itemInfo.stats.playCount || views;
+              likes = itemInfo.stats.diggCount || likes;
+              comments = itemInfo.stats.commentCount || comments;
+            }
+            if (itemInfo.statsV2) {
+              views = parseInt(itemInfo.statsV2.playCount || "0", 10) || views;
+              likes = parseInt(itemInfo.statsV2.diggCount || "0", 10) || likes;
+              comments = parseInt(itemInfo.statsV2.commentCount || "0", 10) || comments;
+            }
+            if (itemInfo.author?.uniqueId) {
+              author = itemInfo.author.uniqueId;
+            }
+          }
+        } catch {}
+      }
+
+      // 3. Fallback regexes on raw HTML
+      if (!views) {
+        const playMatch = html.match(/"playCount":\s*(\d+)/) || html.match(/"play_count":\s*(\d+)/);
         if (playMatch) views = parseInt(playMatch[1], 10);
+      }
+      if (!likes) {
+        const diggMatch = html.match(/"diggCount":\s*(\d+)/) || html.match(/"digg_count":\s*(\d+)/);
         if (diggMatch) likes = parseInt(diggMatch[1], 10);
-        if (commentMatch) comments = parseInt(commentMatch[1], 10);
       }
-
-      if (!author) {
-        const authorMatch = html.match(/"uniqueId":\s*"([^"]+)"/) || html.match(/"authorName":\s*"([^"]+)"/);
-        if (authorMatch) author = authorMatch[1].replace(/^@/, "");
-      }
-
-      // Check meta description: e.g. "Watch ... with 12.3K likes and 456 comments."
-      if (!likes || !comments) {
-        const descMatch =
-          html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']*)["']/i) ||
-          html.match(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']*)["']/i);
-        if (descMatch) {
-          const text = descMatch[1];
-          const lMatch = text.match(/([0-9,.]+[KMkm]?)\s+likes/i);
-          const cMatch = text.match(/([0-9,.]+[KMkm]?)\s+comments/i);
-          const vMatch = text.match(/([0-9,.]+[KMkm]?)\s+views/i);
-
-          if (lMatch && !likes) likes = this.parseCount(lMatch[1]);
-          if (cMatch && !comments) comments = this.parseCount(cMatch[1]);
-          if (vMatch && !views) views = this.parseCount(vMatch[1]);
-        }
+      if (!comments) {
+        const commMatch = html.match(/"commentCount":\s*(\d+)/) || html.match(/"comment_count":\s*(\d+)/);
+        if (commMatch) comments = parseInt(commMatch[1], 10);
       }
 
       if (views > 0 || likes > 0 || comments > 0 || author) {
-        if (views === 0 && likes > 0) {
-          views = Math.round(likes * 12.5);
-        }
         return { views, likes, comments, author };
       }
-    } catch {}
-    return null;
-  }
-
-  private parseCount(str: string): number {
-    const clean = str.replace(/,/g, "").trim().toUpperCase();
-    if (clean.endsWith("K")) return Math.round(parseFloat(clean) * 1000);
-    if (clean.endsWith("M")) return Math.round(parseFloat(clean) * 1000000);
-    return parseInt(clean, 10) || 0;
+      return null;
+    } catch {
+      return null;
+    }
   }
 }

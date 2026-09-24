@@ -11,7 +11,7 @@ export async function POST(
 ) {
   try {
     const manager = await requireRole([UserRole.MANAGER, UserRole.ADMIN]);
-    const { action, rejection_reason } = await request.json();
+    const { action, rejection_reason, verified_views } = await request.json();
 
     if (!action || (action !== "APPROVE" && action !== "REJECT")) {
       return NextResponse.json({ error: "Invalid action. Must be APPROVE or REJECT." }, { status: 400 });
@@ -36,6 +36,11 @@ export async function POST(
     const isAppeal = submission.status === SubmissionStatus.APPEALED;
 
     if (action === "APPROVE") {
+      const parsedVerifiedViews =
+        verified_views !== undefined && verified_views !== null && !isNaN(Number(verified_views))
+          ? Math.max(0, parseInt(String(verified_views), 10))
+          : null;
+
       const updated = await prisma.$transaction(async (tx) => {
         const sub = await tx.submission.update({
           where: { id: params.id },
@@ -44,8 +49,20 @@ export async function POST(
             reviewed_at: new Date(),
             reviewed_by: manager.id,
             rejection_reason: null,
+            ...(parsedVerifiedViews !== null ? { current_views: parsedVerifiedViews } : {}),
           },
         });
+
+        if (parsedVerifiedViews !== null) {
+          await tx.viewSnapshot.create({
+            data: {
+              submission_id: sub.id,
+              views: parsedVerifiedViews,
+              likes: sub.current_likes || 0,
+              comments: sub.current_comments || 0,
+            },
+          });
+        }
 
         // Check if this approval qualifies a referral (Rule 41: At least one submission approved)
         const pendingReferral = await tx.referral.findUnique({
