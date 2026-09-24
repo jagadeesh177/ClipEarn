@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { signSessionToken, COOKIE_NAME } from "@/lib/auth";
+import { signSessionToken, COOKIE_NAME, isAllowedAdminEmail } from "@/lib/auth";
 import { UserRole, UserStatus, ReferralStatus } from "@prisma/client";
 import { verifyPreAuthTicket, PREAUTH_COOKIE_NAME } from "@/lib/managerAccessKey";
 
@@ -10,27 +10,39 @@ export async function GET(request: Request) {
   const state = searchParams.get("state");
 
   let referralCode: string | null = null;
-  let requestedRole: string = "CLIPPER";
+  let requestedPortal: "clipper" | "manager" | "admin" = "clipper";
   let managerKeyId: string | null = null;
 
   if (state) {
     try {
       const decoded = JSON.parse(Buffer.from(state, "base64").toString("utf-8"));
-      referralCode = decoded.ref;
-      if (decoded.role === "MANAGER") {
-        requestedRole = "MANAGER";
-        managerKeyId = decoded.managerKeyId || null;
+      referralCode = decoded.ref || null;
+      managerKeyId = decoded.managerKeyId || null;
+      if (decoded.portal === "admin" || decoded.role === "ADMIN") {
+        requestedPortal = "admin";
+      } else if (decoded.portal === "manager" || decoded.role === "MANAGER") {
+        requestedPortal = "manager";
+      } else {
+        requestedPortal = "clipper";
       }
     } catch {
       // ignore state decode error
     }
   }
 
-  // If Manager role was requested:
-  // - If managerKeyId is present: First-Time Manager Invitation linking.
-  // - If managerKeyId is null: Returning Manager login with linked Discord account.
+  const getLoginRedirect = (errorParam: string, reason?: string) => {
+    const base = requestedPortal === "admin"
+      ? "/admin/login"
+      : requestedPortal === "manager"
+      ? "/manager/login"
+      : "/login";
+    const reasonParam = reason ? `&reason=${encodeURIComponent(reason)}` : "";
+    return `${base}?error=${errorParam}${reasonParam}`;
+  };
+
+  // If Manager portal with invite key was requested: First-Time Manager Invitation linking
   let validatedKeyRecord: any = null;
-  const isManagerInvite = requestedRole === "MANAGER" && Boolean(managerKeyId);
+  const isManagerInvite = requestedPortal === "manager" && Boolean(managerKeyId);
 
   if (isManagerInvite) {
     const cookieHeader = request.headers.get("cookie") || "";
@@ -57,8 +69,7 @@ export async function GET(request: Request) {
   }
 
   if (!code) {
-    const failureRedirect = requestedRole === "MANAGER" ? "/manager/login?error=missing_code" : "/login?error=missing_code";
-    return NextResponse.redirect(new URL(failureRedirect, request.url));
+    return NextResponse.redirect(new URL(getLoginRedirect("missing_code"), request.url));
   }
 
   let discordId: string;
@@ -103,8 +114,7 @@ export async function GET(request: Request) {
       : null;
   } catch (err: any) {
     console.error("Discord OAuth Error:", err);
-    const failureRedirect = requestedRole === "MANAGER" ? "/manager/login?error=oauth_failed" : "/login?error=oauth_failed";
-    return NextResponse.redirect(new URL(failureRedirect, request.url));
+    return NextResponse.redirect(new URL(getLoginRedirect("oauth_failed"), request.url));
   }
 
   try {
@@ -123,29 +133,57 @@ export async function GET(request: Request) {
       }
     }
 
-    // 2. Returning Campaign Manager Authorization Check:
-    // If Manager role requested without an invite key, user MUST already be an active linked MANAGER.
-    if (requestedRole === "MANAGER" && !isManagerInvite) {
-      if (!user || user.role !== UserRole.MANAGER) {
-        return NextResponse.redirect(new URL("/manager/login?error=not_authorized", request.url));
+    // 2. Server-Side Authorization Check for Requested Portal
+    // (Never trust client; authenticate intent against actual database permissions)
+
+    // A. ADMIN PORTAL CHECK:
+    if (requestedPortal === "admin") {
+      if (!user || user.role !== UserRole.ADMIN || !isAllowedAdminEmail(user.email)) {
+        return NextResponse.redirect(new URL("/admin/login?error=not_authorized", request.url));
       }
       if (user.status === UserStatus.SUSPENDED || user.status === UserStatus.BANNED) {
-        const reason = user.suspension_reason ? `&reason=${encodeURIComponent(user.suspension_reason)}` : "";
-        return NextResponse.redirect(new URL(`/manager/login?error=account_suspended${reason}`, request.url));
+        return NextResponse.redirect(new URL(getLoginRedirect("account_suspended", user.suspension_reason || undefined), request.url));
       }
     }
 
-    // 3. First-Time Manager Invitation Check:
-    if (requestedRole === "MANAGER" && isManagerInvite) {
+    // B. MANAGER PORTAL CHECK:
+    if (requestedPortal === "manager") {
+      const hasManagerAccess = user && (
+        user.role === UserRole.MANAGER ||
+        (user.role === UserRole.ADMIN && isAllowedAdminEmail(user.email)) ||
+        isManagerInvite
+      );
+
       if (user && (user.status === UserStatus.SUSPENDED || user.status === UserStatus.BANNED)) {
-        const reason = user.suspension_reason ? `&reason=${encodeURIComponent(user.suspension_reason)}` : "";
-        return NextResponse.redirect(new URL(`/manager/login?error=account_suspended${reason}`, request.url));
+        return NextResponse.redirect(new URL(getLoginRedirect("account_suspended", user.suspension_reason || undefined), request.url));
+      }
+
+      if (!hasManagerAccess && !isManagerInvite) {
+        return NextResponse.redirect(new URL("/manager/login?error=not_authorized", request.url));
       }
     }
 
+    // C. CLIPPER PORTAL CHECK:
+    if (requestedPortal === "clipper") {
+      if (user && (user.status === UserStatus.SUSPENDED || user.status === UserStatus.BANNED)) {
+        return NextResponse.redirect(new URL(getLoginRedirect("account_suspended", user.suspension_reason || undefined), request.url));
+      }
+    }
+
+    // 3. User provisioning / account linking
     if (!user) {
+      // Admin portal does NOT auto-create unauthorized users
+      if (requestedPortal === "admin") {
+        return NextResponse.redirect(new URL("/admin/login?error=not_authorized", request.url));
+      }
+
+      // Manager portal without valid invite key does NOT auto-create users
+      if (requestedPortal === "manager" && !isManagerInvite) {
+        return NextResponse.redirect(new URL("/manager/login?error=not_authorized", request.url));
+      }
+
       let referrerId: string | null = null;
-      if (referralCode && requestedRole === "CLIPPER") {
+      if (referralCode && requestedPortal === "clipper") {
         const referrer = await prisma.user.findUnique({
           where: { referral_code: referralCode },
         });
@@ -187,7 +225,7 @@ export async function GET(request: Request) {
           username: user.username || username,
           avatar_url: avatarUrl || user.avatar_url,
           last_login_at: new Date(),
-          ...(isManagerInvite ? { role: UserRole.MANAGER, status: UserStatus.ACTIVE } : {}),
+          ...(isManagerInvite && user.role !== UserRole.ADMIN ? { role: UserRole.MANAGER, status: UserStatus.ACTIVE } : {}),
         },
       });
     }
@@ -211,7 +249,11 @@ export async function GET(request: Request) {
       email: user.email,
     });
 
-    const destination = user.role === UserRole.MANAGER || user.role === UserRole.ADMIN
+    // Destination is strictly governed by login intent + authorization!
+    // Never automatically redirect to highest role!
+    const destination = requestedPortal === "admin"
+      ? "/admin/dashboard"
+      : requestedPortal === "manager"
       ? "/manager/dashboard"
       : "/clipper/dashboard";
 
@@ -227,14 +269,13 @@ export async function GET(request: Request) {
     });
 
     // Clear manager preauth ticket once successfully consumed
-    if (requestedRole === "MANAGER") {
+    if (requestedPortal === "manager") {
       response.cookies.delete(PREAUTH_COOKIE_NAME);
     }
 
     return response;
   } catch (err: any) {
     console.error("Discord profile provisioning error:", err);
-    const failureRedirect = requestedRole === "MANAGER" ? "/manager/login?error=profile_failed" : "/login?error=profile_failed";
-    return NextResponse.redirect(new URL(failureRedirect, request.url));
+    return NextResponse.redirect(new URL(getLoginRedirect("profile_failed"), request.url));
   }
 }

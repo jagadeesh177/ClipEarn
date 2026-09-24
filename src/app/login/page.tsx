@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import React, { useState, useEffect, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ClipEarnLogo } from "@/components/ui/ClipEarnLogo";
 import { Sparkles, ShieldCheck, AlertCircle } from "lucide-react";
 
 function ClipperLoginContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const refCode = searchParams.get("ref");
   const errorParam = searchParams.get("error");
@@ -24,9 +25,23 @@ function ClipperLoginContent() {
       : ""
   );
 
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => {
+        if (!res.ok) return null;
+        return res.json();
+      })
+      .then((data) => {
+        if (data && data.authenticated && data.user) {
+          router.push("/clipper/dashboard");
+        }
+      })
+      .catch(() => {});
+  }, [router]);
+
   const handleDiscordOAuth = () => {
-    let url = "/api/auth/discord";
-    if (refCode) url += `?ref=${encodeURIComponent(refCode)}`;
+    let url = "/api/auth/discord?portal=clipper";
+    if (refCode) url += `&ref=${encodeURIComponent(refCode)}`;
     window.location.href = url;
   };
 

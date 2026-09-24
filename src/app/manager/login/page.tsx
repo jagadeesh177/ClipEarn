@@ -88,7 +88,7 @@ function ManagerLoginContent() {
 
   // STEP 2: Initiate Discord OAuth as Campaign Manager
   const handleDiscordOAuth = () => {
-    window.location.href = "/api/auth/discord?role=MANAGER";
+    window.location.href = "/api/auth/discord?portal=manager";
   };
 
   // Admin / Staff Direct Login (The 2 authorized real Admins)
@@ -101,7 +101,7 @@ function ManagerLoginContent() {
       const res = await fetch("/api/auth/manager-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: adminEmail, password: adminPassword }),
+        body: JSON.stringify({ email: adminEmail, password: adminPassword, portal: "manager" }),
       });
       const data = await res.json();
 
@@ -314,7 +314,7 @@ function ManagerLoginContent() {
           )}
 
           {/* Toggle between Campaign Manager portal & Staff/Admin login */}
-          <div className="mt-6 pt-5 border-t border-slate-800/80 text-center text-xs">
+          <div className="mt-6 pt-5 border-t border-slate-800/80 text-center text-xs flex flex-col gap-2">
             <button
               type="button"
               onClick={() => {
@@ -327,6 +327,12 @@ function ManagerLoginContent() {
                 ? "← Back to Campaign Manager Login"
                 : "Staff / Administrator Credentials"}
             </button>
+            <Link
+              href="/admin/login"
+              className="text-[11px] text-purple-400/80 hover:text-purple-300 transition-colors"
+            >
+              Or go to dedicated Admin / Staff Login Portal →
+            </Link>
           </div>
 
           <div className="mt-4 text-center text-xs text-slate-500">

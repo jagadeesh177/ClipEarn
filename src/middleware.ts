@@ -21,9 +21,16 @@ export function middleware(request: NextRequest) {
     }
   }
 
+  // 3. Admin Protected Routes
+  if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
+    if (!sessionToken) {
+      return NextResponse.redirect(new URL("/admin/login", request.url));
+    }
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/clipper/:path*", "/manager/:path*"],
+  matcher: ["/clipper/:path*", "/manager/:path*", "/admin/:path*"],
 };

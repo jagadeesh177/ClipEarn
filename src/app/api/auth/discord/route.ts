@@ -5,13 +5,22 @@ import { verifyPreAuthTicket, PREAUTH_COOKIE_NAME } from "@/lib/managerAccessKey
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const ref = searchParams.get("ref");
-  const requestedRole = searchParams.get("role"); // "MANAGER" or default "CLIPPER"
+  const portalParam = searchParams.get("portal")?.toLowerCase();
+  const roleParam = searchParams.get("role")?.toLowerCase();
+
+  let requestedPortal: "clipper" | "manager" | "admin" = "clipper";
+  if (portalParam === "admin" || roleParam === "admin") {
+    requestedPortal = "admin";
+  } else if (portalParam === "manager" || roleParam === "manager") {
+    requestedPortal = "manager";
+  } else {
+    requestedPortal = "clipper";
+  }
 
   let managerKeyId: string | null = null;
 
   // Campaign Manager: if a pre-auth ticket exists (first-time invitation onboarding), validate it.
-  // If no ticket exists, managerKeyId remains null (returning manager logging in with linked Discord account).
-  if (requestedRole === "MANAGER") {
+  if (requestedPortal === "manager") {
     const cookieHeader = request.headers.get("cookie") || "";
     const ticketMatch = cookieHeader.match(new RegExp(`${PREAUTH_COOKIE_NAME}=([^;]+)`));
     const ticketToken = ticketMatch ? decodeURIComponent(ticketMatch[1]) : null;
@@ -41,14 +50,20 @@ export async function GET(request: Request) {
 
   const stateObj = {
     ref: ref || null,
-    role: requestedRole === "MANAGER" ? "MANAGER" : "CLIPPER",
+    portal: requestedPortal,
+    role: requestedPortal.toUpperCase(),
     managerKeyId,
     nonce: Math.random().toString(36).substring(7),
   };
   const encodedState = Buffer.from(JSON.stringify(stateObj)).toString("base64");
 
   if (!clientId || clientId === "your_discord_client_id") {
-    const errorUrl = new URL(requestedRole === "MANAGER" ? "/manager/login?error=oauth_failed" : "/login?error=oauth_failed", request.url);
+    const loginPath = requestedPortal === "admin"
+      ? "/admin/login"
+      : requestedPortal === "manager"
+      ? "/manager/login"
+      : "/login";
+    const errorUrl = new URL(`${loginPath}?error=oauth_failed`, request.url);
     return NextResponse.redirect(errorUrl.toString());
   }
 
