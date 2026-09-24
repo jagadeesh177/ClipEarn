@@ -33,6 +33,22 @@ export async function DELETE(
       );
     }
 
+    // Clippers cannot delete approved videos; they can only delete rejected submissions
+    if (!isStaff) {
+      if (submission.status === SubmissionStatus.APPROVED) {
+        return NextResponse.json(
+          { error: "Approved videos cannot be deleted by clippers." },
+          { status: 403 }
+        );
+      }
+      if (submission.status !== SubmissionStatus.REJECTED) {
+        return NextResponse.json(
+          { error: "Clippers can only delete rejected submissions." },
+          { status: 403 }
+        );
+      }
+    }
+
     await prisma.$transaction(async (tx) => {
       // 1. Remove linked view snapshots
       await tx.viewSnapshot.deleteMany({

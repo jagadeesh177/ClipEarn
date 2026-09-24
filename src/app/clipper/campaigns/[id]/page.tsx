@@ -276,7 +276,7 @@ export default function CampaignDetailsPage() {
   const handleDeleteSubmission = async (submissionId: string) => {
     if (
       !confirm(
-        "Are you sure you want to delete this submission? This will remove the clip so you can re-submit it to another campaign if needed."
+        "Are you sure you want to delete this rejected submission? This will remove the clip so you can re-submit it to another campaign if needed."
       )
     ) {
       return;
@@ -720,20 +720,22 @@ export default function CampaignDetailsPage() {
                             </div>
                           )}
 
-                          {/* Delete Submission Button */}
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteSubmission(sub.id)}
-                            disabled={deletingSubId === sub.id}
-                            title="Delete submission"
-                            className="p-1.5 rounded-lg border border-slate-800 bg-slate-900/80 hover:bg-red-500/20 hover:border-red-500/40 text-slate-400 hover:text-red-400 transition-colors shrink-0 flex items-center justify-center disabled:opacity-50"
-                          >
-                            {deletingSubId === sub.id ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin text-red-400" />
-                            ) : (
-                              <Trash2 className="w-3.5 h-3.5" />
-                            )}
-                          </button>
+                          {/* Delete Submission Button - Only for rejected clips */}
+                          {sub.status === "REJECTED" && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteSubmission(sub.id)}
+                              disabled={deletingSubId === sub.id}
+                              title="Delete rejected submission"
+                              className="p-1.5 rounded-lg border border-slate-800 bg-slate-900/80 hover:bg-red-500/20 hover:border-red-500/40 text-slate-400 hover:text-red-400 transition-colors shrink-0 flex items-center justify-center disabled:opacity-50"
+                            >
+                              {deletingSubId === sub.id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin text-red-400" />
+                              ) : (
+                                <Trash2 className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          )}
                         </div>
                       </div>
                     );
