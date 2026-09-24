@@ -24,6 +24,7 @@ export interface VideoMetadata {
   post_url: string;
   author_platform_user_id?: string;
   author_username?: string;
+  author_display_name?: string;
   current_views: number;
   likes?: number;
   comments?: number;

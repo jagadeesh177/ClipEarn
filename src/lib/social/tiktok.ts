@@ -95,34 +95,86 @@ export class TikTokProvider implements SocialProvider {
     };
   }
 
-  async getVideo(postUrl: string): Promise<VideoMetadata> {
-    const postId = this.parsePostId(postUrl) || postUrl;
-    let authorUsername: string | undefined = undefined;
+  private async resolveCanonicalUrl(postUrl: string): Promise<string> {
     try {
-      const parsed = new URL(postUrl.trim());
-      const m = parsed.pathname.match(/@([^/?#&]+)/);
-      if (m) authorUsername = m[1].replace(/^@/, "");
+      if (
+        postUrl.includes("vm.tiktok.com") ||
+        postUrl.includes("vt.tiktok.com") ||
+        postUrl.includes("/t/") ||
+        postUrl.includes("/v/") ||
+        !postUrl.includes("@")
+      ) {
+        const res = await fetch(postUrl, {
+          method: "GET",
+          redirect: "follow",
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          },
+          signal: AbortSignal.timeout(6000),
+        });
+        if (res.url && res.url !== postUrl) {
+          return res.url;
+        }
+      }
     } catch {}
+    return postUrl;
+  }
+
+  async getVideo(postUrl: string): Promise<VideoMetadata> {
+    const resolvedUrl = await this.resolveCanonicalUrl(postUrl);
+    const postId = this.parsePostId(resolvedUrl) || this.parsePostId(postUrl) || postUrl;
+    let authorUsername: string | undefined = undefined;
+
+    // 1. Try extracting handle from resolved or post URL: https://www.tiktok.com/@username/video/12345
+    for (const u of [resolvedUrl, postUrl]) {
+      try {
+        const parsed = new URL(u.trim());
+        const m = parsed.pathname.match(/@([^/?#&]+)/);
+        if (m) {
+          const raw = m[1].replace(/^@/, "").trim();
+          if (raw && !/\s/.test(raw)) {
+            authorUsername = raw;
+            break;
+          }
+        }
+      } catch {}
+    }
 
     let views = 0;
     let likes = 0;
     let comments = 0;
+    let authorDisplayName: string | undefined = undefined;
 
     try {
-      const metrics = await this.fetchPublicMetrics(postUrl);
+      const targetFetchUrl = resolvedUrl !== postUrl ? resolvedUrl : postUrl;
+      const metrics = await this.fetchPublicMetrics(targetFetchUrl);
       if (metrics) {
         views = metrics.views;
         likes = metrics.likes;
         comments = metrics.comments;
-        if (metrics.author) authorUsername = metrics.author;
+        if (metrics.author && !/\s/.test(metrics.author)) {
+          authorUsername = metrics.author;
+        }
+        if (metrics.displayName) {
+          authorDisplayName = metrics.displayName;
+        }
       }
     } catch {}
+
+    // Ensure authorUsername is clean and strictly a handle (no spaces)
+    if (authorUsername && (/\s/.test(authorUsername) || !/^[a-zA-Z0-9_.-]+$/.test(authorUsername))) {
+      if (!authorDisplayName) authorDisplayName = authorUsername;
+      authorUsername = undefined;
+    }
 
     return {
       platform: Platform.TIKTOK,
       platform_post_id: postId,
-      post_url: postUrl,
+      post_url: resolvedUrl || postUrl,
       author_username: authorUsername,
+      author_display_name: authorDisplayName,
       current_views: views,
       likes,
       comments,
@@ -148,11 +200,15 @@ export class TikTokProvider implements SocialProvider {
     return { views: 0, likes: 0, comments: 0 };
   }
 
-  private async fetchPublicMetrics(postUrl: string): Promise<{ views: number; likes: number; comments: number; author?: string } | null> {
+  private async fetchPublicMetrics(
+    postUrl: string
+  ): Promise<{ views: number; likes: number; comments: number; author?: string; displayName?: string } | null> {
     try {
       const res = await fetch(postUrl, {
+        redirect: "follow",
         headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
           "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
           "Accept-Language": "en-US,en;q=0.9",
         },
@@ -166,13 +222,23 @@ export class TikTokProvider implements SocialProvider {
       let likes = 0;
       let comments = 0;
       let author: string | undefined = undefined;
+      let displayName: string | undefined = undefined;
 
-      // Extract author from URL: https://www.tiktok.com/@username/video/12345
-      try {
-        const parsed = new URL(postUrl.trim());
-        const m = parsed.pathname.match(/@([^/?#&]+)/);
-        if (m) author = m[1].replace(/^@/, "");
-      } catch {}
+      // Extract handle from final redirected URL: https://www.tiktok.com/@username/video/12345
+      const urlsToCheck = [res.url, postUrl].filter(Boolean);
+      for (const u of urlsToCheck) {
+        try {
+          const parsed = new URL(u);
+          const m = parsed.pathname.match(/@([^/?#&]+)/);
+          if (m) {
+            const raw = m[1].replace(/^@/, "").trim();
+            if (raw && !/\s/.test(raw)) {
+              author = raw;
+              break;
+            }
+          }
+        } catch {}
+      }
 
       // 1. Try JSON-LD schema
       const jsonLdMatch = html.match(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/i);
@@ -189,8 +255,17 @@ export class TikTokProvider implements SocialProvider {
               if (type.includes("Comment")) comments = count;
             }
           }
-          if (ld.author?.name && !author) {
-            author = ld.author.name;
+          // Note: ld.author.url has the handle: https://www.tiktok.com/@brendanarcade
+          if (ld.author?.url && !author) {
+            const uMatch = String(ld.author.url).match(/@([^/?#&]+)/);
+            if (uMatch) {
+              const raw = uMatch[1].replace(/^@/, "").trim();
+              if (raw && !/\s/.test(raw)) author = raw;
+            }
+          }
+          // ld.author.name is display nickname
+          if (ld.author?.name) {
+            displayName = String(ld.author.name).trim();
           }
         } catch {}
       }
@@ -212,14 +287,33 @@ export class TikTokProvider implements SocialProvider {
               likes = parseInt(itemInfo.statsV2.diggCount || "0", 10) || likes;
               comments = parseInt(itemInfo.statsV2.commentCount || "0", 10) || comments;
             }
+            // itemInfo.author.uniqueId is the handle (e.g. brendanarcade)
             if (itemInfo.author?.uniqueId) {
-              author = itemInfo.author.uniqueId;
+              const raw = String(itemInfo.author.uniqueId).replace(/^@/, "").trim();
+              if (raw && !/\s/.test(raw)) author = raw;
+            }
+            if (itemInfo.author?.nickname) {
+              displayName = String(itemInfo.author.nickname).trim();
             }
           }
         } catch {}
       }
 
-      // 3. Fallback regexes on raw HTML
+      // 3. SIGI_STATE or __NEXT_DATA__
+      if (!author) {
+        const uMatch =
+          html.match(/"uniqueId":"([a-zA-Z0-9_.-]+)"/) ||
+          html.match(/"authorUniqueId":"([a-zA-Z0-9_.-]+)"/) ||
+          html.match(/property="og:url"\s+content="https?:\/\/(?:www\.)?tiktok\.com\/@([a-zA-Z0-9_.-]+)/i) ||
+          html.match(/content="https?:\/\/(?:www\.)?tiktok\.com\/@([a-zA-Z0-9_.-]+)[^"]*"\s+property="og:url"/i) ||
+          html.match(/<link[^>]*rel="canonical"[^>]*href="https?:\/\/(?:www\.)?tiktok\.com\/@([a-zA-Z0-9_.-]+)/i) ||
+          html.match(/property="al:ios:url"\s+content="[^"]*@([a-zA-Z0-9_.-]+)/i);
+        if (uMatch) {
+          author = uMatch[1].replace(/^@/, "").trim();
+        }
+      }
+
+      // 4. Fallback regexes for stats on raw HTML
       if (!views) {
         const playMatch = html.match(/"playCount":\s*(\d+)/) || html.match(/"play_count":\s*(\d+)/);
         if (playMatch) views = parseInt(playMatch[1], 10);
@@ -233,8 +327,14 @@ export class TikTokProvider implements SocialProvider {
         if (commMatch) comments = parseInt(commMatch[1], 10);
       }
 
-      if (views > 0 || likes > 0 || comments > 0 || author) {
-        return { views, likes, comments, author };
+      // Ensure author has no spaces (a handle cannot have spaces)
+      if (author && /\s/.test(author)) {
+        if (!displayName) displayName = author;
+        author = undefined;
+      }
+
+      if (views > 0 || likes > 0 || comments > 0 || author || displayName) {
+        return { views, likes, comments, author, displayName };
       }
       return null;
     } catch {

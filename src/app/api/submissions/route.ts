@@ -236,7 +236,7 @@ export async function POST(request: Request) {
     const urlAuthor = extractAccountFromUrl(trimmedUrl, detectedPlatform);
     if (urlAuthor && !isAuthorMatch(urlAuthor, account.username)) {
       // Check if user owns another verified account that matches this handle
-      const altAccount = await prisma.socialAccount.findFirst({
+      const allVerifiedAccounts = await prisma.socialAccount.findMany({
         where: {
           user_id: user.id,
           platform: detectedPlatform,
@@ -244,9 +244,9 @@ export async function POST(request: Request) {
         },
       });
 
-      const isAltMatch = altAccount ? isAuthorMatch(urlAuthor, altAccount.username) : false;
+      const matchingAlt = allVerifiedAccounts.find((a) => isAuthorMatch(urlAuthor, a.username));
 
-      if (!isAltMatch) {
+      if (!matchingAlt) {
         await flagSuspiciousActivity({
           userId: user.id,
           type: "ACCOUNT_MISMATCH_SUBMISSION_ATTEMPT",
@@ -259,8 +259,8 @@ export async function POST(request: Request) {
           },
           { status: 400 }
         );
-      } else if (altAccount) {
-        account = altAccount;
+      } else {
+        account = matchingAlt;
       }
     }
 
@@ -312,10 +312,10 @@ export async function POST(request: Request) {
       initialComments = 0;
     }
 
-    // If provider extracted an author handle from the clip page/API, enforce match
-    if (videoMeta?.author_username) {
+    // 7. Verify Author Match if provider extracted a valid username handle (no spaces)
+    if (videoMeta?.author_username && !/\s/.test(videoMeta.author_username)) {
       const metaAuthor = videoMeta.author_username;
-      const isMatch = isAuthorMatch(metaAuthor, account.username);
+      const isMatch = isAuthorMatch(metaAuthor, account.username, videoMeta.author_display_name);
 
       if (!isMatch) {
         // Also check if user has another verified account that matches
@@ -327,7 +327,7 @@ export async function POST(request: Request) {
           },
         });
 
-        const matchingAcc = allVerified.find((a) => isAuthorMatch(metaAuthor, a.username));
+        const matchingAcc = allVerified.find((a) => isAuthorMatch(metaAuthor, a.username, videoMeta.author_display_name));
 
         if (!matchingAcc) {
           await flagSuspiciousActivity({

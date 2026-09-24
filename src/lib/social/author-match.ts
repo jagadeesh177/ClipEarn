@@ -34,17 +34,8 @@ export function levenshteinDistance(a: string, b: string): number {
   return dp[m][n];
 }
 
-/**
- * Checks whether an author extracted from a clip URL/metadata matches the verified account handle.
- * Returns true if they are deemed to be the same identity or compatible handle variation.
- */
-export function isAuthorMatch(
-  scrapedOrUrlAuthor?: string | null,
-  verifiedHandle?: string | null
-): boolean {
-  if (!scrapedOrUrlAuthor || !verifiedHandle) return true;
-
-  const rawA = scrapedOrUrlAuthor.toLowerCase().replace(/^@/, "").trim();
+function checkSingleMatch(author: string, verifiedHandle: string): boolean {
+  const rawA = author.toLowerCase().replace(/^@/, "").trim();
   const rawB = verifiedHandle.toLowerCase().replace(/^@/, "").trim();
 
   if (!rawA || !rawB) return true;
@@ -52,7 +43,7 @@ export function isAuthorMatch(
   // 1. Direct match
   if (rawA === rawB) return true;
 
-  // 2. Alphanumeric match (ignoring dots, underscores, dashes, etc.)
+  // 2. Alphanumeric match (ignoring dots, underscores, dashes, spaces, etc.)
   const cleanA = cleanAlphanumeric(rawA);
   const cleanB = cleanAlphanumeric(rawB);
 
@@ -90,3 +81,27 @@ export function isAuthorMatch(
 
   return false;
 }
+
+/**
+ * Checks whether an author extracted from a clip URL/metadata matches the verified account handle.
+ * Returns true if they are deemed to be the same identity or compatible handle variation.
+ */
+export function isAuthorMatch(
+  scrapedOrUrlAuthor?: string | null,
+  verifiedHandle?: string | null,
+  displayName?: string | null
+): boolean {
+  if (!verifiedHandle) return true;
+  if (!scrapedOrUrlAuthor && !displayName) return true;
+
+  if (scrapedOrUrlAuthor && checkSingleMatch(scrapedOrUrlAuthor, verifiedHandle)) {
+    return true;
+  }
+
+  if (displayName && checkSingleMatch(displayName, verifiedHandle)) {
+    return true;
+  }
+
+  return false;
+}
+
