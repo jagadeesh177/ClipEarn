@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   const state = searchParams.get("state");
 
   let referralCode: string | null = null;
-  let requestedPortal: "clipper" | "manager" | "admin" = "clipper";
+  let requestedPortal: "clipper" | "manager" = "clipper";
   let managerKeyId: string | null = null;
 
   if (state) {
@@ -18,9 +18,7 @@ export async function GET(request: Request) {
       const decoded = JSON.parse(Buffer.from(state, "base64").toString("utf-8"));
       referralCode = decoded.ref || null;
       managerKeyId = decoded.managerKeyId || null;
-      if (decoded.portal === "admin" || decoded.role === "ADMIN") {
-        requestedPortal = "admin";
-      } else if (decoded.portal === "manager" || decoded.role === "MANAGER") {
+      if (decoded.portal === "manager" || decoded.role === "MANAGER" || decoded.portal === "admin" || decoded.role === "ADMIN") {
         requestedPortal = "manager";
       } else {
         requestedPortal = "clipper";
@@ -31,11 +29,7 @@ export async function GET(request: Request) {
   }
 
   const getLoginRedirect = (errorParam: string, reason?: string) => {
-    const base = requestedPortal === "admin"
-      ? "/admin/login"
-      : requestedPortal === "manager"
-      ? "/manager/login"
-      : "/login";
+    const base = requestedPortal === "manager" ? "/manager/login" : "/login";
     const reasonParam = reason ? `&reason=${encodeURIComponent(reason)}` : "";
     return `${base}?error=${errorParam}${reasonParam}`;
   };
@@ -136,17 +130,7 @@ export async function GET(request: Request) {
     // 2. Server-Side Authorization Check for Requested Portal
     // (Never trust client; authenticate intent against actual database permissions)
 
-    // A. ADMIN PORTAL CHECK:
-    if (requestedPortal === "admin") {
-      if (!user || user.role !== UserRole.ADMIN || !isAllowedAdminEmail(user.email)) {
-        return NextResponse.redirect(new URL("/admin/login?error=not_authorized", request.url));
-      }
-      if (user.status === UserStatus.SUSPENDED || user.status === UserStatus.BANNED) {
-        return NextResponse.redirect(new URL(getLoginRedirect("account_suspended", user.suspension_reason || undefined), request.url));
-      }
-    }
-
-    // B. MANAGER PORTAL CHECK:
+    // A. MANAGER PORTAL CHECK:
     if (requestedPortal === "manager") {
       const hasManagerAccess = user && (
         user.role === UserRole.MANAGER ||
@@ -163,7 +147,7 @@ export async function GET(request: Request) {
       }
     }
 
-    // C. CLIPPER PORTAL CHECK:
+    // B. CLIPPER PORTAL CHECK:
     if (requestedPortal === "clipper") {
       if (user && (user.status === UserStatus.SUSPENDED || user.status === UserStatus.BANNED)) {
         return NextResponse.redirect(new URL(getLoginRedirect("account_suspended", user.suspension_reason || undefined), request.url));
@@ -172,11 +156,6 @@ export async function GET(request: Request) {
 
     // 3. User provisioning / account linking
     if (!user) {
-      // Admin portal does NOT auto-create unauthorized users
-      if (requestedPortal === "admin") {
-        return NextResponse.redirect(new URL("/admin/login?error=not_authorized", request.url));
-      }
-
       // Manager portal without valid invite key does NOT auto-create users
       if (requestedPortal === "manager" && !isManagerInvite) {
         return NextResponse.redirect(new URL("/manager/login?error=not_authorized", request.url));
@@ -251,9 +230,7 @@ export async function GET(request: Request) {
 
     // Destination is strictly governed by login intent + authorization!
     // Never automatically redirect to highest role!
-    const destination = requestedPortal === "admin"
-      ? "/admin/dashboard"
-      : requestedPortal === "manager"
+    const destination = requestedPortal === "manager"
       ? "/manager/dashboard"
       : "/clipper/dashboard";
 

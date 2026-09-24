@@ -8,10 +8,8 @@ export async function GET(request: Request) {
   const portalParam = searchParams.get("portal")?.toLowerCase();
   const roleParam = searchParams.get("role")?.toLowerCase();
 
-  let requestedPortal: "clipper" | "manager" | "admin" = "clipper";
-  if (portalParam === "admin" || roleParam === "admin") {
-    requestedPortal = "admin";
-  } else if (portalParam === "manager" || roleParam === "manager") {
+  let requestedPortal: "clipper" | "manager" = "clipper";
+  if (portalParam === "manager" || roleParam === "manager" || portalParam === "admin" || roleParam === "admin") {
     requestedPortal = "manager";
   } else {
     requestedPortal = "clipper";
@@ -58,9 +56,7 @@ export async function GET(request: Request) {
   const encodedState = Buffer.from(JSON.stringify(stateObj)).toString("base64");
 
   if (!clientId || clientId === "your_discord_client_id") {
-    const loginPath = requestedPortal === "admin"
-      ? "/admin/login"
-      : requestedPortal === "manager"
+    const loginPath = requestedPortal === "manager"
       ? "/manager/login"
       : "/login";
     const errorUrl = new URL(`${loginPath}?error=oauth_failed`, request.url);

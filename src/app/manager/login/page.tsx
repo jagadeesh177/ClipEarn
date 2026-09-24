@@ -28,7 +28,7 @@ function ManagerLoginContent() {
   const [verifiedKeyPreview, setVerifiedKeyPreview] = useState("");
 
   // Secondary Staff / Admin login toggle
-  const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [showAdminLogin, setShowAdminLogin] = useState(searchParams.get("admin") === "true");
   const [adminEmail, setAdminEmail] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
   const [adminLoading, setAdminLoading] = useState(false);
@@ -314,7 +314,7 @@ function ManagerLoginContent() {
           )}
 
           {/* Toggle between Campaign Manager portal & Staff/Admin login */}
-          <div className="mt-6 pt-5 border-t border-slate-800/80 text-center text-xs flex flex-col gap-2">
+          <div className="mt-6 pt-5 border-t border-slate-800/80 text-center text-xs">
             <button
               type="button"
               onClick={() => {
@@ -327,12 +327,6 @@ function ManagerLoginContent() {
                 ? "← Back to Campaign Manager Login"
                 : "Staff / Administrator Credentials"}
             </button>
-            <Link
-              href="/admin/login"
-              className="text-[11px] text-purple-400/80 hover:text-purple-300 transition-colors"
-            >
-              Or go to dedicated Admin / Staff Login Portal →
-            </Link>
           </div>
 
           <div className="mt-4 text-center text-xs text-slate-500">

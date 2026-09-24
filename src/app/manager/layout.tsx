@@ -48,7 +48,7 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
             router.push("/manager/dashboard");
           }
         } else if (!isLoginPage) {
-          router.push(data.authenticated ? "/manager/login?error=not_authorized" : "/manager/login");
+          router.push("/manager/login");
         }
       })
       .catch(() => {

@@ -47,9 +47,6 @@ export async function POST(request: Request) {
         targetId: user.id,
       });
 
-      const requestedPortal = body.portal === "manager" ? "manager" : "admin";
-      const redirectTo = requestedPortal === "manager" ? "/manager/dashboard" : "/admin/dashboard";
-
       const response = NextResponse.json({
         success: true,
         user: {
@@ -58,7 +55,7 @@ export async function POST(request: Request) {
           email: user.email,
           role: user.role,
         },
-        redirectTo,
+        redirectTo: "/manager/dashboard",
       });
 
       const isHttps =
