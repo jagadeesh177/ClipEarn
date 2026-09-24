@@ -68,12 +68,11 @@ export async function ensureRealAdmins(): Promise<void> {
             referral_code: adm.ref,
           },
         });
-      } else if (existing.role !== UserRole.ADMIN || !existing.password_hash) {
+      } else if (!existing.password_hash) {
         const hash = await hashPassword(adm.pass);
         await prisma.user.update({
           where: { id: existing.id },
           data: {
-            role: UserRole.ADMIN,
             password_hash: hash,
             status: UserStatus.ACTIVE,
           },
@@ -154,9 +153,12 @@ export async function getSessionUser(): Promise<User | null> {
       return null;
     }
 
-    // Exact Admin Access Protection:
-    // Only the two designated real Admin accounts are allowed the ADMIN role in active sessions.
-    if (user.role === UserRole.ADMIN && !isAllowedAdminEmail(user.email)) {
+    // Strict Role Enforcement:
+    // 1. Managers strictly remain Managers and must NEVER be elevated or promoted to Admin.
+    if (payload.role === UserRole.MANAGER || user.role === UserRole.MANAGER) {
+      user.role = UserRole.MANAGER;
+    } else if (user.role === UserRole.ADMIN && !isAllowedAdminEmail(user.email)) {
+      // 2. Only the two designated real Admin accounts are allowed the ADMIN role in active sessions.
       user.role = UserRole.CLIPPER;
     }
 

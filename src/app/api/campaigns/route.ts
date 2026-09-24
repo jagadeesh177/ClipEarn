@@ -28,16 +28,6 @@ export async function GET(request: Request) {
           }
         : {}),
       ...(platform ? { allowed_platforms: { has: platform } } : {}),
-      ...(user?.role === UserRole.MANAGER
-        ? {
-            access_codes: {
-              some: {
-                redeemed_by: user.id,
-                status: "REDEEMED",
-              },
-            },
-          }
-        : {}),
     };
 
     const [total, campaigns] = await Promise.all([

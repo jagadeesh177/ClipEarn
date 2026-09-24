@@ -281,16 +281,6 @@ export default function ManagerDashboardPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 shrink-0 sm:pt-0.5">
-          {currentUser?.role === "MANAGER" && (
-            <Link
-              href="/manager/campaigns?redeem=true"
-              className="px-4 py-2.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 hover:text-white border border-purple-500/40 text-xs font-bold transition-all flex items-center gap-2 shadow-sm"
-            >
-              <Key className="w-4 h-4 text-purple-400" />
-              <span>Enter Campaign Access Code</span>
-            </Link>
-          )}
-
           <Link
             href="/manager/submissions"
             className="px-4 py-2.5 rounded-xl bg-yellow-500/15 hover:bg-yellow-500/25 text-yellow-400 border border-yellow-500/30 text-xs font-bold transition-colors flex items-center gap-2"
@@ -300,24 +290,22 @@ export default function ManagerDashboardPage() {
           </Link>
 
           {currentUser?.role === "ADMIN" && (
-            <>
-              <button
-                onClick={handleOpenKeysModal}
-                className="px-4 py-2.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 hover:text-white border border-purple-500/40 text-xs font-bold transition-all flex items-center gap-2 shadow-sm"
-              >
-                <Users className="w-4 h-4 text-purple-400" />
-                <span>Campaign Managers ({activeManagersCount})</span>
-              </button>
-
-              <Link
-                href="/manager/campaigns/create"
-                className="px-4 py-2.5 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-black text-xs transition-opacity hover:opacity-95 flex items-center gap-2 shadow-lg shadow-brand-cyan/20"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Create Campaign</span>
-              </Link>
-            </>
+            <button
+              onClick={handleOpenKeysModal}
+              className="px-4 py-2.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 hover:text-white border border-purple-500/40 text-xs font-bold transition-all flex items-center gap-2 shadow-sm"
+            >
+              <Users className="w-4 h-4 text-purple-400" />
+              <span>Campaign Managers ({activeManagersCount})</span>
+            </button>
           )}
+
+          <Link
+            href="/manager/campaigns/create"
+            className="px-4 py-2.5 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-black text-xs transition-opacity hover:opacity-95 flex items-center gap-2 shadow-lg shadow-brand-cyan/20"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Create Campaign</span>
+          </Link>
         </div>
       </div>
 

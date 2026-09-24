@@ -83,21 +83,9 @@ export async function hasManagerCampaignAccess(
   campaignId: string,
   role: UserRole
 ): Promise<boolean> {
-  if (role === UserRole.ADMIN) {
+  if (role === UserRole.ADMIN || role === UserRole.MANAGER) {
     return true;
   }
-
-  if (role === UserRole.MANAGER) {
-    const access = await prisma.campaignAccessCode.findFirst({
-      where: {
-        campaign_id: campaignId,
-        redeemed_by: userId,
-        status: "REDEEMED",
-      },
-    });
-    return !!access;
-  }
-
   return false;
 }
 

@@ -204,7 +204,7 @@ export async function GET(request: Request) {
           username: user.username || username,
           avatar_url: avatarUrl || user.avatar_url,
           last_login_at: new Date(),
-          ...(isManagerInvite && user.role !== UserRole.ADMIN ? { role: UserRole.MANAGER, status: UserStatus.ACTIVE } : {}),
+          ...(isManagerInvite ? { role: UserRole.MANAGER, status: UserStatus.ACTIVE } : {}),
         },
       });
     }

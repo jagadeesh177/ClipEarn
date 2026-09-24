@@ -156,7 +156,9 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await requireRole([UserRole.MANAGER, UserRole.ADMIN]);
+    // Only Administrators are permitted to delete campaigns.
+    // Managers are strictly blocked from deleting campaigns.
+    const user = await requireRole([UserRole.ADMIN]);
 
     const campaign = await prisma.campaign.findUnique({
       where: { id: params.id },
@@ -164,16 +166,6 @@ export async function DELETE(
 
     if (!campaign) {
       return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
-    }
-
-    if (user.role === UserRole.MANAGER) {
-      const hasAccess = await hasManagerCampaignAccess(user.id, params.id, user.role);
-      if (!hasAccess) {
-        return NextResponse.json(
-          { error: "Access denied. You do not have permission to delete this campaign." },
-          { status: 403 }
-        );
-      }
     }
 
     await prisma.campaign.delete({
