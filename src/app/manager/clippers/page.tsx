@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Users, Search, ShieldAlert, ShieldCheck, Video, DollarSign, Eye } from "lucide-react";
+import { Users, Search, ShieldAlert, ShieldCheck, Video, DollarSign, Eye, Trash2 } from "lucide-react";
 
 export default function ManagerClippersPage() {
   const [clippers, setClippers] = useState<any[]>([]);
@@ -49,6 +49,32 @@ export default function ManagerClippersPage() {
       }
     } catch {
       alert("Network error");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleDeleteClipper = async (userId: string, username: string) => {
+    if (
+      !confirm(
+        `Are you sure you want to PERMANENTLY DELETE clipper @${username}? This action cannot be undone.`
+      )
+    )
+      return;
+
+    try {
+      setUpdatingId(userId);
+      const res = await fetch(`/api/manager/clippers?userId=${encodeURIComponent(userId)}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setClippers((prev) => prev.filter((c) => c.id !== userId));
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to delete clipper");
+      }
+    } catch {
+      alert("Network error deleting clipper");
     } finally {
       setUpdatingId(null);
     }
@@ -160,17 +186,27 @@ export default function ManagerClippersPage() {
                     </td>
 
                     <td className="py-4 text-right">
-                      <button
-                        onClick={() => handleToggleStatus(c.id, c.status)}
-                        disabled={updatingId === c.id}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                          c.status === "ACTIVE"
-                            ? "bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/30"
-                            : "bg-brand-emerald/15 hover:bg-brand-emerald/25 text-brand-emerald border border-brand-emerald/30"
-                        }`}
-                      >
-                        {c.status === "ACTIVE" ? "Suspend" : "Re-activate"}
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleToggleStatus(c.id, c.status)}
+                          disabled={updatingId === c.id}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                            c.status === "ACTIVE"
+                              ? "bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/30"
+                              : "bg-brand-emerald/15 hover:bg-brand-emerald/25 text-brand-emerald border border-brand-emerald/30"
+                          }`}
+                        >
+                          {c.status === "ACTIVE" ? "Suspend" : "Re-activate"}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteClipper(c.id, c.username)}
+                          disabled={updatingId === c.id}
+                          title="Permanently Delete Clipper"
+                          className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

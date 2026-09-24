@@ -48,12 +48,8 @@ export async function GET(request: Request) {
   const encodedState = Buffer.from(JSON.stringify(stateObj)).toString("base64");
 
   if (!clientId || clientId === "your_discord_client_id") {
-    // If Discord credentials not set in .env, redirect to callback with a mock code so testing still succeeds smoothly
-    const mockCallbackUrl = new URL(redirectUri);
-    mockCallbackUrl.searchParams.set("code", "mock_discord_code_" + Date.now());
-    mockCallbackUrl.searchParams.set("state", encodedState);
-    if (ref) mockCallbackUrl.searchParams.set("ref", ref);
-    return NextResponse.redirect(mockCallbackUrl.toString());
+    const errorUrl = new URL(requestedRole === "MANAGER" ? "/manager/login?error=oauth_failed" : "/login?error=oauth_failed", request.url);
+    return NextResponse.redirect(errorUrl.toString());
   }
 
   const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(

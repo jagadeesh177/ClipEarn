@@ -66,54 +66,45 @@ export async function GET(request: Request) {
   let email: string | null = null;
   let avatarUrl: string | null = null;
 
-  if (code.startsWith("mock_discord_code")) {
-    // Development fallback mock
-    const suffix = code.replace("mock_discord_code_", "");
-    discordId = requestedRole === "MANAGER" ? (suffix ? `987654321_${suffix}` : "987654321098765432") : "123456789012345678";
-    username = requestedRole === "MANAGER" ? "DiscordManager" : "DemoClipper";
-    email = requestedRole === "MANAGER" ? `discord.manager.${suffix || "0"}@clipearn.com` : "clipper@clipearn.com";
-    avatarUrl = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150";
-  } else {
-    // Official Discord OAuth token exchange
-    try {
-      const clientId = process.env.DISCORD_CLIENT_ID!;
-      const clientSecret = process.env.DISCORD_CLIENT_SECRET!;
-      const urlObj = new URL(request.url);
-      const redirectUri = process.env.DISCORD_REDIRECT_URI || `${urlObj.origin}/api/auth/discord/callback`;
+  // Official Discord OAuth token exchange
+  try {
+    const clientId = process.env.DISCORD_CLIENT_ID!;
+    const clientSecret = process.env.DISCORD_CLIENT_SECRET!;
+    const urlObj = new URL(request.url);
+    const redirectUri = process.env.DISCORD_REDIRECT_URI || `${urlObj.origin}/api/auth/discord/callback`;
 
-      const tokenRes = await fetch("https://discord.com/api/oauth2/token", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          client_id: clientId,
-          client_secret: clientSecret,
-          grant_type: "authorization_code",
-          code,
-          redirect_uri: redirectUri,
-        }),
-      });
+    const tokenRes = await fetch("https://discord.com/api/oauth2/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        grant_type: "authorization_code",
+        code,
+        redirect_uri: redirectUri,
+      }),
+    });
 
-      const tokenData = await tokenRes.json();
-      if (!tokenRes.ok || tokenData.error) {
-        throw new Error(tokenData.error_description || "Failed to exchange Discord code");
-      }
-
-      const userRes = await fetch("https://discord.com/api/users/@me", {
-        headers: { Authorization: `Bearer ${tokenData.access_token}` },
-      });
-      const userData = await userRes.json();
-
-      discordId = userData.id;
-      username = userData.global_name || userData.username;
-      email = userData.email || null;
-      avatarUrl = userData.avatar
-        ? `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png`
-        : null;
-    } catch (err: any) {
-      console.error("Discord OAuth Error:", err);
-      const failureRedirect = requestedRole === "MANAGER" ? "/manager/login?error=oauth_failed" : "/login?error=oauth_failed";
-      return NextResponse.redirect(new URL(failureRedirect, request.url));
+    const tokenData = await tokenRes.json();
+    if (!tokenRes.ok || tokenData.error) {
+      throw new Error(tokenData.error_description || "Failed to exchange Discord code");
     }
+
+    const userRes = await fetch("https://discord.com/api/users/@me", {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` },
+    });
+    const userData = await userRes.json();
+
+    discordId = userData.id;
+    username = userData.global_name || userData.username;
+    email = userData.email || null;
+    avatarUrl = userData.avatar
+      ? `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png`
+      : null;
+  } catch (err: any) {
+    console.error("Discord OAuth Error:", err);
+    const failureRedirect = requestedRole === "MANAGER" ? "/manager/login?error=oauth_failed" : "/login?error=oauth_failed";
+    return NextResponse.redirect(new URL(failureRedirect, request.url));
   }
 
   try {
