@@ -1,12 +1,19 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
+import { requireRole, isAllowedAdminEmail } from "@/lib/auth";
 import { UserRole, UserStatus } from "@prisma/client";
 import { logAuditEvent } from "@/lib/audit";
 
 /**
  * POST /api/admin/managers/[id]/revoke
- * Admin-only: immediately revokes a Campaign Manager by user ID.
+ * Admin-only: immediately revokes a Campaign Manager's management privileges.
+ *
+ * Requirements:
+ * - Does NOT ban or delete the user account.
+ * - Downgrades role from MANAGER to CLIPPER.
+ * - Preserves existing status (ACTIVE) so they can log in as a regular user.
+ * - Preserves previous submissions, campaigns, and activity history.
+ * - Immediately invalidates Manager permissions on the backend.
  */
 export async function POST(
   request: Request,
@@ -23,16 +30,26 @@ export async function POST(
       return NextResponse.json({ error: "Manager not found" }, { status: 404 });
     }
 
-    if (managerUser.role !== UserRole.MANAGER && managerUser.status === UserStatus.SUSPENDED) {
-      return NextResponse.json({ error: "Manager is already revoked" }, { status: 400 });
+    if (managerUser.role === UserRole.ADMIN || isAllowedAdminEmail(managerUser.email)) {
+      return NextResponse.json({ error: "Cannot revoke an Admin account." }, { status: 400 });
     }
 
-    // Demote role and suspend status to immediately invalidate sessions and block Discord login
+    if (managerUser.role !== UserRole.MANAGER) {
+      return NextResponse.json(
+        { error: "User is not currently an active Campaign Manager." },
+        { status: 400 }
+      );
+    }
+
+    // Demote role to CLIPPER while preserving their account and existing status (ACTIVE)
     const updated = await prisma.user.update({
       where: { id: params.id },
       data: {
         role: UserRole.CLIPPER,
-        status: UserStatus.SUSPENDED,
+        // If status was previously marked SUSPENDED by old revocation logic, ensure it is restored to ACTIVE
+        status: managerUser.status === UserStatus.SUSPENDED ? UserStatus.ACTIVE : managerUser.status,
+        suspension_reason: managerUser.status === UserStatus.SUSPENDED ? null : managerUser.suspension_reason,
+        suspended_at: managerUser.status === UserStatus.SUSPENDED ? null : managerUser.suspended_at,
       },
     });
 
@@ -47,12 +64,13 @@ export async function POST(
       action: "MANAGER_REVOKED",
       targetType: "USER",
       targetId: params.id,
-      newValue: { status: "SUSPENDED", role: "CLIPPER" },
+      oldValue: { role: "MANAGER" },
+      newValue: { role: "CLIPPER", status: updated.status },
     });
 
     return NextResponse.json({
       success: true,
-      message: "Campaign Manager access revoked successfully.",
+      message: "Campaign Manager access revoked successfully. Account preserved as a regular Clipper.",
       user: {
         id: updated.id,
         username: updated.username,
@@ -68,7 +86,7 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized. Admin role required." }, { status: 403 });
     }
     return NextResponse.json(
-      { error: err?.message || "Failed to revoke manager" },
+      { error: err?.message || "Failed to revoke manager access" },
       { status: 500 }
     );
   }

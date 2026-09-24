@@ -32,23 +32,33 @@ export async function POST(
       data: { status: "REVOKED" },
     });
 
-    // If key was used by a manager, immediately revoke the manager's access and suspend user
+    // If key was used by a manager, immediately revoke the manager's access without banning or deleting them
     if (existing.used_by) {
-      await prisma.user.update({
+      const user = await prisma.user.findUnique({
         where: { id: existing.used_by },
-        data: {
-          role: UserRole.CLIPPER,
-          status: UserStatus.SUSPENDED,
-        },
       });
 
-      await logAuditEvent({
-        actorId: admin.id,
-        action: "MANAGER_REVOKED",
-        targetType: "USER",
-        targetId: existing.used_by,
-        newValue: { status: "SUSPENDED", role: "CLIPPER" },
-      });
+      if (user && user.role !== UserRole.ADMIN) {
+        await prisma.user.update({
+          where: { id: existing.used_by },
+          data: {
+            role: UserRole.CLIPPER,
+            // Preserve account as ACTIVE so they can use regular Clipper features
+            status: user.status === UserStatus.SUSPENDED ? UserStatus.ACTIVE : user.status,
+            suspension_reason: user.status === UserStatus.SUSPENDED ? null : user.suspension_reason,
+            suspended_at: user.status === UserStatus.SUSPENDED ? null : user.suspended_at,
+          },
+        });
+
+        await logAuditEvent({
+          actorId: admin.id,
+          action: "MANAGER_REVOKED",
+          targetType: "USER",
+          targetId: existing.used_by,
+          oldValue: { role: user.role },
+          newValue: { role: "CLIPPER", status: user.status === UserStatus.SUSPENDED ? "ACTIVE" : user.status },
+        });
+      }
     }
 
     await logAuditEvent({
@@ -63,7 +73,7 @@ export async function POST(
     return NextResponse.json({
       success: true,
       message: existing.used_by
-        ? "Campaign Manager access revoked successfully."
+        ? "Campaign Manager access revoked successfully. Account preserved as Clipper."
         : "Manager invitation code revoked successfully.",
       accessKey: updated,
     });
