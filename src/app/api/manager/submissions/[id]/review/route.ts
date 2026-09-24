@@ -34,13 +34,9 @@ export async function POST(
     }
 
     const isAppeal = submission.status === SubmissionStatus.APPEALED;
+    const wasApproved = submission.status === SubmissionStatus.APPROVED;
 
     if (action === "APPROVE") {
-      const parsedVerifiedViews =
-        verified_views !== undefined && verified_views !== null && !isNaN(Number(verified_views))
-          ? Math.max(0, parseInt(String(verified_views), 10))
-          : null;
-
       const updated = await prisma.$transaction(async (tx) => {
         const sub = await tx.submission.update({
           where: { id: params.id },
@@ -49,20 +45,8 @@ export async function POST(
             reviewed_at: new Date(),
             reviewed_by: manager.id,
             rejection_reason: null,
-            ...(parsedVerifiedViews !== null ? { current_views: parsedVerifiedViews } : {}),
           },
         });
-
-        if (parsedVerifiedViews !== null) {
-          await tx.viewSnapshot.create({
-            data: {
-              submission_id: sub.id,
-              views: parsedVerifiedViews,
-              likes: sub.current_likes || 0,
-              comments: sub.current_comments || 0,
-            },
-          });
-        }
 
         // Check if this approval qualifies a referral (Rule 41: At least one submission approved)
         const pendingReferral = await tx.referral.findUnique({
@@ -122,15 +106,29 @@ export async function POST(
 
       return NextResponse.json({ success: true, submission: updated });
     } else {
-      // REJECT
+      // REJECT (can reject PENDING, APPEALED, or already APPROVED clips)
+      const earningsToRefund = Number(submission.current_earnings) || 0;
+
       const updated = await prisma.$transaction(async (tx) => {
+        // If it was previously approved and accumulated earnings, refund campaign used budget
+        if (wasApproved && earningsToRefund > 0) {
+          await tx.campaign.update({
+            where: { id: submission.campaign_id },
+            data: {
+              used_budget: {
+                decrement: earningsToRefund,
+              },
+            },
+          });
+        }
+
         const sub = await tx.submission.update({
           where: { id: params.id },
           data: {
             status: SubmissionStatus.REJECTED,
             reviewed_at: new Date(),
             reviewed_by: manager.id,
-            rejection_reason,
+            rejection_reason: rejection_reason.trim(),
             eligible_views: 0,
             current_earnings: 0,
           },
@@ -140,11 +138,17 @@ export async function POST(
         await tx.notification.create({
           data: {
             user_id: submission.user_id,
-            type: isAppeal ? "APPEAL_REJECTED" : "SUBMISSION_REJECTED",
-            title: isAppeal ? "Appeal Denied" : "Submission Not Approved",
-            message: isAppeal
-              ? `Your appeal for "${submission.campaign.name}" was reviewed and rejected. Final reason: ${rejection_reason}`
-              : `Your clip for "${submission.campaign.name}" was rejected. Reason: ${rejection_reason}`,
+            type: wasApproved ? "SUBMISSION_REJECTED" : isAppeal ? "APPEAL_REJECTED" : "SUBMISSION_REJECTED",
+            title: wasApproved
+              ? "Submission Revoked & Rejected"
+              : isAppeal
+              ? "Appeal Denied"
+              : "Submission Not Approved",
+            message: wasApproved
+              ? `Your previously approved clip for "${submission.campaign.name}" was revoked and rejected by manager. Reason: ${rejection_reason.trim()}`
+              : isAppeal
+              ? `Your appeal for "${submission.campaign.name}" was reviewed and rejected. Final reason: ${rejection_reason.trim()}`
+              : `Your clip for "${submission.campaign.name}" was rejected. Reason: ${rejection_reason.trim()}`,
           },
         });
 
@@ -153,11 +157,11 @@ export async function POST(
 
       await logAuditEvent({
         actorId: manager.id,
-        action: isAppeal ? "APPEAL_REJECTED" : "SUBMISSION_REJECTED",
+        action: wasApproved ? "SUBMISSION_REVOKED_REJECTED" : isAppeal ? "APPEAL_REJECTED" : "SUBMISSION_REJECTED",
         targetType: "SUBMISSION",
         targetId: submission.id,
-        oldValue: { status: submission.status, appeal_reason: submission.appeal_reason },
-        newValue: { status: SubmissionStatus.REJECTED, reason: rejection_reason },
+        oldValue: { status: submission.status, current_earnings: submission.current_earnings, appeal_reason: submission.appeal_reason },
+        newValue: { status: SubmissionStatus.REJECTED, reason: rejection_reason.trim() },
       });
 
       return NextResponse.json({ success: true, submission: updated });

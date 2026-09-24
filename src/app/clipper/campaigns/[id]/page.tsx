@@ -99,6 +99,7 @@ export default function CampaignDetailsPage() {
   const [appealReason, setAppealReason] = useState("");
   const [submittingAppeal, setSubmittingAppeal] = useState(false);
   const [appealError, setAppealError] = useState("");
+  const [deletingSubId, setDeletingSubId] = useState<string | null>(null);
 
   const detectedPlatform = useMemo(() => {
     const url = postUrl.trim().toLowerCase();
@@ -268,6 +269,36 @@ export default function CampaignDetailsPage() {
       setSubmitError("Network error submitting clip");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDeleteSubmission = async (submissionId: string) => {
+    if (
+      !confirm(
+        "Are you sure you want to delete this submission? This will remove the clip so you can re-submit it to another campaign if needed."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setDeletingSubId(submissionId);
+      const res = await fetch(`/api/submissions/${submissionId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (res.ok) {
+        clientCache.clear(`clipper_camp_${campaignId}`);
+        clientCache.clear(`clipper_camp_stats_${campaignId}`);
+        clientCache.clear("clipper_submissions_list");
+        loadData();
+      } else {
+        alert(data.error || "Failed to delete submission");
+      }
+    } catch {
+      alert("Network error deleting submission");
+    } finally {
+      setDeletingSubId(null);
     }
   };
 
@@ -760,6 +791,21 @@ export default function CampaignDetailsPage() {
                               </button>
                             </div>
                           )}
+
+                          {/* Delete Submission Button */}
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSubmission(sub.id)}
+                            disabled={deletingSubId === sub.id}
+                            title="Delete submission"
+                            className="p-1.5 rounded-lg border border-slate-800 bg-slate-900/80 hover:bg-red-500/20 hover:border-red-500/40 text-slate-400 hover:text-red-400 transition-colors shrink-0 flex items-center justify-center disabled:opacity-50"
+                          >
+                            {deletingSubId === sub.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin text-red-400" />
+                            ) : (
+                              <Trash2 className="w-3.5 h-3.5" />
+                            )}
+                          </button>
                         </div>
                       </div>
                     );

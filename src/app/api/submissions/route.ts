@@ -84,6 +84,7 @@ export async function GET(request: Request) {
       appeal_reason: s.appeal_reason,
       appealed_at: s.appealed_at,
       submitted_at: s.submitted_at,
+      created_at: s.created_at,
       reviewed_at: s.reviewed_at,
       last_view_update: s.last_view_update,
       recent_snapshots: s.view_snapshots.map((snap) => ({

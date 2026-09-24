@@ -15,7 +15,6 @@ import {
   Eye,
   Heart,
   MessageSquare,
-  Edit3,
 } from "lucide-react";
 
 export default function ManagerSubmissionsReviewPage() {
@@ -29,15 +28,7 @@ export default function ManagerSubmissionsReviewPage() {
   const [actionType, setActionType] = useState<"APPROVE" | "REJECT">("APPROVE");
   const [rejectionReason, setRejectionReason] = useState("Campaign requirement not followed");
   const [customReason, setCustomReason] = useState("");
-  const [verifiedViewsInput, setVerifiedViewsInput] = useState("");
   const [processing, setProcessing] = useState(false);
-
-  // Edit metrics modal
-  const [editingSubmission, setEditingSubmission] = useState<any>(null);
-  const [editViewsInput, setEditViewsInput] = useState("");
-  const [editLikesInput, setEditLikesInput] = useState("");
-  const [editCommentsInput, setEditCommentsInput] = useState("");
-  const [editSaving, setEditSaving] = useState(false);
 
   const rejectionOptions = [
     "Campaign requirement not followed",
@@ -87,17 +78,12 @@ export default function ManagerSubmissionsReviewPage() {
         body: JSON.stringify({
           action: actionType,
           rejection_reason: actionType === "REJECT" ? finalReason : null,
-          verified_views:
-            actionType === "APPROVE" && verifiedViewsInput.trim() !== ""
-              ? parseInt(verifiedViewsInput.trim(), 10)
-              : undefined,
         }),
       });
 
       if (res.ok) {
         setSelectedSubmission(null);
         setCustomReason("");
-        setVerifiedViewsInput("");
         loadSubmissions();
       } else {
         const data = await res.json();
@@ -107,36 +93,6 @@ export default function ManagerSubmissionsReviewPage() {
       alert("Network error processing review");
     } finally {
       setProcessing(false);
-    }
-  };
-
-  const handleSaveMetrics = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingSubmission) return;
-
-    setEditSaving(true);
-    try {
-      const res = await fetch(`/api/manager/submissions/${editingSubmission.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          views: parseInt(editViewsInput.trim() || "0", 10),
-          likes: parseInt(editLikesInput.trim() || "0", 10),
-          comments: parseInt(editCommentsInput.trim() || "0", 10),
-        }),
-      });
-
-      if (res.ok) {
-        setEditingSubmission(null);
-        loadSubmissions();
-      } else {
-        const data = await res.json();
-        alert(data.error || "Failed to update metrics");
-      }
-    } catch {
-      alert("Network error updating metrics");
-    } finally {
-      setEditSaving(false);
     }
   };
 
@@ -343,7 +299,6 @@ export default function ManagerSubmissionsReviewPage() {
                               onClick={() => {
                                 setSelectedSubmission(sub);
                                 setActionType("APPROVE");
-                                setVerifiedViewsInput(sub.current_views ? String(sub.current_views) : "");
                               }}
                               className="px-3.5 py-1.5 rounded-xl bg-brand-emerald hover:bg-brand-emerald/90 text-slate-950 font-bold text-xs flex items-center gap-1 shadow-sm transition-all active:scale-95"
                             >
@@ -362,23 +317,27 @@ export default function ManagerSubmissionsReviewPage() {
                               <span>Reject</span>
                             </button>
                           </div>
+                        ) : sub.status === "APPROVED" ? (
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => {
+                                setSelectedSubmission(sub);
+                                setActionType("REJECT");
+                                setRejectionReason("Campaign requirement not followed");
+                                setCustomReason("");
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/30 font-bold text-xs flex items-center gap-1 transition-all active:scale-95"
+                              title="Reject approved clip"
+                            >
+                              <XCircle className="w-3.5 h-3.5" />
+                              <span>Reject</span>
+                            </button>
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-400 font-medium">
+                              Reviewed by {sub.reviewer_username || "Staff"}
+                            </span>
+                          </div>
                         ) : (
                           <div className="flex items-center justify-end gap-2">
-                            {sub.status === "APPROVED" && (
-                              <button
-                                onClick={() => {
-                                  setEditingSubmission(sub);
-                                  setEditViewsInput(String(sub.current_views || 0));
-                                  setEditLikesInput(String(sub.current_likes || 0));
-                                  setEditCommentsInput(String(sub.current_comments || 0));
-                                }}
-                                className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 font-medium flex items-center gap-1 transition-colors border border-slate-700"
-                                title="Edit clip metrics"
-                              >
-                                <Edit3 className="w-3 h-3 text-brand-emerald" />
-                                <span>Edit</span>
-                              </button>
-                            )}
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-400 font-medium">
                               Reviewed by {sub.reviewer_username || "Staff"}
                             </span>
@@ -407,10 +366,27 @@ export default function ManagerSubmissionsReviewPage() {
               ) : (
                 <>
                   <XCircle className="w-5 h-5 text-red-400" />
-                  {selectedSubmission.status === "APPEALED" ? "Deny Clipper Appeal" : "Reject Clip Submission"}
+                  {selectedSubmission.status === "APPROVED"
+                    ? "Reject Approved Clip"
+                    : selectedSubmission.status === "APPEALED"
+                    ? "Deny Clipper Appeal"
+                    : "Reject Clip Submission"}
                 </>
               )}
             </h3>
+
+            {/* Warning Banner if Rejecting an Already Approved Clip */}
+            {selectedSubmission.status === "APPROVED" && actionType === "REJECT" && (
+              <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-xs space-y-1.5 my-3">
+                <div className="flex items-center gap-1.5 text-red-400 font-bold">
+                  <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                  <span>Rejecting Approved Clip</span>
+                </div>
+                <p className="text-slate-300 text-[11px] leading-relaxed">
+                  This clip was previously approved. Rejecting it will immediately stop automated view tracking, reset its earnings to $0.00, refund any allocated campaign budget, and notify the clipper with your mandatory reason.
+                </p>
+              </div>
+            )}
 
             {/* Appeal Context Banner if Appealed */}
             {selectedSubmission.status === "APPEALED" && (
@@ -549,25 +525,12 @@ export default function ManagerSubmissionsReviewPage() {
 
               {actionType === "APPROVE" && (
                 <div className="space-y-3">
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1.5">
-                      Verified Starting Views (Optional)
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="Leave blank to use detected count"
-                      value={verifiedViewsInput}
-                      onChange={(e) => setVerifiedViewsInput(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-brand-emerald font-mono text-xs"
-                    />
-                    <p className="text-[11px] text-slate-500 mt-1">
-                      Detected: {(selectedSubmission.current_views || 0).toLocaleString()} views. You can adjust this count to match the exact view count visible on the live clip.
+                  <div className="p-3.5 rounded-xl bg-brand-emerald/10 border border-brand-emerald/30 text-xs text-brand-emerald">
+                    <p className="font-semibold">Ready to approve this clip?</p>
+                    <p className="text-[11px] text-slate-300 mt-1">
+                      Initial views detected: {(selectedSubmission.current_views || 0).toLocaleString()} views. Approving this submission initiates automated view tracking and calculates payable clipper earnings based on the campaign's CPM (${Number(selectedSubmission.campaign.cpm).toFixed(2)} CPM).
                     </p>
                   </div>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    Approving this submission immediately initiates automated 8-hour view tracking and begins calculating payable clipper earnings based on the campaign's CPM.
-                  </p>
                 </div>
               )}
 
@@ -590,87 +553,8 @@ export default function ManagerSubmissionsReviewPage() {
                 >
                   {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                   <span>
-                    Confirm {actionType === "APPROVE" ? (selectedSubmission.status === "APPEALED" ? "Appeal Approval" : "Approval") : (selectedSubmission.status === "APPEALED" ? "Appeal Rejection" : "Rejection")}
+                    Confirm {actionType === "APPROVE" ? (selectedSubmission.status === "APPEALED" ? "Appeal Approval" : "Approval") : (selectedSubmission.status === "APPROVED" ? "Revocation & Rejection" : selectedSubmission.status === "APPEALED" ? "Appeal Rejection" : "Rejection")}
                   </span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Metrics Modal */}
-      {editingSubmission && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-[#0F141F] border border-slate-800 rounded-2xl max-w-md w-full p-6 relative shadow-2xl">
-            <h3 className="text-xl font-bold text-white mb-1 flex items-center gap-2">
-              <Edit3 className="w-5 h-5 text-brand-emerald" />
-              Adjust Clip Metrics
-            </h3>
-            <p className="text-xs text-slate-400 mb-4">
-              Update verified metrics for submission <span className="font-mono text-slate-300">#{editingSubmission.id.slice(0, 8)}</span>.
-            </p>
-
-            <form onSubmit={handleSaveMetrics} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
-                  <Eye className="w-3.5 h-3.5 text-blue-400" />
-                  Verified Views
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  required
-                  value={editViewsInput}
-                  onChange={(e) => setEditViewsInput(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-brand-emerald font-mono text-xs"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
-                    <Heart className="w-3.5 h-3.5 text-rose-400" />
-                    Likes
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={editLikesInput}
-                    onChange={(e) => setEditLikesInput(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-brand-emerald font-mono text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
-                    <MessageSquare className="w-3.5 h-3.5 text-purple-400" />
-                    Comments
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={editCommentsInput}
-                    onChange={(e) => setEditCommentsInput(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-brand-emerald font-mono text-xs"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setEditingSubmission(null)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white font-semibold text-xs transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={editSaving}
-                  className="px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 bg-brand-emerald text-slate-950 hover:bg-brand-emerald/90 transition-all shadow-md active:scale-95 disabled:opacity-50"
-                >
-                  {editSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                  <span>Save Changes</span>
                 </button>
               </div>
             </form>
@@ -680,3 +564,4 @@ export default function ManagerSubmissionsReviewPage() {
     </div>
   );
 }
+

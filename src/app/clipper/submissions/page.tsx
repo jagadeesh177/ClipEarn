@@ -15,6 +15,7 @@ import {
   MessageSquare,
   HelpCircle,
   ShieldCheck,
+  Trash2,
 } from "lucide-react";
 
 import { clientCache } from "@/lib/clientCache";
@@ -36,6 +37,37 @@ export default function MySubmissionsPage() {
 
   // View Appeal Modal State
   const [selectedAppeal, setSelectedAppeal] = useState<any | null>(null);
+
+  // Deleting State
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDeleteSubmission = async (submissionId: string) => {
+    if (
+      !confirm(
+        "Are you sure you want to delete this submission? This will remove the clip so you can re-submit to the correct campaign if needed."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setDeletingId(submissionId);
+      const res = await fetch(`/api/submissions/${submissionId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (res.ok) {
+        clientCache.clear("clipper_submissions_list");
+        loadSubmissions();
+      } else {
+        alert(data.error || "Failed to delete submission");
+      }
+    } catch {
+      alert("Network error deleting submission");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const loadSubmissions = () => {
     let url = "/api/submissions";
@@ -237,14 +269,8 @@ export default function MySubmissionsPage() {
                     <span className="text-xs text-slate-500 uppercase tracking-wider block font-semibold">
                       Current Views
                     </span>
-                    <span className="text-base font-bold text-white">
-                      {isPending || isAppealed ? (
-                        <span className="text-yellow-400/80 font-normal text-xs italic">
-                          {isAppealed ? "Under Appeal" : "Pending Review"}
-                        </span>
-                      ) : (
-                        sub.current_views.toLocaleString()
-                      )}
+                    <span className="text-base font-bold text-white font-mono">
+                      {(sub.current_views || 0).toLocaleString()}
                     </span>
                   </div>
 
@@ -266,7 +292,7 @@ export default function MySubmissionsPage() {
                     </span>
                   </div>
 
-                  <div className="min-w-[130px] text-right">
+                  <div className="min-w-[150px] flex items-center justify-end gap-2.5">
                     {isApproved && (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider bg-brand-cyan/10 text-brand-cyan border border-brand-cyan/30 pointer-events-none select-none">
                         <CheckCircle2 className="w-3.5 h-3.5" />
@@ -324,6 +350,21 @@ export default function MySubmissionsPage() {
                         </div>
                       </div>
                     )}
+
+                    {/* Delete Submission Action */}
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteSubmission(sub.id)}
+                      disabled={deletingId === sub.id}
+                      title="Delete submission"
+                      className="p-2 rounded-lg border border-slate-800 bg-slate-900/80 hover:bg-red-500/20 hover:border-red-500/40 text-slate-400 hover:text-red-400 transition-colors shrink-0 flex items-center justify-center disabled:opacity-50"
+                    >
+                      {deletingId === sub.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-red-400" />
+                      ) : (
+                        <Trash2 className="w-3.5 h-3.5" />
+                      )}
+                    </button>
                   </div>
                 </div>
               </div>
