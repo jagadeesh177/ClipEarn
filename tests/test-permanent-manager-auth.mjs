@@ -218,35 +218,14 @@ async function runTests() {
     assert.strictEqual(demoMgrLoginRes.status, 401, "Demo Manager login rejected (HTTP 401)");
     testPass("Demo Manager credentials (manager@clipearn.com / manager123) rejected");
 
-    // 3. /api/auth/demo-login rejects ADMIN role
-    const demoLoginAdminRes = await fetch(`${BASE_URL}/api/auth/demo-login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role: "ADMIN" }),
-    });
-    assert.strictEqual(demoLoginAdminRes.status, 403, "Demo Admin creation rejected (HTTP 403)");
-    testPass("POST /api/auth/demo-login with role=ADMIN blocked with HTTP 403");
-
-    // 4. /api/auth/demo-login rejects MANAGER role
-    const demoLoginMgrRes = await fetch(`${BASE_URL}/api/auth/demo-login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role: "MANAGER" }),
-    });
-    assert.strictEqual(demoLoginMgrRes.status, 403, "Demo Manager creation rejected (HTTP 403)");
-    testPass("POST /api/auth/demo-login with role=MANAGER blocked with HTTP 403");
-
-    // 5. 1-Click Demo Clipper Login works
-    const demoClipperRes = await fetch(`${BASE_URL}/api/auth/demo-login`, {
+    // 3. /api/auth/demo-login is permanently removed (HTTP 404)
+    const demoLoginRes = await fetch(`${BASE_URL}/api/auth/demo-login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ role: "CLIPPER" }),
     });
-    const demoClipperData = await demoClipperRes.json();
-    assert.strictEqual(demoClipperRes.status, 200, "Demo Clipper login must succeed (HTTP 200)");
-    assert.strictEqual(demoClipperData.user.role, "CLIPPER", "Role must be CLIPPER");
-    assert.strictEqual(demoClipperData.redirectTo, "/clipper/dashboard", "Redirect to /clipper/dashboard");
-    testPass("1-Click Demo Clipper Login preserved and working properly");
+    assert.strictEqual(demoLoginRes.status, 404, "Demo login endpoint permanently removed (HTTP 404)");
+    testPass("POST /api/auth/demo-login permanently removed (HTTP 404)");
 
     // 6. Real Admin 2 login works
     const admin2Res = await fetch(`${BASE_URL}/api/auth/manager-login`, {

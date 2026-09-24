@@ -30,7 +30,7 @@ export default function ClipEarnChatPage() {
     const newMsg = {
       id: Date.now().toString(),
       channel: activeChannel,
-      user: "DemoClipper",
+      user: "You",
       badge: "Clipper",
       avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
       text: inputMessage.trim(),

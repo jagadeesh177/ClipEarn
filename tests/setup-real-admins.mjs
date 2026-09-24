@@ -56,7 +56,12 @@ async function main() {
   const aronUser = await prisma.user.findUnique({ where: { email: "aronyesh63@gmail.com" } });
   if (aronUser) {
     const demoUsers = await prisma.user.findMany({
-      where: { email: { in: ["admin@clipearn.com", "manager@clipearn.com"] } },
+      where: {
+        OR: [
+          { email: { in: ["admin@clipearn.com", "manager@clipearn.com", "clipper@clipearn.com"] } },
+          { username: { in: ["DemoAdmin", "DemoManager", "DemoClipper"] } },
+        ],
+      },
     });
     for (const demoUser of demoUsers) {
       await prisma.campaign.updateMany({

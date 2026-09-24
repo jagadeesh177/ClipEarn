@@ -434,7 +434,7 @@ async function main() {
 
   console.log("Database seeded successfully!");
   console.log("Authorized Access:");
-  console.log("  Clipper: 1-Click Demo Login button on /login or Discord OAuth");
+  console.log("  Clipper: Discord OAuth on /login");
   console.log("  Admin:   aronyesh63@gmail.com / Aron@2006 on /manager/login");
   console.log("  Admin:   easalajagadeesh@gmail.com / Jazz@2006 on /manager/login");
   console.log("  Manager: Invitation key onboarding via /manager/login, then Discord OAuth");

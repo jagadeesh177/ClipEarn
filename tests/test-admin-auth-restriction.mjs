@@ -160,26 +160,14 @@ async function runTests() {
   const unauthApiRes = await fetch(`${BASE_URL}/api/admin/manager-access-keys`);
   assert(unauthApiRes.status === 401 || unauthApiRes.status === 403, "Unauthenticated request to Admin API rejected (HTTP 401/403)");
 
-  // 5. Demo Login Functionality Preserved
-  console.log("\n--- TEST SUITE 5: Existing Demo Login Functionality Preserved ---");
+  // 5. Demo Login Functionality Permanently Removed
+  console.log("\n--- TEST SUITE 5: Demo Login Permanently Removed ---");
   const demoRes = await fetch(`${BASE_URL}/api/auth/demo-login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ role: "CLIPPER" }),
   });
-  const demoData = await demoRes.json();
-  assert(demoRes.status === 200 && demoData.success === true, "1-Click Demo Login works successfully (HTTP 200)");
-  assert(demoData.user?.role === "CLIPPER", "Demo user has CLIPPER role");
-  assert(demoData.redirectTo === "/clipper/dashboard", "Demo user redirects to /clipper/dashboard");
-
-  const demoCookie = demoRes.headers.get("set-cookie")?.split(";")[0];
-  assert(!!demoCookie, "Demo session cookie issued");
-
-  // Verify Demo User CANNOT access Admin-only API
-  const demoAdminApiRes = await fetch(`${BASE_URL}/api/admin/manager-access-keys`, {
-    headers: { Cookie: demoCookie },
-  });
-  assert(demoAdminApiRes.status === 403, "Demo user CANNOT access Admin API (HTTP 403 Forbidden)");
+  assert(demoRes.status === 404, "Demo Login endpoint permanently removed (HTTP 404)");
 
   // 6. Demo Manager Login (manager@clipearn.com) Removed Completely
   console.log("\n--- TEST SUITE 6: Demo Manager Login Removed ---");
