@@ -77,7 +77,6 @@ export default function CampaignDetailsPage() {
   const [myStats, setMyStats] = useState<any>(() => clientCache.get(`clipper_camp_stats_${campaignId}`));
   const [allSocialAccounts, setAllSocialAccounts] = useState<any[]>(() => clientCache.get("clipper_all_social_accounts") || []);
   const [socialAccounts, setSocialAccounts] = useState<any[]>(() => clientCache.get("clipper_social_accounts") || []);
-  const [selectedAccountId, setSelectedAccountId] = useState<string>("");
   const [leaderboard, setLeaderboard] = useState<any[]>(() => clientCache.get(`clipper_camp_lead_${campaignId}`) || []);
   const [mySubmissions, setMySubmissions] = useState<any[]>(() =>
     (clientCache.get("clipper_submissions_list") || []).filter((s: any) => s.campaign_id === campaignId)
@@ -119,14 +118,6 @@ export default function CampaignDetailsPage() {
     return platformAccounts.filter((a: any) => a.verification_status === "VERIFIED");
   }, [platformAccounts]);
 
-  const activeAccount = useMemo(() => {
-    if (selectedAccountId) {
-      const found = platformAccounts.find((a: any) => a.id === selectedAccountId);
-      if (found) return found;
-    }
-    return verifiedPlatformAccounts[0] || platformAccounts[0] || null;
-  }, [selectedAccountId, platformAccounts, verifiedPlatformAccounts]);
-
   const extractedUrlHandle = useMemo(() => {
     if (!postUrl.trim() || !detectedPlatform) return null;
     try {
@@ -161,6 +152,16 @@ export default function CampaignDetailsPage() {
     } catch {}
     return null;
   }, [postUrl, detectedPlatform]);
+
+  const activeAccount = useMemo(() => {
+    if (extractedUrlHandle && platformAccounts.length > 0) {
+      const match = platformAccounts.find(
+        (a: any) => a.verification_status === "VERIFIED" && isAuthorMatch(extractedUrlHandle, a.username)
+      );
+      if (match) return match;
+    }
+    return verifiedPlatformAccounts[0] || platformAccounts[0] || null;
+  }, [extractedUrlHandle, platformAccounts, verifiedPlatformAccounts]);
 
   const isAuthorMismatch = useMemo(() => {
     if (!extractedUrlHandle || !activeAccount) return false;
@@ -470,36 +471,9 @@ export default function CampaignDetailsPage() {
             )}
 
             <form onSubmit={handleSubmitClip} className="space-y-4">
-              {/* Account Status / Validation Banner */}
+              {/* Account Validation Banners */}
               {detectedPlatform && (
                 <div className="space-y-2">
-                  {hasVerifiedAccount && activeAccount && (
-                    <div className="p-3.5 rounded-xl bg-slate-900/90 border border-emerald-500/30 flex items-center justify-between text-xs animate-fadeIn">
-                      <div className="flex items-center gap-2">
-                        <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-                        <div>
-                          <span className="text-slate-400">Submitting with verified account: </span>
-                          <span className="font-bold text-white">@{activeAccount.username}</span>
-                        </div>
-                      </div>
-                      {verifiedPlatformAccounts.length > 1 ? (
-                        <select
-                          value={activeAccount.id}
-                          onChange={(e) => setSelectedAccountId(e.target.value)}
-                          className="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white"
-                        >
-                          {verifiedPlatformAccounts.map((a: any) => (
-                            <option key={a.id} value={a.id}>@{a.username}</option>
-                          ))}
-                        </select>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold text-[11px]">
-                          Verified ✓
-                        </span>
-                      )}
-                    </div>
-                  )}
-
                   {isAuthorMismatch && (
                     <div className="p-3.5 rounded-xl bg-red-500/15 border border-red-500/40 text-xs text-red-300 flex items-start gap-2 animate-fadeIn">
                       <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
@@ -581,49 +555,9 @@ export default function CampaignDetailsPage() {
                   ) : (
                     <Send className="w-4 h-4 text-slate-950" />
                   )}
-                  <span>
-                    {isAuthorMismatch
-                      ? "Handle Mismatch"
-                      : hasUnverifiedAccount
-                      ? "Account Not Verified"
-                      : hasNoAccount
-                      ? "Connect Account"
-                      : "Submit"}
-                  </span>
+                  <span>Submit</span>
                 </button>
               </div>
-
-              {/* Connected accounts chips guide below input */}
-              {!detectedPlatform && (
-                <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-slate-400">
-                  <span className="font-semibold text-slate-500">Your connected accounts:</span>
-                  {(campaign?.allowed_platforms || ["TIKTOK", "INSTAGRAM", "YOUTUBE"]).map((plt: string) => {
-                    const acc = allSocialAccounts.find((a: any) => a.platform === plt && a.verification_status === "VERIFIED");
-                    const unv = allSocialAccounts.find((a: any) => a.platform === plt && a.verification_status !== "VERIFIED");
-                    if (acc) {
-                      return (
-                        <span key={plt} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-medium">
-                          <ShieldCheck className="w-3 h-3" />
-                          {plt}: @{acc.username}
-                        </span>
-                      );
-                    }
-                    if (unv) {
-                      return (
-                        <span key={plt} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 font-medium">
-                          <AlertCircle className="w-3 h-3" />
-                          {plt}: @{unv.username} (Unverified)
-                        </span>
-                      );
-                    }
-                    return (
-                      <span key={plt} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-slate-500">
-                        {plt}: (Not connected)
-                      </span>
-                    );
-                  })}
-                </div>
-              )}
             </form>
           </div>
 
@@ -744,12 +678,6 @@ export default function CampaignDetailsPage() {
                             </div>
                             <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
                               <span>Submitted {formattedDate}</span>
-                              {sub.platform_post_id && (
-                                <>
-                                  <span className="text-slate-600">&bull;</span>
-                                  <span className="font-mono text-xs text-slate-500">ID: {sub.platform_post_id}</span>
-                                </>
-                              )}
                             </div>
                           </div>
                         </div>
