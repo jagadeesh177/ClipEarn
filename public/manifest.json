@@ -1,0 +1,21 @@
+{
+  "name": "ClipEarn — Get Paid to Post Short-Form Clips",
+  "short_name": "ClipEarn",
+  "description": "The premier payout and campaign platform for short-form video clippers and clip channels.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#070A0F",
+  "theme_color": "#070A0F",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
