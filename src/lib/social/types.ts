@@ -26,16 +26,47 @@ export interface VideoMetadata {
   author_username?: string;
   author_display_name?: string;
   current_views: number;
-  likes?: number;
-  comments?: number;
+  likes?: number | null;
+  comments?: number | null;
+  shares?: number | null;
+  saves?: number | null;
   is_available: boolean;
   is_private: boolean;
 }
 
 export interface VideoMetrics {
   views: number;
-  likes: number;
-  comments: number;
+  likes: number | null;
+  comments: number | null;
+  shares: number | null;
+  saves: number | null;
+}
+
+export interface NormalizedMetrics {
+  views: number | null;
+  likes: number | null;
+  comments: number | null;
+  shares: number | null;
+  saves: number | null;
+  fetchedAt: Date;
+  platform: Platform;
+  platformVideoId: string;
+  platformUrl?: string;
+  isAvailable: boolean;
+  isPrivate: boolean;
+  authorUsername?: string;
+  authorDisplayName?: string;
+  authorPlatformUserId?: string;
+  rawDetails?: Record<string, any>;
+  error?: string;
+}
+
+export interface OwnershipVerificationResult {
+  isOwned: boolean;
+  ownerPlatformUserId?: string;
+  ownerUsername?: string;
+  ownerDisplayName?: string;
+  reason?: string;
 }
 
 export interface SocialProvider {
@@ -43,9 +74,24 @@ export interface SocialProvider {
   connect(code: string): Promise<SocialAccountData>;
   verifyAccount(username: string, verificationCode: string): Promise<VerificationResult>;
   getProfile(platformUserId: string): Promise<{ username: string; profile_url: string; bio?: string }>;
-  getVideo(postUrl: string): Promise<VideoMetadata>;
+  getVideo(
+    postUrl: string,
+    account?: { platform_user_id?: string; username?: string; access_token?: string | null } | null
+  ): Promise<VideoMetadata>;
   getVideoViews(platformPostId: string): Promise<number>;
-  getVideoMetrics?(platformPostId: string, postUrl?: string): Promise<VideoMetrics>;
+  getVideoMetrics?(
+    platformPostId: string,
+    postUrl?: string,
+    account?: { platform_user_id?: string; username?: string; access_token?: string | null } | null
+  ): Promise<VideoMetrics>;
+  getNormalizedMetrics?(
+    videoIdOrUrl: string,
+    account?: { platform_user_id?: string; username?: string; access_token?: string | null } | null
+  ): Promise<NormalizedMetrics>;
+  verifyOwnership?(
+    videoIdOrUrl: string,
+    account: { platform_user_id: string; username: string; access_token?: string | null }
+  ): Promise<OwnershipVerificationResult>;
   refreshToken?(refreshToken: string): Promise<{ access_token: string; expires_at: Date }>;
   parsePostId(postUrl: string): string | null;
 }

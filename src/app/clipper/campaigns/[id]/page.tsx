@@ -25,6 +25,10 @@ import {
   X,
   ChevronRight,
   ArrowRight,
+  Eye,
+  Heart,
+  Share2,
+  Bookmark,
 } from "lucide-react";
 import { isAuthorMatch } from "@/lib/social/author-match";
 
@@ -678,15 +682,45 @@ export default function CampaignDetailsPage() {
                             </div>
                             <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
                               <span>Submitted {formattedDate}</span>
+                              {sub.status === "UNAVAILABLE" && (
+                                <span className="text-[10px] text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded font-medium">
+                                  Clip unavailable / private
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Real Social Media Metrics Strip */}
+                            <div className="flex flex-wrap items-center gap-2 pt-1.5 text-xs">
+                              <span className="inline-flex items-center gap-1 font-mono text-slate-300" title="Views">
+                                <Eye className="w-3.5 h-3.5 text-brand-cyan" />
+                                {(sub.current_views || 0).toLocaleString()}
+                              </span>
+                              <span className="text-slate-700">•</span>
+                              <span className="inline-flex items-center gap-1 font-mono text-slate-300" title="Likes">
+                                <Heart className="w-3.5 h-3.5 text-red-400" />
+                                {sub.current_likes != null ? sub.current_likes.toLocaleString() : "N/A"}
+                              </span>
+                              <span className="text-slate-700">•</span>
+                              <span className="inline-flex items-center gap-1 font-mono text-slate-300" title="Comments">
+                                <MessageSquare className="w-3.5 h-3.5 text-blue-400" />
+                                {sub.current_comments != null ? sub.current_comments.toLocaleString() : "N/A"}
+                              </span>
+                              <span className="text-slate-700">•</span>
+                              <span className="inline-flex items-center gap-1 font-mono text-slate-300" title="Shares">
+                                <Share2 className="w-3.5 h-3.5 text-emerald-400" />
+                                {sub.current_shares != null ? sub.current_shares.toLocaleString() : "N/A"}
+                              </span>
+                              <span className="text-slate-700">•</span>
+                              <span className="inline-flex items-center gap-1 font-mono text-slate-300" title="Saves">
+                                <Bookmark className="w-3.5 h-3.5 text-purple-400" />
+                                {sub.current_saves != null ? sub.current_saves.toLocaleString() : "N/A"}
+                              </span>
                             </div>
                           </div>
                         </div>
 
-                        {/* Views & Status Badge */}
+                        {/* Status Badge & Actions */}
                         <div className="flex items-center gap-3 self-end sm:self-center shrink-0">
-                          <span className="text-xs text-slate-300 font-semibold">
-                            {(sub.current_views || 0).toLocaleString()} views
-                          </span>
 
                           {sub.status === "APPROVED" && (
                             <span className="px-2.5 py-1 rounded-full bg-brand-cyan/15 text-brand-cyan border border-brand-cyan/30 text-xs font-semibold">

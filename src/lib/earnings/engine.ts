@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { getSocialProvider } from "@/lib/social";
-import { SubmissionStatus, CampaignStatus, ViewEligibilityMode, Prisma } from "@prisma/client";
+import { SubmissionStatus, CampaignStatus, ViewEligibilityMode, Prisma, FraudSeverity } from "@prisma/client";
+import { decryptToken } from "@/lib/encryption";
+import { flagSuspiciousActivity } from "@/lib/fraud";
 
 export interface SyncResult {
   submissionId: string;
@@ -8,7 +10,7 @@ export interface SyncResult {
   newViews: number;
   eligibleViewsDelta: number;
   earningsDelta: number;
-  status: "SUCCESS" | "SKIPPED" | "BUDGET_EXHAUSTED" | "FAILED";
+  status: "SUCCESS" | "SKIPPED" | "BUDGET_EXHAUSTED" | "FAILED" | "UNAVAILABLE";
   error?: string;
 }
 
@@ -18,6 +20,7 @@ export async function syncSubmissionViews(submissionId: string): Promise<SyncRes
     include: {
       campaign: true,
       user: true,
+      social_account: true,
       view_snapshots: {
         orderBy: { captured_at: "asc" },
       },
@@ -55,21 +58,84 @@ export async function syncSubmissionViews(submissionId: string): Promise<SyncRes
     };
   }
 
-  // Fetch current metrics (views, likes, comments) via social provider
+  // Decrypt social account access token if available
+  const decryptedToken = submission.social_account?.access_token_encrypted
+    ? decryptToken(submission.social_account.access_token_encrypted)
+    : null;
+
+  // Fetch current metrics (views, likes, comments, shares, saves) via social provider
   const provider = getSocialProvider(submission.platform);
-  let latestViews: number;
-  let latestLikes = submission.current_likes || 0;
-  let latestComments = submission.current_comments || 0;
+  let latestViews = submission.current_views;
+  let latestLikes = submission.current_likes;
+  let latestComments = submission.current_comments;
+  let latestShares = submission.current_shares;
+  let latestSaves = submission.current_saves;
 
   try {
-    if (provider.getVideoMetrics) {
-      const metrics = await provider.getVideoMetrics(submission.platform_post_id, submission.post_url);
+    if (provider.getNormalizedMetrics) {
+      const norm = await provider.getNormalizedMetrics(
+        submission.platform_post_id,
+        submission.social_account
+          ? {
+              platform_user_id: submission.social_account.platform_user_id,
+              username: submission.social_account.username,
+              access_token: decryptedToken,
+            }
+          : null
+      );
+
+      // Handle unavailable or private clips cleanly without resetting views or earnings
+      if (!norm.isAvailable || norm.isPrivate) {
+        await prisma.submission.update({
+          where: { id: submission.id },
+          data: {
+            last_sync_status: "UNAVAILABLE",
+            last_sync_error: norm.isPrivate
+              ? "Clip is marked private on the platform by the creator"
+              : "Clip is unavailable or has been removed from the platform",
+            last_view_update: new Date(),
+          },
+        });
+
+        return {
+          submissionId,
+          previousViews: submission.current_views,
+          newViews: submission.current_views,
+          eligibleViewsDelta: 0,
+          earningsDelta: 0,
+          status: "UNAVAILABLE",
+          error: norm.isPrivate ? "Clip marked private" : "Clip unavailable or removed",
+        };
+      }
+
+      if (norm.views != null && !isNaN(norm.views)) {
+        latestViews = norm.views;
+      }
+      if (norm.likes !== undefined) latestLikes = norm.likes;
+      if (norm.comments !== undefined) latestComments = norm.comments;
+      if (norm.shares !== undefined) latestShares = norm.shares;
+      if (norm.saves !== undefined) latestSaves = norm.saves;
+    } else if (provider.getVideoMetrics) {
+      const metrics = await provider.getVideoMetrics(
+        submission.platform_post_id,
+        submission.post_url,
+        submission.social_account
+          ? {
+              platform_user_id: submission.social_account.platform_user_id,
+              username: submission.social_account.username,
+              access_token: decryptedToken,
+            }
+          : null
+      );
       latestViews = metrics.views;
       latestLikes = metrics.likes ?? latestLikes;
       latestComments = metrics.comments ?? latestComments;
+      latestShares = metrics.shares ?? latestShares;
+      latestSaves = metrics.saves ?? latestSaves;
     } else {
       latestViews = await provider.getVideoViews(submission.platform_post_id);
     }
+
     if (isNaN(latestViews) || latestViews < 0) {
       throw new Error(`Invalid view count returned: ${latestViews}`);
     }
@@ -95,22 +161,50 @@ export async function syncSubmissionViews(submissionId: string): Promise<SyncRes
     };
   }
 
-  // Prevent impossible view decrease (e.g. API glitch)
+  // Prevent impossible view decrease (e.g. temporary API fluctuation)
   if (latestViews < submission.current_views) {
     latestViews = submission.current_views;
   }
 
-  return await prisma.$transaction(async (tx) => {
-    // 1. Create historical view snapshot
-    await tx.viewSnapshot.create({
-      data: {
-        submission_id: submission.id,
-        views: latestViews,
-        likes: latestLikes,
-        comments: latestComments,
-        source: "PLATFORM_API",
-      },
+  // Abnormal View Velocity / Spike Fraud Detection (> 500k views jump in a single sync)
+  const viewJump = latestViews - submission.current_views;
+  if (viewJump > 500000) {
+    await flagSuspiciousActivity({
+      userId: submission.user_id,
+      submissionId: submission.id,
+      type: "ABNORMAL_VIEW_VELOCITY",
+      severity: FraudSeverity.HIGH,
+      description: `Clip jumped by ${viewJump.toLocaleString()} views (from ${submission.current_views.toLocaleString()} to ${latestViews.toLocaleString()}) in a single sync. Flagged for review.`,
     });
+  }
+
+  // Check if metrics have changed to deduplicate snapshot creation
+  const metricsChanged =
+    latestViews !== submission.current_views ||
+    latestLikes !== submission.current_likes ||
+    latestComments !== submission.current_comments ||
+    latestShares !== submission.current_shares ||
+    latestSaves !== submission.current_saves;
+
+  const lastSnapshot = submission.view_snapshots[submission.view_snapshots.length - 1];
+  const lastCapturedMs = lastSnapshot ? new Date(lastSnapshot.captured_at).getTime() : 0;
+  const hoursSinceLastSnapshot = (Date.now() - lastCapturedMs) / (1000 * 60 * 60);
+
+  return await prisma.$transaction(async (tx) => {
+    // 1. Create historical view snapshot if metrics changed or if > 24 hours have passed
+    if (metricsChanged || hoursSinceLastSnapshot >= 24 || !lastSnapshot) {
+      await tx.viewSnapshot.create({
+        data: {
+          submission_id: submission.id,
+          views: latestViews,
+          likes: latestLikes,
+          comments: latestComments,
+          shares: latestShares,
+          saves: latestSaves,
+          source: "PLATFORM_API",
+        },
+      });
+    }
 
     // 2. Calculate baseline for eligible views based on campaign mode
     let baselineViews = 0;
@@ -142,6 +236,10 @@ export async function syncSubmissionViews(submissionId: string): Promise<SyncRes
         where: { id: submission.id },
         data: {
           current_views: latestViews,
+          current_likes: latestLikes,
+          current_comments: latestComments,
+          current_shares: latestShares,
+          current_saves: latestSaves,
           last_view_update: new Date(),
           last_sync_status: "SUCCESS",
           last_sync_error: null,
@@ -159,8 +257,8 @@ export async function syncSubmissionViews(submissionId: string): Promise<SyncRes
       };
     }
 
-    // 3. Calculate earnings delta using exact rate
-    // Once views reach minimum_views_for_payout, then only budget used increases; otherwise view progress increases
+    // 3. Calculate earnings delta using exact CPM rate (Approved eligible views ONLY)
+    // Likes, comments, shares, and saves NEVER generate CPM earnings
     const minPayoutViews = campaign.minimum_views_for_payout || 0;
     const qualifiesForPayout = minPayoutViews > 0 ? totalPotentialEligible >= minPayoutViews : true;
 
@@ -205,7 +303,7 @@ export async function syncSubmissionViews(submissionId: string): Promise<SyncRes
       });
     }
 
-    // 5. Update submission
+    // 5. Update submission metrics & earnings
     const newCurrentEarnings = Number(submission.current_earnings) + finalEarningsDelta;
     const newEligibleViews = previousEligible + actualEligibleDelta;
 
@@ -215,6 +313,8 @@ export async function syncSubmissionViews(submissionId: string): Promise<SyncRes
         current_views: latestViews,
         current_likes: latestLikes,
         current_comments: latestComments,
+        current_shares: latestShares,
+        current_saves: latestSaves,
         eligible_views: newEligibleViews,
         current_earnings: new Prisma.Decimal(newCurrentEarnings),
         last_view_update: new Date(),
@@ -235,13 +335,28 @@ export async function syncSubmissionViews(submissionId: string): Promise<SyncRes
   });
 }
 
-export async function syncAllApprovedSubmissions(): Promise<SyncResult[]> {
+export async function syncAllApprovedSubmissions(options?: {
+  force?: boolean;
+  intervalHours?: number;
+}): Promise<SyncResult[]> {
+  const force = options?.force ?? false;
+  const intervalHours = options?.intervalHours ?? 8;
+  const cutoffTime = new Date(Date.now() - intervalHours * 60 * 60 * 1000);
+
   const approvedSubmissions = await prisma.submission.findMany({
     where: {
       status: SubmissionStatus.APPROVED,
       campaign: {
         status: CampaignStatus.ACTIVE,
       },
+      ...(force
+        ? {}
+        : {
+            OR: [
+              { last_view_update: null },
+              { last_view_update: { lt: cutoffTime } },
+            ],
+          }),
     },
     select: { id: true },
   });

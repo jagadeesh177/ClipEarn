@@ -1,6 +1,15 @@
 import { Platform } from "@prisma/client";
-import { SocialProvider, SocialAccountData, VerificationResult, VideoMetadata } from "./types";
+import {
+  SocialProvider,
+  SocialAccountData,
+  VerificationResult,
+  VideoMetadata,
+  VideoMetrics,
+  NormalizedMetrics,
+  OwnershipVerificationResult,
+} from "./types";
 import { verifySocialBio } from "./bio-verifier";
+import { isAuthorMatch } from "./author-match";
 
 export class YouTubeProvider implements SocialProvider {
   public platform = Platform.YOUTUBE;
@@ -90,6 +99,198 @@ export class YouTubeProvider implements SocialProvider {
     };
   }
 
+  async verifyOwnership(
+    videoIdOrUrl: string,
+    account: { platform_user_id: string; username: string; access_token?: string | null }
+  ): Promise<OwnershipVerificationResult> {
+    const videoId = this.parsePostId(videoIdOrUrl) || videoIdOrUrl;
+    const apiKey = process.env.GOOGLE_API_KEY;
+    const token = account.access_token;
+
+    let channelId: string | undefined = undefined;
+    let channelTitle: string | undefined = undefined;
+    let customHandle: string | undefined = undefined;
+
+    // 1. Try YouTube Data API v3 if apiKey or access_token is available
+    if (apiKey || token) {
+      try {
+        const headers: Record<string, string> = {};
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
+        const url = apiKey
+          ? `https://www.googleapis.com/youtube/v3/videos?part=snippet,status&id=${videoId}&key=${apiKey}`
+          : `https://www.googleapis.com/youtube/v3/videos?part=snippet,status&id=${videoId}`;
+
+        const res = await fetch(url, { headers, signal: AbortSignal.timeout(6000) });
+        const data = await res.json();
+        const item = data.items?.[0];
+        if (item) {
+          channelId = item.snippet?.channelId;
+          channelTitle = item.snippet?.channelTitle;
+
+          // Fetch channel snippet to get customUrl / handle
+          if (channelId && apiKey) {
+            try {
+              const chRes = await fetch(
+                `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${channelId}&key=${apiKey}`,
+                { signal: AbortSignal.timeout(4000) }
+              );
+              const chData = await chRes.json();
+              const cUrl = chData.items?.[0]?.snippet?.customUrl;
+              if (cUrl) {
+                customHandle = cUrl.replace(/^@/, "");
+              }
+            } catch {}
+          }
+        }
+      } catch {}
+    }
+
+    // 2. Fallback to oEmbed if handle or channelTitle was not retrieved
+    if (!customHandle) {
+      const oembedHandle = await this.fetchAuthorHandleFromOembed(videoId);
+      if (oembedHandle) {
+        customHandle = oembedHandle;
+      }
+    }
+
+    // 3. Match against account
+    // Direct Channel ID match
+    if (channelId && account.platform_user_id && channelId === account.platform_user_id) {
+      return {
+        isOwned: true,
+        ownerPlatformUserId: channelId,
+        ownerUsername: customHandle,
+        ownerDisplayName: channelTitle,
+      };
+    }
+
+    // Handle or Channel Title match
+    if (customHandle || channelTitle) {
+      const matches = isAuthorMatch(customHandle || "", account.username, channelTitle);
+      if (matches) {
+        return {
+          isOwned: true,
+          ownerPlatformUserId: channelId,
+          ownerUsername: customHandle,
+          ownerDisplayName: channelTitle,
+        };
+      }
+      return {
+        isOwned: false,
+        ownerPlatformUserId: channelId,
+        ownerUsername: customHandle,
+        ownerDisplayName: channelTitle,
+        reason: `This YouTube video was published by ${customHandle ? "@" + customHandle : channelTitle || "another channel"}, which does not match your verified YouTube account (@${account.username}).`,
+      };
+    }
+
+    // If channel info could not be determined at all (e.g. quota limits)
+    return {
+      isOwned: true,
+      ownerPlatformUserId: channelId,
+      ownerUsername: customHandle,
+    };
+  }
+
+  async getNormalizedMetrics(
+    videoIdOrUrl: string,
+    account?: { platform_user_id?: string; username?: string; access_token?: string | null } | null
+  ): Promise<NormalizedMetrics> {
+    const videoId = this.parsePostId(videoIdOrUrl) || videoIdOrUrl;
+    const apiKey = process.env.GOOGLE_API_KEY;
+    const token = account?.access_token;
+
+    let views: number | null = null;
+    let likes: number | null = null;
+    let comments: number | null = null;
+    let isPrivate = false;
+    let authorDisplayName: string | undefined = undefined;
+    let authorPlatformUserId: string | undefined = undefined;
+
+    if (apiKey || token) {
+      try {
+        const headers: Record<string, string> = {};
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
+        const url = apiKey
+          ? `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,status&id=${videoId}&key=${apiKey}`
+          : `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,status&id=${videoId}`;
+
+        const res = await fetch(url, { headers, signal: AbortSignal.timeout(6000) });
+        const data = await res.json();
+
+        if (data.items && data.items.length === 0) {
+          return {
+            views: null,
+            likes: null,
+            comments: null,
+            shares: null,
+            saves: null,
+            fetchedAt: new Date(),
+            platform: Platform.YOUTUBE,
+            platformVideoId: videoId,
+            isAvailable: false,
+            isPrivate: false,
+            error: "Video not found or removed from YouTube",
+          };
+        }
+
+        const item = data.items?.[0];
+        if (item) {
+          authorPlatformUserId = item.snippet?.channelId;
+          authorDisplayName = item.snippet?.channelTitle;
+          isPrivate = item.status?.privacyStatus === "private";
+
+          if (item.statistics?.viewCount != null) {
+            views = parseInt(item.statistics.viewCount, 10);
+          }
+          if (item.statistics?.likeCount != null) {
+            likes = parseInt(item.statistics.likeCount, 10);
+          }
+          if (item.statistics?.commentCount != null) {
+            comments = parseInt(item.statistics.commentCount, 10);
+          }
+
+          // YouTube Data API v3 does not expose shares or saves
+          return {
+            views,
+            likes,
+            comments,
+            shares: null,
+            saves: null,
+            fetchedAt: new Date(),
+            platform: Platform.YOUTUBE,
+            platformVideoId: videoId,
+            isAvailable: true,
+            isPrivate,
+            authorPlatformUserId,
+            authorDisplayName,
+          };
+        }
+      } catch {}
+    }
+
+    // Fallback: public metrics via oEmbed / page
+    const publicMetrics = await this.fetchPublicMetrics(videoId);
+    return {
+      views: publicMetrics.views,
+      likes: publicMetrics.likes,
+      comments: publicMetrics.comments,
+      shares: null,
+      saves: null,
+      fetchedAt: new Date(),
+      platform: Platform.YOUTUBE,
+      platformVideoId: videoId,
+      isAvailable: true,
+      isPrivate: false,
+      authorUsername: publicMetrics.author,
+      authorDisplayName: publicMetrics.displayName,
+    };
+  }
+
   async getVideo(postUrl: string): Promise<VideoMetadata> {
     const videoId = this.parsePostId(postUrl) || postUrl;
     const apiKey = process.env.GOOGLE_API_KEY;
@@ -136,8 +337,10 @@ export class YouTubeProvider implements SocialProvider {
             author_username: cleanAuthorHandle,
             author_display_name: channelTitle,
             current_views: parseInt(item.statistics?.viewCount || "0", 10),
-            likes: parseInt(item.statistics?.likeCount || "0", 10),
-            comments: parseInt(item.statistics?.commentCount || "0", 10),
+            likes: item.statistics?.likeCount != null ? parseInt(item.statistics.likeCount, 10) : null,
+            comments: item.statistics?.commentCount != null ? parseInt(item.statistics.commentCount, 10) : null,
+            shares: null,
+            saves: null,
             is_available: true,
             is_private: false,
           };
@@ -156,6 +359,8 @@ export class YouTubeProvider implements SocialProvider {
       current_views: publicMetrics.views,
       likes: publicMetrics.likes,
       comments: publicMetrics.comments,
+      shares: null,
+      saves: null,
       is_available: true,
       is_private: false,
     };
@@ -166,7 +371,7 @@ export class YouTubeProvider implements SocialProvider {
     return metrics.views;
   }
 
-  async getVideoMetrics(platformPostId: string): Promise<{ views: number; likes: number; comments: number }> {
+  async getVideoMetrics(platformPostId: string): Promise<VideoMetrics> {
     const apiKey = process.env.GOOGLE_API_KEY;
     if (apiKey) {
       try {
@@ -179,8 +384,10 @@ export class YouTubeProvider implements SocialProvider {
         if (stats) {
           return {
             views: parseInt(stats.viewCount || "0", 10),
-            likes: parseInt(stats.likeCount || "0", 10),
-            comments: parseInt(stats.commentCount || "0", 10),
+            likes: stats.likeCount != null ? parseInt(stats.likeCount, 10) : null,
+            comments: stats.commentCount != null ? parseInt(stats.commentCount, 10) : null,
+            shares: null,
+            saves: null,
           };
         }
       } catch {}
@@ -191,6 +398,8 @@ export class YouTubeProvider implements SocialProvider {
       views: publicMetrics.views,
       likes: publicMetrics.likes,
       comments: publicMetrics.comments,
+      shares: null,
+      saves: null,
     };
   }
 

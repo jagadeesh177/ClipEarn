@@ -16,6 +16,10 @@ import {
   HelpCircle,
   ShieldCheck,
   Trash2,
+  Eye,
+  Heart,
+  Share2,
+  Bookmark,
 } from "lucide-react";
 
 import { clientCache } from "@/lib/clientCache";
@@ -260,20 +264,45 @@ export default function MySubmissionsPage() {
                         Last synced: {new Date(sub.last_view_update).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                       </span>
                     )}
+                    {sub.last_sync_status === "UNAVAILABLE" && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-400">
+                        <AlertCircle className="w-3 h-3 shrink-0" />
+                        Platform clip unavailable or private
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Real Social Media Metrics Strip */}
+                  <div className="flex flex-wrap items-center gap-3 pt-1 text-xs">
+                    <span className="inline-flex items-center gap-1 font-mono text-slate-300" title="Views">
+                      <Eye className="w-3.5 h-3.5 text-brand-cyan" />
+                      {(sub.current_views || 0).toLocaleString()}
+                    </span>
+                    <span className="text-slate-700">•</span>
+                    <span className="inline-flex items-center gap-1 font-mono text-slate-300" title="Likes">
+                      <Heart className="w-3.5 h-3.5 text-red-400" />
+                      {sub.current_likes != null ? sub.current_likes.toLocaleString() : "N/A"}
+                    </span>
+                    <span className="text-slate-700">•</span>
+                    <span className="inline-flex items-center gap-1 font-mono text-slate-300" title="Comments">
+                      <MessageSquare className="w-3.5 h-3.5 text-blue-400" />
+                      {sub.current_comments != null ? sub.current_comments.toLocaleString() : "N/A"}
+                    </span>
+                    <span className="text-slate-700">•</span>
+                    <span className="inline-flex items-center gap-1 font-mono text-slate-300" title="Shares">
+                      <Share2 className="w-3.5 h-3.5 text-emerald-400" />
+                      {sub.current_shares != null ? sub.current_shares.toLocaleString() : "N/A"}
+                    </span>
+                    <span className="text-slate-700">•</span>
+                    <span className="inline-flex items-center gap-1 font-mono text-slate-300" title="Saves">
+                      <Bookmark className="w-3.5 h-3.5 text-purple-400" />
+                      {sub.current_saves != null ? sub.current_saves.toLocaleString() : "N/A"}
+                    </span>
                   </div>
                 </div>
 
                 {/* Right side metrics and status */}
                 <div className="flex flex-wrap items-center gap-6 self-end lg:self-center">
-                  <div className="text-right">
-                    <span className="text-xs text-slate-500 uppercase tracking-wider block font-semibold">
-                      Current Views
-                    </span>
-                    <span className="text-base font-bold text-white font-mono">
-                      {(sub.current_views || 0).toLocaleString()}
-                    </span>
-                  </div>
-
                   <div className="text-right">
                     <span className="text-xs text-slate-500 uppercase tracking-wider block font-semibold">
                       Eligible Views

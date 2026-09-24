@@ -1,6 +1,15 @@
 import { Platform } from "@prisma/client";
-import { SocialProvider, SocialAccountData, VerificationResult, VideoMetadata } from "./types";
+import {
+  SocialProvider,
+  SocialAccountData,
+  VerificationResult,
+  VideoMetadata,
+  VideoMetrics,
+  NormalizedMetrics,
+  OwnershipVerificationResult,
+} from "./types";
 import { verifySocialBio } from "./bio-verifier";
+import { isAuthorMatch } from "./author-match";
 
 export class TikTokProvider implements SocialProvider {
   public platform = Platform.TIKTOK;
@@ -122,6 +131,175 @@ export class TikTokProvider implements SocialProvider {
     return postUrl;
   }
 
+  async verifyOwnership(
+    videoIdOrUrl: string,
+    account: { platform_user_id: string; username: string; access_token?: string | null }
+  ): Promise<OwnershipVerificationResult> {
+    const resolvedUrl = await this.resolveCanonicalUrl(videoIdOrUrl);
+    const postId = this.parsePostId(resolvedUrl) || this.parsePostId(videoIdOrUrl) || videoIdOrUrl;
+
+    // 1. If OAuth token exists, verify via TikTok Video Query API v2
+    if (account.access_token && !account.access_token.startsWith("mock_")) {
+      try {
+        const res = await fetch(
+          "https://open.tiktokapis.com/v2/video/query/?fields=id,title",
+          {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${account.access_token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              filters: {
+                video_ids: [postId],
+              },
+            }),
+            signal: AbortSignal.timeout(6000),
+          }
+        );
+        const data = await res.json();
+        if (res.ok && data?.data?.videos && data.data.videos.length > 0) {
+          return {
+            isOwned: true,
+            ownerPlatformUserId: account.platform_user_id,
+            ownerUsername: account.username,
+          };
+        }
+      } catch {}
+    }
+
+    // 2. Extract author handle from resolved URL (e.g. tiktok.com/@username/video/12345)
+    let urlHandle: string | undefined = undefined;
+    for (const u of [resolvedUrl, videoIdOrUrl]) {
+      try {
+        const parsed = new URL(u.trim());
+        const m = parsed.pathname.match(/@([^/?#&]+)/);
+        if (m) {
+          const raw = m[1].replace(/^@/, "").trim();
+          if (raw && !/\s/.test(raw)) {
+            urlHandle = raw;
+            break;
+          }
+        }
+      } catch {}
+    }
+
+    // 3. Fallback: try official TikTok oEmbed to obtain author_unique_id
+    if (!urlHandle) {
+      try {
+        const oRes = await fetch(
+          `https://www.tiktok.com/oembed?url=${encodeURIComponent(resolvedUrl || videoIdOrUrl)}`,
+          { signal: AbortSignal.timeout(5000) }
+        );
+        if (oRes.ok) {
+          const oData = await oRes.json();
+          if (oData.author_unique_id) {
+            urlHandle = oData.author_unique_id.replace(/^@/, "").trim();
+          }
+        }
+      } catch {}
+    }
+
+    // 4. Compare handle with verified account
+    if (urlHandle) {
+      const match = isAuthorMatch(urlHandle, account.username);
+      if (match) {
+        return {
+          isOwned: true,
+          ownerPlatformUserId: account.platform_user_id,
+          ownerUsername: urlHandle,
+        };
+      }
+      return {
+        isOwned: false,
+        ownerUsername: urlHandle,
+        reason: `This TikTok clip was published by @${urlHandle}, which does not match your verified TikTok account (@${account.username}).`,
+      };
+    }
+
+    // If handle cannot be determined from URL or oembed
+    return {
+      isOwned: true,
+      ownerUsername: account.username,
+    };
+  }
+
+  async getNormalizedMetrics(
+    videoIdOrUrl: string,
+    account?: { platform_user_id?: string; username?: string; access_token?: string | null } | null
+  ): Promise<NormalizedMetrics> {
+    const resolvedUrl = await this.resolveCanonicalUrl(videoIdOrUrl);
+    const postId = this.parsePostId(resolvedUrl) || this.parsePostId(videoIdOrUrl) || videoIdOrUrl;
+
+    let views: number | null = null;
+    let likes: number | null = null;
+    let comments: number | null = null;
+    let shares: number | null = null;
+
+    // 1. If access token available, query official TikTok Video Query API
+    if (account?.access_token && !account.access_token.startsWith("mock_")) {
+      try {
+        const res = await fetch(
+          "https://open.tiktokapis.com/v2/video/query/?fields=id,title,view_count,like_count,comment_count,share_count",
+          {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${account.access_token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              filters: {
+                video_ids: [postId],
+              },
+            }),
+            signal: AbortSignal.timeout(6000),
+          }
+        );
+        const data = await res.json();
+        const video = data?.data?.videos?.[0];
+        if (video) {
+          return {
+            views: video.view_count ?? null,
+            likes: video.like_count ?? null,
+            comments: video.comment_count ?? null,
+            shares: video.share_count ?? null,
+            saves: null, // TikTok API v2 does not expose saves/bookmarks count
+            fetchedAt: new Date(),
+            platform: Platform.TIKTOK,
+            platformVideoId: postId,
+            isAvailable: true,
+            isPrivate: false,
+            authorUsername: account.username,
+          };
+        }
+      } catch {}
+    }
+
+    // 2. Fallback: fetch public metrics via oEmbed / web
+    const publicMetrics = await this.fetchPublicMetrics(resolvedUrl || videoIdOrUrl);
+    if (publicMetrics) {
+      views = publicMetrics.views;
+      likes = publicMetrics.likes;
+      comments = publicMetrics.comments;
+      shares = (publicMetrics as any).shares ?? null;
+    }
+
+    return {
+      views,
+      likes,
+      comments,
+      shares,
+      saves: null, // Unsupported on TikTok
+      fetchedAt: new Date(),
+      platform: Platform.TIKTOK,
+      platformVideoId: postId,
+      isAvailable: true,
+      isPrivate: false,
+      authorUsername: publicMetrics?.author,
+      authorDisplayName: publicMetrics?.displayName,
+    };
+  }
+
   async getVideo(postUrl: string): Promise<VideoMetadata> {
     const resolvedUrl = await this.resolveCanonicalUrl(postUrl);
     const postId = this.parsePostId(resolvedUrl) || this.parsePostId(postUrl) || postUrl;
@@ -145,6 +323,7 @@ export class TikTokProvider implements SocialProvider {
     let views = 0;
     let likes = 0;
     let comments = 0;
+    let shares: number | null = null;
     let authorDisplayName: string | undefined = undefined;
 
     try {
@@ -154,6 +333,7 @@ export class TikTokProvider implements SocialProvider {
         views = metrics.views;
         likes = metrics.likes;
         comments = metrics.comments;
+        shares = (metrics as any).shares ?? null;
         if (metrics.author && !/\s/.test(metrics.author)) {
           authorUsername = metrics.author;
         }
@@ -178,6 +358,8 @@ export class TikTokProvider implements SocialProvider {
       current_views: views,
       likes,
       comments,
+      shares,
+      saves: null,
       is_available: true,
       is_private: false,
     };
@@ -188,21 +370,27 @@ export class TikTokProvider implements SocialProvider {
     return metrics.views;
   }
 
-  async getVideoMetrics(platformPostId: string, postUrl?: string): Promise<{ views: number; likes: number; comments: number }> {
+  async getVideoMetrics(platformPostId: string, postUrl?: string): Promise<VideoMetrics> {
     if (postUrl) {
       try {
         const metrics = await this.fetchPublicMetrics(postUrl);
         if (metrics) {
-          return { views: metrics.views, likes: metrics.likes, comments: metrics.comments };
+          return {
+            views: metrics.views,
+            likes: metrics.likes,
+            comments: metrics.comments,
+            shares: (metrics as any).shares ?? null,
+            saves: null,
+          };
         }
       } catch {}
     }
-    return { views: 0, likes: 0, comments: 0 };
+    return { views: 0, likes: 0, comments: 0, shares: null, saves: null };
   }
 
   private async fetchPublicMetrics(
     postUrl: string
-  ): Promise<{ views: number; likes: number; comments: number; author?: string; displayName?: string } | null> {
+  ): Promise<{ views: number; likes: number; comments: number; shares: number | null; author?: string; displayName?: string } | null> {
     try {
       const res = await fetch(postUrl, {
         redirect: "follow",
@@ -221,6 +409,7 @@ export class TikTokProvider implements SocialProvider {
       let views = 0;
       let likes = 0;
       let comments = 0;
+      let shares: number | null = null;
       let author: string | undefined = undefined;
       let displayName: string | undefined = undefined;
 
@@ -253,6 +442,7 @@ export class TikTokProvider implements SocialProvider {
               if (type.includes("Watch") || type.includes("View")) views = count;
               if (type.includes("Like")) likes = count;
               if (type.includes("Comment")) comments = count;
+              if (type.includes("Share")) shares = count;
             }
           }
           // Note: ld.author.url has the handle: https://www.tiktok.com/@brendanarcade
@@ -281,11 +471,15 @@ export class TikTokProvider implements SocialProvider {
               views = itemInfo.stats.playCount || views;
               likes = itemInfo.stats.diggCount || likes;
               comments = itemInfo.stats.commentCount || comments;
+              if (itemInfo.stats.shareCount != null) shares = itemInfo.stats.shareCount;
             }
             if (itemInfo.statsV2) {
               views = parseInt(itemInfo.statsV2.playCount || "0", 10) || views;
               likes = parseInt(itemInfo.statsV2.diggCount || "0", 10) || likes;
               comments = parseInt(itemInfo.statsV2.commentCount || "0", 10) || comments;
+              if (itemInfo.statsV2.shareCount != null) {
+                shares = parseInt(itemInfo.statsV2.shareCount || "0", 10) || shares;
+              }
             }
             // itemInfo.author.uniqueId is the handle (e.g. brendanarcade)
             if (itemInfo.author?.uniqueId) {
@@ -326,6 +520,10 @@ export class TikTokProvider implements SocialProvider {
         const commMatch = html.match(/"commentCount":\s*(\d+)/) || html.match(/"comment_count":\s*(\d+)/);
         if (commMatch) comments = parseInt(commMatch[1], 10);
       }
+      if (shares == null) {
+        const shareMatch = html.match(/"shareCount":\s*(\d+)/) || html.match(/"share_count":\s*(\d+)/);
+        if (shareMatch) shares = parseInt(shareMatch[1], 10);
+      }
 
       // Ensure author has no spaces (a handle cannot have spaces)
       if (author && /\s/.test(author)) {
@@ -333,8 +531,8 @@ export class TikTokProvider implements SocialProvider {
         author = undefined;
       }
 
-      if (views > 0 || likes > 0 || comments > 0 || author || displayName) {
-        return { views, likes, comments, author, displayName };
+      if (views > 0 || likes > 0 || comments > 0 || shares != null || author || displayName) {
+        return { views, likes, comments, shares, author, displayName };
       }
       return null;
     } catch {

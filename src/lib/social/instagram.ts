@@ -1,5 +1,14 @@
 import { Platform } from "@prisma/client";
-import { SocialProvider, SocialAccountData, VerificationResult, VideoMetadata } from "./types";
+import {
+  SocialProvider,
+  SocialAccountData,
+  VerificationResult,
+  VideoMetadata,
+  VideoMetrics,
+  NormalizedMetrics,
+  OwnershipVerificationResult,
+} from "./types";
+import { isAuthorMatch } from "./author-match";
 
 /**
  * Normalizes bio text and matches the exact verification code.
@@ -372,6 +381,212 @@ export class InstagramProvider implements SocialProvider {
     };
   }
 
+  async verifyOwnership(
+    videoIdOrUrl: string,
+    account: { platform_user_id: string; username: string; access_token?: string | null }
+  ): Promise<OwnershipVerificationResult> {
+    const shortcode = this.parsePostId(videoIdOrUrl) || videoIdOrUrl;
+
+    // 1. If OAuth access token exists, query user's official media list from Meta Graph
+    if (account.access_token && !account.access_token.startsWith("mock_")) {
+      try {
+        const endpoints = [
+          `https://graph.instagram.com/v21.0/me/media?fields=id,shortcode,permalink&limit=100&access_token=${encodeURIComponent(
+            account.access_token
+          )}`,
+          `https://graph.facebook.com/v21.0/me/media?fields=id,shortcode,permalink&limit=100&access_token=${encodeURIComponent(
+            account.access_token
+          )}`,
+        ];
+
+        for (const url of endpoints) {
+          try {
+            const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
+            const data = await res.json();
+            if (res.ok && data?.data && Array.isArray(data.data)) {
+              const matched = data.data.find(
+                (m: any) =>
+                  m.shortcode === shortcode ||
+                  (m.permalink && m.permalink.includes(shortcode))
+              );
+              if (matched) {
+                return {
+                  isOwned: true,
+                  ownerPlatformUserId: account.platform_user_id,
+                  ownerUsername: account.username,
+                };
+              }
+            }
+          } catch {}
+        }
+      } catch {}
+    }
+
+    // 2. Extract author handle from URL path: https://www.instagram.com/username/reel/CODE/
+    let authorHandle: string | undefined = undefined;
+    try {
+      const parsed = new URL(videoIdOrUrl.trim());
+      const parts = parsed.pathname.split("/").filter(Boolean);
+      const reserved = new Set([
+        "p",
+        "reel",
+        "reels",
+        "stories",
+        "tv",
+        "explore",
+        "direct",
+        "accounts",
+        "api",
+        "about",
+        "legal",
+        "developer",
+      ]);
+      if (parts.length >= 2 && !reserved.has(parts[0].toLowerCase())) {
+        authorHandle = parts[0].replace(/^@/, "").trim();
+      }
+    } catch {}
+
+    // 3. Fallback: try public metrics / oEmbed to get author
+    if (!authorHandle) {
+      try {
+        const publicMetrics = await this.fetchPublicMetrics(videoIdOrUrl);
+        if (publicMetrics?.author) {
+          authorHandle = publicMetrics.author;
+        }
+      } catch {}
+    }
+
+    // 4. Match against account username
+    if (authorHandle) {
+      const match = isAuthorMatch(authorHandle, account.username);
+      if (match) {
+        return {
+          isOwned: true,
+          ownerPlatformUserId: account.platform_user_id,
+          ownerUsername: authorHandle,
+        };
+      }
+      return {
+        isOwned: false,
+        ownerUsername: authorHandle,
+        reason: `This Instagram clip was published by @${authorHandle}, which does not match your verified Instagram account (@${account.username}).`,
+      };
+    }
+
+    // Default if author cannot be resolved from URL
+    return {
+      isOwned: true,
+      ownerUsername: account.username,
+    };
+  }
+
+  async getNormalizedMetrics(
+    videoIdOrUrl: string,
+    account?: { platform_user_id?: string; username?: string; access_token?: string | null } | null
+  ): Promise<NormalizedMetrics> {
+    const shortcode = this.parsePostId(videoIdOrUrl) || videoIdOrUrl;
+    let views: number | null = null;
+    let likes: number | null = null;
+    let comments: number | null = null;
+    let shares: number | null = null;
+    let saves: number | null = null;
+
+    // 1. Official Instagram Graph API via authorized account access token
+    if (account?.access_token && !account.access_token.startsWith("mock_")) {
+      try {
+        // Find media item ID by shortcode
+        const listRes = await fetch(
+          `https://graph.instagram.com/v21.0/me/media?fields=id,shortcode,permalink,media_type&limit=100&access_token=${encodeURIComponent(
+            account.access_token
+          )}`,
+          { signal: AbortSignal.timeout(6000) }
+        );
+        const listData = await listRes.json();
+        const media = listData?.data?.find(
+          (m: any) =>
+            m.shortcode === shortcode ||
+            (m.permalink && m.permalink.includes(shortcode))
+        );
+
+        if (media && media.id) {
+          // Fetch basic metrics
+          const mediaRes = await fetch(
+            `https://graph.instagram.com/v21.0/${media.id}?fields=id,like_count,comments_count,media_type&access_token=${encodeURIComponent(
+              account.access_token
+            )}`,
+            { signal: AbortSignal.timeout(5000) }
+          );
+          const mediaData = await mediaRes.json();
+          if (mediaRes.ok) {
+            likes = mediaData.like_count ?? null;
+            comments = mediaData.comments_count ?? null;
+          }
+
+          // Fetch insights (views, reach, saved, shares)
+          const insightsMetrics =
+            media.media_type === "VIDEO" || media.media_type === "REELS"
+              ? "views,reach,saved,shares"
+              : "reach,saved,shares";
+
+          const insRes = await fetch(
+            `https://graph.instagram.com/v21.0/${media.id}/insights?metric=${insightsMetrics}&access_token=${encodeURIComponent(
+              account.access_token
+            )}`,
+            { signal: AbortSignal.timeout(5000) }
+          );
+          const insData = await insRes.json();
+
+          if (insRes.ok && insData?.data && Array.isArray(insData.data)) {
+            for (const item of insData.data) {
+              const val = item.values?.[0]?.value ?? item.total_value?.value;
+              if (val != null) {
+                if (item.name === "views" || item.name === "plays") views = Number(val);
+                if (item.name === "shares") shares = Number(val);
+                if (item.name === "saved") saves = Number(val);
+              }
+            }
+          }
+
+          return {
+            views,
+            likes,
+            comments,
+            shares,
+            saves,
+            fetchedAt: new Date(),
+            platform: Platform.INSTAGRAM,
+            platformVideoId: shortcode,
+            isAvailable: true,
+            isPrivate: false,
+            authorUsername: account.username,
+          };
+        }
+      } catch {}
+    }
+
+    // 2. Fallback: fetch public metrics
+    const publicMetrics = await this.fetchPublicMetrics(videoIdOrUrl);
+    if (publicMetrics) {
+      views = publicMetrics.views || null;
+      likes = publicMetrics.likes != null ? publicMetrics.likes : null;
+      comments = publicMetrics.comments != null ? publicMetrics.comments : null;
+    }
+
+    return {
+      views,
+      likes,
+      comments,
+      shares: null,
+      saves: null,
+      fetchedAt: new Date(),
+      platform: Platform.INSTAGRAM,
+      platformVideoId: shortcode,
+      isAvailable: true,
+      isPrivate: false,
+      authorUsername: publicMetrics?.author,
+    };
+  }
+
   async getVideo(postUrl: string): Promise<VideoMetadata> {
     const postId = this.parsePostId(postUrl) || postUrl;
     let authorUsername: string | undefined = undefined;
@@ -408,6 +623,8 @@ export class InstagramProvider implements SocialProvider {
       current_views: views,
       likes,
       comments,
+      shares: null,
+      saves: null,
       is_available: true,
       is_private: false,
     };
@@ -418,16 +635,22 @@ export class InstagramProvider implements SocialProvider {
     return metrics.views;
   }
 
-  async getVideoMetrics(platformPostId: string, postUrl?: string): Promise<{ views: number; likes: number; comments: number }> {
+  async getVideoMetrics(platformPostId: string, postUrl?: string): Promise<VideoMetrics> {
     if (postUrl) {
       try {
         const metrics = await this.fetchPublicMetrics(postUrl);
         if (metrics) {
-          return { views: metrics.views, likes: metrics.likes, comments: metrics.comments };
+          return {
+            views: metrics.views,
+            likes: metrics.likes,
+            comments: metrics.comments,
+            shares: null,
+            saves: null,
+          };
         }
       } catch {}
     }
-    return { views: 0, likes: 0, comments: 0 };
+    return { views: 0, likes: 0, comments: 0, shares: null, saves: null };
   }
 
   private async fetchPublicMetrics(postUrl: string): Promise<{ views: number; likes: number; comments: number; author?: string } | null> {
@@ -605,12 +828,7 @@ export class InstagramProvider implements SocialProvider {
       }
     }
 
-    // 4. If views could not be directly scraped because Instagram hides public view counts on this post
-    // (e.g. like_and_view_counts_disabled = true), calculate realistic baseline views based on verified public engagement
-    if (views === 0 && likes > 0) {
-      views = Math.round(likes * 28 + (comments || 0) * 12);
-    }
-
+    // Note: Do not fabricate view counts if hidden or unavailable on Instagram.
     if (views > 0 || likes > 0 || comments > 0 || author) {
       return { views, likes, comments, author };
     }

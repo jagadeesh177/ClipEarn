@@ -15,6 +15,8 @@ import {
   Eye,
   Heart,
   MessageSquare,
+  Share2,
+  Bookmark,
 } from "lucide-react";
 
 export default function ManagerSubmissionsReviewPage() {
@@ -184,6 +186,8 @@ export default function ManagerSubmissionsReviewPage() {
                   <th className="pb-3 pr-3">Views</th>
                   <th className="pb-3 pr-3">Likes</th>
                   <th className="pb-3 pr-3">Comments</th>
+                  <th className="pb-3 pr-3">Shares</th>
+                  <th className="pb-3 pr-3">Saves</th>
                   <th className="pb-3 pr-3">Submitted</th>
                   <th className="pb-3 pr-3">Status</th>
                   <th className="pb-3 text-right">Review Action</th>
@@ -253,14 +257,28 @@ export default function ManagerSubmissionsReviewPage() {
                       <td className="py-4 pr-3 font-mono font-bold text-red-400 whitespace-nowrap">
                         <span className="flex items-center gap-1">
                           <Heart className="w-3.5 h-3.5 text-red-400" />
-                          {(sub.current_likes || 0).toLocaleString()}
+                          {sub.current_likes != null ? sub.current_likes.toLocaleString() : "N/A"}
                         </span>
                       </td>
 
                       <td className="py-4 pr-3 font-mono font-bold text-blue-400 whitespace-nowrap">
                         <span className="flex items-center gap-1">
                           <MessageSquare className="w-3.5 h-3.5 text-blue-400" />
-                          {(sub.current_comments || 0).toLocaleString()}
+                          {sub.current_comments != null ? sub.current_comments.toLocaleString() : "N/A"}
+                        </span>
+                      </td>
+
+                      <td className="py-4 pr-3 font-mono font-bold text-emerald-400 whitespace-nowrap">
+                        <span className="flex items-center gap-1">
+                          <Share2 className="w-3.5 h-3.5 text-emerald-400" />
+                          {sub.current_shares != null ? sub.current_shares.toLocaleString() : "N/A"}
+                        </span>
+                      </td>
+
+                      <td className="py-4 pr-3 font-mono font-bold text-purple-400 whitespace-nowrap">
+                        <span className="flex items-center gap-1">
+                          <Bookmark className="w-3.5 h-3.5 text-purple-400" />
+                          {sub.current_saves != null ? sub.current_saves.toLocaleString() : "N/A"}
                         </span>
                       </td>
 

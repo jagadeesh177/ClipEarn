@@ -3,9 +3,13 @@ import { syncAllApprovedSubmissions } from "@/lib/earnings/engine";
 
 export async function POST(request: Request) {
   try {
-    const results = await syncAllApprovedSubmissions();
+    const { searchParams } = new URL(request.url);
+    const force = searchParams.get("force") === "true";
+
+    const results = await syncAllApprovedSubmissions({ force });
     const successful = results.filter((r) => r.status === "SUCCESS").length;
     const failed = results.filter((r) => r.status === "FAILED").length;
+    const unavailable = results.filter((r) => r.status === "UNAVAILABLE").length;
     const budgetExhausted = results.filter((r) => r.status === "BUDGET_EXHAUSTED").length;
     const totalEarningsGenerated = results.reduce((sum, r) => sum + r.earningsDelta, 0);
     const totalEligibleViewsGenerated = results.reduce((sum, r) => sum + r.eligibleViewsDelta, 0);
@@ -16,6 +20,7 @@ export async function POST(request: Request) {
         totalProcessed: results.length,
         successful,
         failed,
+        unavailable,
         budgetExhausted,
         totalEarningsGenerated,
         totalEligibleViewsGenerated,

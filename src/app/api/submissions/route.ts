@@ -5,6 +5,7 @@ import { detectPlatformFromUrl, getSocialProvider, extractAccountFromUrl, isAuth
 import { CampaignStatus, SubmissionStatus, VerificationStatus } from "@prisma/client";
 import { logAuditEvent } from "@/lib/audit";
 import { flagSuspiciousActivity } from "@/lib/fraud";
+import { decryptToken } from "@/lib/encryption";
 
 export async function GET(request: Request) {
   try {
@@ -78,6 +79,10 @@ export async function GET(request: Request) {
       account_username: s.social_account?.username || extractHandle(s.post_url, s.user?.username || "clipper"),
       status: s.status,
       current_views: s.current_views,
+      current_likes: s.current_likes,
+      current_comments: s.current_comments,
+      current_shares: s.current_shares,
+      current_saves: s.current_saves,
       eligible_views: s.eligible_views,
       current_earnings: Number(s.current_earnings),
       rejection_reason: s.rejection_reason,
@@ -87,8 +92,13 @@ export async function GET(request: Request) {
       created_at: s.created_at,
       reviewed_at: s.reviewed_at,
       last_view_update: s.last_view_update,
+      last_sync_status: s.last_sync_status,
       recent_snapshots: s.view_snapshots.map((snap) => ({
         views: snap.views,
+        likes: snap.likes,
+        comments: snap.comments,
+        shares: snap.shares,
+        saves: snap.saves,
         captured_at: snap.captured_at,
       })),
     }));
@@ -296,59 +306,112 @@ export async function POST(request: Request) {
       );
     }
 
-    // 8. Fetch Initial Video Metadata (Views, Likes, Comments) & Validate Author
-    let initialViews = 0;
-    let initialLikes = 0;
-    let initialComments = 0;
-    let videoMeta = null;
-    try {
-      videoMeta = await provider.getVideo(trimmedUrl);
-      initialViews = videoMeta.current_views || 0;
-      initialLikes = videoMeta.likes || 0;
-      initialComments = videoMeta.comments || 0;
-    } catch {
-      initialViews = 0;
-      initialLikes = 0;
-      initialComments = 0;
-    }
+    // 8. Decrypt Access Token & Verify Ownership
+    const decryptedToken = account.access_token_encrypted
+      ? decryptToken(account.access_token_encrypted)
+      : null;
 
-    // 7. Verify Author Match if provider extracted a valid username handle (no spaces)
-    if (videoMeta?.author_username && !/\s/.test(videoMeta.author_username)) {
-      const metaAuthor = videoMeta.author_username;
-      const isMatch = isAuthorMatch(metaAuthor, account.username, videoMeta.author_display_name);
+    if (provider.verifyOwnership) {
+      const ownership = await provider.verifyOwnership(trimmedUrl, {
+        platform_user_id: account.platform_user_id,
+        username: account.username,
+        access_token: decryptedToken,
+      });
 
-      if (!isMatch) {
-        // Also check if user has another verified account that matches
-        const allVerified = await prisma.socialAccount.findMany({
-          where: {
-            user_id: user.id,
-            platform: detectedPlatform,
-            verification_status: VerificationStatus.VERIFIED,
-          },
-        });
+      if (!ownership.isOwned) {
+        // Also check if user has another verified account that matches this author
+        if (ownership.ownerUsername) {
+          const allVerified = await prisma.socialAccount.findMany({
+            where: {
+              user_id: user.id,
+              platform: detectedPlatform,
+              verification_status: VerificationStatus.VERIFIED,
+            },
+          });
+          const matchingAcc = allVerified.find((a) =>
+            isAuthorMatch(ownership.ownerUsername!, a.username, ownership.ownerDisplayName)
+          );
+          if (matchingAcc) {
+            account = matchingAcc;
+          } else {
+            await flagSuspiciousActivity({
+              userId: user.id,
+              type: "ACCOUNT_MISMATCH_SUBMISSION_ATTEMPT",
+              description:
+                ownership.reason ||
+                `Ownership verification failed for video ${platformPostId} with account @${account.username}`,
+            });
 
-        const matchingAcc = allVerified.find((a) => isAuthorMatch(metaAuthor, a.username, videoMeta.author_display_name));
-
-        if (!matchingAcc) {
+            return NextResponse.json(
+              {
+                error:
+                  ownership.reason ||
+                  `This clip was published by @${ownership.ownerUsername}, which does not match your verified ${detectedPlatform} account (@${account.username}). You can only submit clips from your verified social account.`,
+              },
+              { status: 400 }
+            );
+          }
+        } else {
           await flagSuspiciousActivity({
             userId: user.id,
-            type: "AUTHOR_MISMATCH_METADATA",
-            description: `Video metadata reported author @${videoMeta.author_username} which does not match verified account @${account.username}`,
+            type: "ACCOUNT_MISMATCH_SUBMISSION_ATTEMPT",
+            description:
+              ownership.reason ||
+              `Ownership verification failed for video ${platformPostId} with account @${account.username}`,
           });
 
           return NextResponse.json(
             {
-              error: `This clip was published by @${videoMeta.author_username}, which does not match your verified ${detectedPlatform} account (@${account.username}). You can only submit clips from your verified account.`
+              error:
+                ownership.reason ||
+                `This clip does not belong to your verified ${detectedPlatform} account (@${account.username}). You can only submit clips published by your verified account.`,
             },
             { status: 400 }
           );
-        } else {
-          account = matchingAcc;
         }
       }
     }
 
-    // 8. Create Submission & Baseline Snapshot in Transaction
+    // 9. Fetch Real Official Platform Metrics
+    let initialViews = 0;
+    let initialLikes: number | null = null;
+    let initialComments: number | null = null;
+    let initialShares: number | null = null;
+    let initialSaves: number | null = null;
+
+    try {
+      if (provider.getNormalizedMetrics) {
+        const norm = await provider.getNormalizedMetrics(trimmedUrl, {
+          platform_user_id: account.platform_user_id,
+          username: account.username,
+          access_token: decryptedToken,
+        });
+        initialViews = norm.views ?? 0;
+        initialLikes = norm.likes ?? null;
+        initialComments = norm.comments ?? null;
+        initialShares = norm.shares ?? null;
+        initialSaves = norm.saves ?? null;
+      } else {
+        const videoMeta = await provider.getVideo(trimmedUrl, {
+          platform_user_id: account.platform_user_id,
+          username: account.username,
+          access_token: decryptedToken,
+        });
+        initialViews = videoMeta.current_views || 0;
+        initialLikes = videoMeta.likes ?? null;
+        initialComments = videoMeta.comments ?? null;
+        initialShares = videoMeta.shares ?? null;
+        initialSaves = videoMeta.saves ?? null;
+      }
+    } catch {
+      initialViews = 0;
+      initialLikes = null;
+      initialComments = null;
+      initialShares = null;
+      initialSaves = null;
+    }
+
+    // 10. Create Submission & Baseline Snapshot in Transaction
     const submission = await prisma.$transaction(async (tx) => {
       const sub = await tx.submission.create({
         data: {
@@ -362,20 +425,26 @@ export async function POST(request: Request) {
           current_views: initialViews,
           current_likes: initialLikes,
           current_comments: initialComments,
+          current_shares: initialShares,
+          current_saves: initialSaves,
           eligible_views: 0,
           current_earnings: 0,
           last_view_update: new Date(),
+          last_sync_status: "SUCCESS",
+          last_successful_sync: new Date(),
         },
       });
 
       // Baseline snapshot
-      if (initialViews > 0 || initialLikes > 0) {
+      if (initialViews > 0 || (initialLikes ?? 0) > 0) {
         await tx.viewSnapshot.create({
           data: {
             submission_id: sub.id,
             views: initialViews,
             likes: initialLikes,
             comments: initialComments,
+            shares: initialShares,
+            saves: initialSaves,
             source: "SUBMISSION_INITIAL",
           },
         });

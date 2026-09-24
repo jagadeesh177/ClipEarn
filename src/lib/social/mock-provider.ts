@@ -1,5 +1,13 @@
 import { Platform } from "@prisma/client";
-import { SocialProvider, SocialAccountData, VerificationResult, VideoMetadata } from "./types";
+import {
+  SocialProvider,
+  SocialAccountData,
+  VerificationResult,
+  VideoMetadata,
+  VideoMetrics,
+  OwnershipVerificationResult,
+  NormalizedMetrics,
+} from "./types";
 
 import { verifySocialBio } from "./bio-verifier";
 
@@ -127,7 +135,7 @@ export class MockSocialProvider implements SocialProvider {
     return base + additional;
   }
 
-  async getVideoMetrics(platformPostId: string): Promise<{ views: number; likes: number; comments: number }> {
+  async getVideoMetrics(platformPostId: string): Promise<VideoMetrics> {
     const views = await this.getVideoViews(platformPostId);
     let hash = 0;
     for (let i = 0; i < platformPostId.length; i++) {
@@ -136,6 +144,38 @@ export class MockSocialProvider implements SocialProvider {
     }
     const likes = Math.round(views * (0.045 + (Math.abs(hash % 30) / 1000)));
     const comments = Math.round(views * (0.003 + (Math.abs(hash % 20) / 10000))) + 5;
-    return { views, likes, comments };
+    return { views, likes, comments, shares: null, saves: null };
+  }
+
+  async verifyOwnership(
+    videoIdOrUrl: string,
+    account: { platform_user_id: string; username: string; access_token?: string | null }
+  ): Promise<OwnershipVerificationResult> {
+    return {
+      isOwned: true,
+      ownerPlatformUserId: account.platform_user_id,
+      ownerUsername: account.username,
+    };
+  }
+
+  async getNormalizedMetrics(
+    videoIdOrUrl: string,
+    account?: { platform_user_id?: string; username?: string; access_token?: string | null } | null
+  ): Promise<NormalizedMetrics> {
+    const postId = this.parsePostId(videoIdOrUrl) || videoIdOrUrl;
+    const metrics = await this.getVideoMetrics(postId);
+    return {
+      views: metrics.views,
+      likes: metrics.likes,
+      comments: metrics.comments,
+      shares: null,
+      saves: null,
+      fetchedAt: new Date(),
+      platform: this.platform,
+      platformVideoId: postId,
+      isAvailable: true,
+      isPrivate: false,
+      authorUsername: account?.username,
+    };
   }
 }

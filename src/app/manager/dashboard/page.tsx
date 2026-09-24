@@ -28,6 +28,8 @@ import {
   UserCheck,
   RotateCcw,
   CheckCircle2,
+  Share2,
+  Bookmark,
 } from "lucide-react";
 
 export default function ManagerDashboardPage() {
@@ -249,6 +251,8 @@ export default function ManagerDashboardPage() {
     totalViews: 0,
     totalLikes: 0,
     totalComments: 0,
+    totalShares: 0,
+    totalSaves: 0,
     eligibleViews: 0,
     totalBudget: 0,
     usedBudget: 0,
@@ -390,7 +394,7 @@ export default function ManagerDashboardPage() {
           <Eye className="w-5 h-5 text-brand-cyan" />
           Clip Engagement & Reach Metrics
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
           <div className="p-5 rounded-2xl bg-[#0F141F] border border-slate-800 hover:border-slate-700 transition-colors">
             <span className="text-slate-400 text-xs flex items-center gap-1.5 font-semibold">
               <Eye className="w-4 h-4 text-brand-cyan" /> Total Video Views
@@ -411,7 +415,7 @@ export default function ManagerDashboardPage() {
               {(data.totalLikes || 0).toLocaleString()}
             </div>
             <span className="text-xs text-slate-400 mt-1 block">
-              Total likes across all platforms
+              Likes across platforms
             </span>
           </div>
 
@@ -423,7 +427,31 @@ export default function ManagerDashboardPage() {
               {(data.totalComments || 0).toLocaleString()}
             </div>
             <span className="text-xs text-slate-400 mt-1 block">
-              Audience conversations & comments
+              Audience conversations
+            </span>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-[#0F141F] border border-slate-800 hover:border-slate-700 transition-colors">
+            <span className="text-slate-400 text-xs flex items-center gap-1.5 font-semibold">
+              <Share2 className="w-4 h-4 text-emerald-400" /> Total Shares
+            </span>
+            <div className="text-2xl font-black text-emerald-400 mt-1">
+              {(data.totalShares || 0).toLocaleString()}
+            </div>
+            <span className="text-xs text-slate-400 mt-1 block">
+              Viral shares &amp; reposts
+            </span>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-[#0F141F] border border-slate-800 hover:border-slate-700 transition-colors">
+            <span className="text-slate-400 text-xs flex items-center gap-1.5 font-semibold">
+              <Bookmark className="w-4 h-4 text-purple-400" /> Total Saves
+            </span>
+            <div className="text-2xl font-black text-purple-400 mt-1">
+              {(data.totalSaves || 0).toLocaleString()}
+            </div>
+            <span className="text-xs text-slate-400 mt-1 block">
+              Bookmarks &amp; saved clips
             </span>
           </div>
         </div>

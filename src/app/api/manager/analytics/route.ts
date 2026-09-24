@@ -31,6 +31,8 @@ export async function GET() {
           current_views: true,
           current_likes: true,
           current_comments: true,
+          current_shares: true,
+          current_saves: true,
           eligible_views: true,
           current_earnings: true,
         },
@@ -66,6 +68,8 @@ export async function GET() {
     let totalViews = 0;
     let totalLikes = 0;
     let totalComments = 0;
+    let totalShares = 0;
+    let totalSaves = 0;
     let eligibleViews = 0;
 
     for (const group of submissionsCounts) {
@@ -73,6 +77,8 @@ export async function GET() {
       totalViews += group._sum.current_views || 0;
       totalLikes += group._sum.current_likes || 0;
       totalComments += group._sum.current_comments || 0;
+      totalShares += group._sum.current_shares || 0;
+      totalSaves += group._sum.current_saves || 0;
       eligibleViews += group._sum.eligible_views || 0;
 
       if (group.status === SubmissionStatus.PENDING) pendingReviews = group._count;
@@ -109,6 +115,8 @@ export async function GET() {
         totalViews,
         totalLikes,
         totalComments,
+        totalShares,
+        totalSaves,
         eligibleViews,
         totalBudget,
         usedBudget,

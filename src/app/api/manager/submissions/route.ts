@@ -100,6 +100,8 @@ export async function GET(request: Request) {
       current_views: s.current_views,
       current_likes: s.current_likes,
       current_comments: s.current_comments,
+      current_shares: s.current_shares,
+      current_saves: s.current_saves,
       eligible_views: s.eligible_views,
       current_earnings: Number(s.current_earnings),
       rejection_reason: s.rejection_reason,
