@@ -477,14 +477,30 @@ export class InstagramProvider implements SocialProvider {
           if (commentsMatch) comments = this.parseCount(commentsMatch[1]);
           if (viewsMatch) views = this.parseCount(viewsMatch[1]);
 
-          // Extract author from description if available: "... comments - username on ..."
+          // Extract author from description if available: "... comments - username on ..." or "... comments - Name (@username) on ..."
           if (!author) {
-            const aMatch = text.match(/[-–—]\s*([a-zA-Z0-9_.]+)\s+on/i);
-            if (aMatch) author = aMatch[1].replace(/^@/, "");
+            const handleMatch = text.match(/\(@([a-zA-Z0-9_.]+)\)/) || text.match(/@([a-zA-Z0-9_.]+)/);
+            if (handleMatch) {
+              author = handleMatch[1].replace(/^@/, "");
+            } else {
+              const aMatch = text.match(/[-–—]\s*([a-zA-Z0-9_.]+)\s+on/i);
+              if (aMatch) author = aMatch[1].replace(/^@/, "");
+            }
           }
         }
 
-        // B. Title fallback for author
+        // B. Embedded JSON owner check before title fallback
+        if (!author) {
+          const ownerMatch =
+            html.match(/"owner"\s*:\s*\{[^}]*"username"\s*:\s*"([a-zA-Z0-9_.]+)"/i) ||
+            html.match(/"user"\s*:\s*\{[^}]*"username"\s*:\s*"([a-zA-Z0-9_.]+)"/i) ||
+            html.match(/"owner_username"\s*:\s*"([a-zA-Z0-9_.]+)"/i);
+          if (ownerMatch) {
+            author = ownerMatch[1].replace(/^@/, "");
+          }
+        }
+
+        // C. Title fallback for author
         if (!author) {
           const titleMatch =
             html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']*)["']/i) ||
@@ -572,7 +588,11 @@ export class InstagramProvider implements SocialProvider {
               if (mComments) comments = this.parseCount(mComments[1]);
             }
             if (!author) {
-              const mAuthor = mHtml.match(/href="\/([a-zA-Z0-9_.]+)\/"[^>]*><h1/i) || mHtml.match(/<div class="fullname"[^>]*>[\s\S]*?<h1>([^<]+)<\/h1>/i);
+              const mAuthor =
+                mHtml.match(/class="user"[^>]*>[\s\S]*?<a[^>]*href="\/([a-zA-Z0-9_.]+)\/"/i) ||
+                mHtml.match(/<a class="username"[^>]*href="\/([a-zA-Z0-9_.]+)\/"/i) ||
+                mHtml.match(/href="\/([a-zA-Z0-9_.]+)\/"[^>]*><h1/i) ||
+                mHtml.match(/<div class="fullname"[^>]*>[\s\S]*?<h1>([^<]+)<\/h1>/i);
               if (mAuthor) author = mAuthor[1].trim().replace(/^@/, "");
             }
             if (!views) {

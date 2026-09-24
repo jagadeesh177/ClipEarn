@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
-import { detectPlatformFromUrl, getSocialProvider, extractAccountFromUrl } from "@/lib/social";
+import { detectPlatformFromUrl, getSocialProvider, extractAccountFromUrl, isAuthorMatch } from "@/lib/social";
 import { CampaignStatus, SubmissionStatus, VerificationStatus } from "@prisma/client";
 import { logAuditEvent } from "@/lib/audit";
 import { flagSuspiciousActivity } from "@/lib/fraud";
@@ -233,19 +233,34 @@ export async function POST(request: Request) {
 
     // 5. Author Matching Check: Prevent submitting clips belonging to other accounts
     const urlAuthor = extractAccountFromUrl(trimmedUrl, detectedPlatform);
-    if (urlAuthor && urlAuthor !== verifiedHandle) {
-      await flagSuspiciousActivity({
-        userId: user.id,
-        type: "ACCOUNT_MISMATCH_SUBMISSION_ATTEMPT",
-        description: `User submitted clip belonging to @${urlAuthor} while verified account is @${account.username}`,
+    if (urlAuthor && !isAuthorMatch(urlAuthor, account.username)) {
+      // Check if user owns another verified account that matches this handle
+      const altAccount = await prisma.socialAccount.findFirst({
+        where: {
+          user_id: user.id,
+          platform: detectedPlatform,
+          verification_status: VerificationStatus.VERIFIED,
+        },
       });
 
-      return NextResponse.json(
-        {
-          error: `This clip belongs to @${urlAuthor}, but your verified ${detectedPlatform} account is @${account.username}. You can only submit clips published by your own verified account.`
-        },
-        { status: 400 }
-      );
+      const isAltMatch = altAccount ? isAuthorMatch(urlAuthor, altAccount.username) : false;
+
+      if (!isAltMatch) {
+        await flagSuspiciousActivity({
+          userId: user.id,
+          type: "ACCOUNT_MISMATCH_SUBMISSION_ATTEMPT",
+          description: `User submitted clip belonging to @${urlAuthor} while verified account is @${account.username}`,
+        });
+
+        return NextResponse.json(
+          {
+            error: `This clip belongs to @${urlAuthor}, but your verified ${detectedPlatform} account is @${account.username}. You can only submit clips published by your own verified account.`
+          },
+          { status: 400 }
+        );
+      } else if (altAccount) {
+        account = altAccount;
+      }
     }
 
     // 6. Parse Platform Post ID
@@ -298,20 +313,37 @@ export async function POST(request: Request) {
 
     // If provider extracted an author handle from the clip page/API, enforce match
     if (videoMeta?.author_username) {
-      const metaAuthor = videoMeta.author_username.toLowerCase().replace(/^@/, "").trim();
-      if (metaAuthor && metaAuthor !== verifiedHandle) {
-        await flagSuspiciousActivity({
-          userId: user.id,
-          type: "AUTHOR_MISMATCH_METADATA",
-          description: `Video metadata reported author @${videoMeta.author_username} which does not match verified account @${account.username}`,
+      const metaAuthor = videoMeta.author_username;
+      const isMatch = isAuthorMatch(metaAuthor, account.username);
+
+      if (!isMatch) {
+        // Also check if user has another verified account that matches
+        const allVerified = await prisma.socialAccount.findMany({
+          where: {
+            user_id: user.id,
+            platform: detectedPlatform,
+            verification_status: VerificationStatus.VERIFIED,
+          },
         });
 
-        return NextResponse.json(
-          {
-            error: `This clip was published by @${videoMeta.author_username}, which does not match your verified ${detectedPlatform} account (@${account.username}). You can only submit clips from your verified account.`
-          },
-          { status: 400 }
-        );
+        const matchingAcc = allVerified.find((a) => isAuthorMatch(metaAuthor, a.username));
+
+        if (!matchingAcc) {
+          await flagSuspiciousActivity({
+            userId: user.id,
+            type: "AUTHOR_MISMATCH_METADATA",
+            description: `Video metadata reported author @${videoMeta.author_username} which does not match verified account @${account.username}`,
+          });
+
+          return NextResponse.json(
+            {
+              error: `This clip was published by @${videoMeta.author_username}, which does not match your verified ${detectedPlatform} account (@${account.username}). You can only submit clips from your verified account.`
+            },
+            { status: 400 }
+          );
+        } else {
+          account = matchingAcc;
+        }
       }
     }
 

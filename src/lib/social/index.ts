@@ -88,4 +88,4 @@ export function extractAccountFromUrl(url: string, platform?: Platform): string 
 }
 
 export * from "./types";
-
+export * from "./author-match";

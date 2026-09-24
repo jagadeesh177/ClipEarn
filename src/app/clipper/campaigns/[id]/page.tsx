@@ -26,6 +26,7 @@ import {
   ChevronRight,
   ArrowRight,
 } from "lucide-react";
+import { isAuthorMatch } from "@/lib/social/author-match";
 
 // Platform Icons
 function InstagramIcon({ className = "w-4 h-4" }: { className?: string }) {
@@ -162,8 +163,7 @@ export default function CampaignDetailsPage() {
 
   const isAuthorMismatch = useMemo(() => {
     if (!extractedUrlHandle || !activeAccount) return false;
-    const cleanActiveHandle = activeAccount.username.toLowerCase().replace(/^@/, "").trim();
-    return cleanActiveHandle !== extractedUrlHandle.trim();
+    return !isAuthorMatch(extractedUrlHandle, activeAccount.username);
   }, [extractedUrlHandle, activeAccount]);
 
   const hasVerifiedAccount = Boolean(activeAccount && activeAccount.verification_status === "VERIFIED");
