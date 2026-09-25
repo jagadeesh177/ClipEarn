@@ -15,6 +15,7 @@ async function main() {
     update: {
       role: UserRole.ADMIN,
       status: UserStatus.ACTIVE,
+      password_hash: hashedAronPassword,
     },
     create: {
       username: "AronAdmin",
@@ -31,6 +32,7 @@ async function main() {
     update: {
       role: UserRole.ADMIN,
       status: UserStatus.ACTIVE,
+      password_hash: hashedJazzPassword,
     },
     create: {
       username: "JagadeeshAdmin",

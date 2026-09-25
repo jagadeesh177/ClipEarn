@@ -68,19 +68,41 @@ export async function ensureRealAdmins(): Promise<void> {
             referral_code: adm.ref,
           },
         });
-      } else if (!existing.password_hash) {
-        const hash = await hashPassword(adm.pass);
+      } else {
+        const passwordMatches = existing.password_hash
+          ? await verifyPassword(adm.pass, existing.password_hash)
+          : false;
+        const passwordHash = passwordMatches
+          ? existing.password_hash
+          : await hashPassword(adm.pass);
+
         await prisma.user.update({
           where: { id: existing.id },
           data: {
-            password_hash: hash,
+            role: UserRole.ADMIN,
             status: UserStatus.ACTIVE,
+            password_hash: passwordHash,
           },
         });
       }
     } catch {
       // Ignore transient errors
     }
+  }
+
+  // Strictly enforce that ONLY the 2 allowed admin accounts have the ADMIN role
+  try {
+    await prisma.user.updateMany({
+      where: {
+        role: UserRole.ADMIN,
+        email: { notIn: [...ALLOWED_ADMIN_EMAILS] },
+      },
+      data: {
+        role: UserRole.MANAGER,
+      },
+    });
+  } catch {
+    // Ignore transient errors
   }
 
   // Clean up legacy demo admin & demo manager accounts
