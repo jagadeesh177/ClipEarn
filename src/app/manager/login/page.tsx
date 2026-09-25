@@ -35,14 +35,14 @@ function ManagerLoginContent() {
 
   useEffect(() => {
     if (errorParam === "not_authorized") {
-      setError("This Discord account is not linked to an authorized Campaign Manager. If this is your first time, please enter your invitation key below.");
+      setError("This Discord account is not linked to an authorized Administrator. If this is your first time, please enter your invitation key below.");
       setShowInviteInput(true);
     } else if (errorParam === "account_suspended") {
       const reason = searchParams.get("reason");
       setError(
         reason
-          ? `Your Campaign Manager access has been suspended: "${reason}"`
-          : "Your Campaign Manager access has been suspended or revoked by an administrator."
+          ? `Your Administrator access has been suspended: "${reason}"`
+          : "Your Administrator access has been suspended or revoked."
       );
     } else if (errorParam === "key_invalid") {
       setError("The invitation key is invalid or has expired.");
@@ -77,7 +77,7 @@ function ManagerLoginContent() {
         setVerifiedKeyPreview(accessKey.trim().toUpperCase());
         setStep("INVITE_VERIFIED");
       } else {
-        setError(data.error || "Invalid or expired manager invitation key.");
+        setError(data.error || "Invalid or expired admin invitation key.");
       }
     } catch {
       setError("Network error. Please try again.");
@@ -86,7 +86,7 @@ function ManagerLoginContent() {
     }
   };
 
-  // STEP 2: Initiate Discord OAuth as Campaign Manager
+  // STEP 2: Initiate Discord OAuth as Administrator
   const handleDiscordOAuth = () => {
     window.location.href = "/api/auth/discord?portal=manager";
   };
@@ -126,11 +126,11 @@ function ManagerLoginContent() {
         <div className="text-center mb-8">
           <ClipEarnLogo size="lg" href="/" />
           <h1 className="text-2xl font-black text-white mt-6">
-            {showAdminLogin ? "Admin / Staff Portal" : "Campaign Manager Access"}
+            {showAdminLogin ? "Admin / Staff Portal" : "Administrator Access"}
           </h1>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-xs font-semibold text-purple-400 mt-2">
             <Shield className="w-3.5 h-3.5" />
-            <span>Authorized Campaign Management</span>
+            <span>Authorized Admin Access</span>
           </div>
         </div>
 
@@ -157,7 +157,7 @@ function ManagerLoginContent() {
                 </div>
 
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  Continue with Discord to create and permanently link your Campaign Manager account. Future logins will not require an access key.
+                  Continue with Discord to create and permanently link your Administrator account. Future logins will not require an access key.
                 </p>
 
                 <button
@@ -183,9 +183,9 @@ function ManagerLoginContent() {
                 </button>
               </div>
             ) : (
-              /* PRIMARY CAMPAIGN MANAGER LOGIN VIEW */
+              /* PRIMARY ADMINISTRATOR LOGIN VIEW */
               <div className="space-y-6">
-                {/* Returning Manager 1-Click Discord Sign In */}
+                {/* Returning Admin 1-Click Discord Sign In */}
                 <div>
                   <button
                     type="button"
@@ -198,7 +198,7 @@ function ManagerLoginContent() {
                     <span>Continue with Discord</span>
                   </button>
                   <p className="text-[11px] text-slate-400 text-center mt-2">
-                    For returning managers with a linked Discord account
+                    For returning admins with a linked Discord account
                   </p>
                 </div>
 
@@ -211,12 +211,12 @@ function ManagerLoginContent() {
                   <div className="flex-grow border-t border-slate-800"></div>
                 </div>
 
-                {/* First-Time Manager Onboarding Form */}
+                {/* First-Time Admin Onboarding Form */}
                 <div className="rounded-xl bg-slate-900/50 border border-slate-800/80 p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
                       <Key className="w-3.5 h-3.5 text-purple-400" />
-                      Redeem Manager Invitation Key
+                      Redeem Admin Invitation Key
                     </span>
                     {!showInviteInput && (
                       <button
@@ -313,7 +313,7 @@ function ManagerLoginContent() {
             </form>
           )}
 
-          {/* Toggle between Campaign Manager portal & Staff/Admin login */}
+          {/* Toggle between Administrator portal & Staff/Admin login */}
           <div className="mt-6 pt-5 border-t border-slate-800/80 text-center text-xs">
             <button
               type="button"
@@ -324,7 +324,7 @@ function ManagerLoginContent() {
               className="text-slate-400 hover:text-white transition-colors"
             >
               {showAdminLogin
-                ? "← Back to Campaign Manager Login"
+                ? "← Back to Administrator Login"
                 : "Staff / Administrator Credentials"}
             </button>
           </div>
