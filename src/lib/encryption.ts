@@ -3,10 +3,14 @@ import crypto from "crypto";
 const ALGORITHM = "aes-256-gcm";
 
 function getKey(): Buffer {
-  const secret =
-    process.env.ENCRYPTION_KEY ||
-    process.env.SESSION_SECRET ||
-    "clipearn_ultra_secure_encryption_key_32bytes_default!";
+  const secret = process.env.ENCRYPTION_KEY || process.env.SESSION_SECRET;
+  if (!secret) {
+    throw new Error(
+      "Missing ENCRYPTION_KEY (or SESSION_SECRET) environment variable. " +
+        "Set one of these in your environment before encrypting or decrypting tokens — " +
+        "this app no longer falls back to a hardcoded default key."
+    );
+  }
   return crypto.createHash("sha256").update(secret).digest();
 }
 

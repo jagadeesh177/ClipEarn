@@ -2,8 +2,22 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 
 const CHARSET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
-const SESSION_SECRET = process.env.SESSION_SECRET || "clipearn_manager_access_key_secret_2026";
 export const PREAUTH_COOKIE_NAME = "clipearn_mgr_preauth";
+
+/**
+ * Returns the secret used to sign pre-auth tickets. Throws if SESSION_SECRET
+ * isn't set, instead of silently falling back to a hardcoded value that's
+ * visible in the public repo (which would let anyone forge a valid ticket).
+ */
+function getSessionSecret(): string {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) {
+    throw new Error(
+      "Missing SESSION_SECRET environment variable. Set it before validating or signing manager access keys."
+    );
+  }
+  return secret;
+}
 
 /**
  * Normalizes an access key into canonical uppercase format.
@@ -81,7 +95,7 @@ export function signPreAuthTicket(keyId: string): string {
 
   const payloadB64 = Buffer.from(payload).toString("base64url");
   const signature = crypto
-    .createHmac("sha256", SESSION_SECRET)
+    .createHmac("sha256", getSessionSecret())
     .update(payloadB64)
     .digest("base64url");
 
@@ -102,7 +116,7 @@ export function verifyPreAuthTicket(ticketStr: string): {
     }
 
     const expectedSig = crypto
-      .createHmac("sha256", SESSION_SECRET)
+      .createHmac("sha256", getSessionSecret())
       .update(payloadB64)
       .digest("base64url");
 

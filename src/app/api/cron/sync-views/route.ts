@@ -1,7 +1,41 @@
 import { NextResponse } from "next/server";
 import { syncAllApprovedSubmissions } from "@/lib/earnings/engine";
 
+/**
+ * Verifies the request is authorized to trigger the cron job.
+ *
+ * Accepts the secret either as a standard "Authorization: Bearer <CRON_SECRET>"
+ * header (the convention Vercel Cron and most schedulers use) or as a
+ * "?secret=<CRON_SECRET>" query param, for schedulers that can't set custom
+ * headers.
+ *
+ * If CRON_SECRET is not configured in the environment at all, requests are
+ * denied by default (fail closed) rather than left open.
+ */
+function isAuthorizedCronRequest(request: Request): boolean {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) {
+    return false;
+  }
+
+  const authHeader = request.headers.get("authorization");
+  if (authHeader === `Bearer ${cronSecret}`) {
+    return true;
+  }
+
+  const { searchParams } = new URL(request.url);
+  if (searchParams.get("secret") === cronSecret) {
+    return true;
+  }
+
+  return false;
+}
+
 export async function POST(request: Request) {
+  if (!isAuthorizedCronRequest(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const force = searchParams.get("force") === "true";
