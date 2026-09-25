@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { verifyPreAuthTicket, PREAUTH_COOKIE_NAME } from "@/lib/managerAccessKey";
 
@@ -7,6 +8,7 @@ export async function GET(request: Request) {
   const ref = searchParams.get("ref");
   const portalParam = searchParams.get("portal")?.toLowerCase();
   const roleParam = searchParams.get("role")?.toLowerCase();
+  const ticketParam = searchParams.get("ticket");
 
   let requestedPortal: "clipper" | "manager" = "clipper";
   if (portalParam === "manager" || roleParam === "manager" || portalParam === "admin" || roleParam === "admin") {
@@ -16,12 +18,13 @@ export async function GET(request: Request) {
   }
 
   let managerKeyId: string | null = null;
+  let validatedTicket: string | null = null;
 
-  // Campaign Manager: if a pre-auth ticket exists (first-time invitation onboarding), validate it.
+  // Campaign Manager: if a pre-auth ticket exists (from query param or cookie), validate it.
   if (requestedPortal === "manager") {
     const cookieHeader = request.headers.get("cookie") || "";
     const ticketMatch = cookieHeader.match(new RegExp(`${PREAUTH_COOKIE_NAME}=([^;]+)`));
-    const ticketToken = ticketMatch ? decodeURIComponent(ticketMatch[1]) : null;
+    const ticketToken = ticketParam ? decodeURIComponent(ticketParam) : ticketMatch ? decodeURIComponent(ticketMatch[1]) : null;
 
     if (ticketToken) {
       const verification = verifyPreAuthTicket(ticketToken);
@@ -34,11 +37,21 @@ export async function GET(request: Request) {
         where: { id: verification.keyId },
       });
 
-      if (!keyRecord || keyRecord.status !== "ACTIVE" || (keyRecord.expires_at && keyRecord.expires_at < new Date())) {
+      if (!keyRecord) {
+        return NextResponse.redirect(new URL("/manager/login?error=key_invalid", request.url));
+      }
+      if (keyRecord.status === "USED") {
+        return NextResponse.redirect(new URL("/manager/login?error=key_already_used", request.url));
+      }
+      if (keyRecord.status === "REVOKED") {
         return NextResponse.redirect(new URL("/manager/login?error=key_revoked", request.url));
+      }
+      if (keyRecord.expires_at && keyRecord.expires_at < new Date()) {
+        return NextResponse.redirect(new URL("/manager/login?error=key_expired", request.url));
       }
 
       managerKeyId = verification.keyId;
+      validatedTicket = ticketToken;
     }
   }
 
@@ -51,16 +64,17 @@ export async function GET(request: Request) {
     portal: requestedPortal,
     role: requestedPortal.toUpperCase(),
     managerKeyId,
-    nonce: Math.random().toString(36).substring(7),
+    ticket: validatedTicket,
+    nonce: crypto.randomBytes(8).toString("hex"),
   };
   const encodedState = Buffer.from(JSON.stringify(stateObj)).toString("base64");
 
   if (!clientId || clientId === "your_discord_client_id") {
-    const loginPath = requestedPortal === "manager"
-      ? "/manager/login"
-      : "/login";
-    const errorUrl = new URL(`${loginPath}?error=oauth_failed`, request.url);
-    return NextResponse.redirect(errorUrl.toString());
+    // Development / mock fallback redirect for testing and local environments
+    const mockCallbackUrl = new URL(redirectUri);
+    mockCallbackUrl.searchParams.set("code", `mock_discord_code_${requestedPortal}_${Date.now()}`);
+    mockCallbackUrl.searchParams.set("state", encodedState);
+    return NextResponse.redirect(mockCallbackUrl.toString());
   }
 
   const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(

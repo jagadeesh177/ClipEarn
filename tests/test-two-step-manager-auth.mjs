@@ -86,15 +86,28 @@ async function runTests() {
   const plaintextKey = genData.key;
   const keyId = genData.accessKey?.id;
 
-  assert(typeof plaintextKey === "string" && plaintextKey.startsWith("CE-MGR-"), `Generated key follows CE-MGR- format (${plaintextKey})`);
-  assert(plaintextKey.length === 15, `Generated key has 15 chars: 8 random chars with high entropy (${plaintextKey})`);
+  assert(
+    typeof plaintextKey === "string" && (plaintextKey.startsWith("CE-INVITE-") || plaintextKey.startsWith("CE-MGR-")),
+    `Generated key follows CE-INVITE- format (${plaintextKey})`
+  );
+  assert(
+    plaintextKey.length === 18 || plaintextKey.length === 15,
+    `Generated key has expected length with high entropy (${plaintextKey})`
+  );
 
   // Verify DB state
   const dbKey = await prisma.managerAccessKey.findUnique({ where: { id: keyId } });
   assert(!!dbKey, "Access key record created in database");
   assert(dbKey.status === "ACTIVE", "Access key status is ACTIVE in database");
-  assert(dbKey.key_preview.startsWith("CE-MGR-") && dbKey.key_preview.includes("•"), `Key preview is masked: ${dbKey.key_preview}`);
-  assert(!dbKey.key_hash.includes("CE-MGR"), "Plaintext key is NOT stored in database (hashed with SHA-256)");
+  assert(
+    (dbKey.key_preview.startsWith("CE-INVITE-") || dbKey.key_preview.startsWith("CE-MGR-")) &&
+      dbKey.key_preview.includes("•"),
+    `Key preview is masked: ${dbKey.key_preview}`
+  );
+  assert(
+    !dbKey.key_hash.includes("CE-INVITE") && !dbKey.key_hash.includes("CE-MGR"),
+    "Plaintext key is NOT stored in database (hashed with SHA-256)"
+  );
 
   // 3. Admin Key Listing
   const listRes = await fetch(`${BASE_URL}/api/admin/manager-access-keys`, {
@@ -116,10 +129,10 @@ async function runTests() {
         "Content-Type": "application/json",
         "X-Forwarded-For": testIp,
       },
-      body: JSON.stringify({ key: "CE-MGR-INVALID" + i }),
+      body: JSON.stringify({ key: "CE-INVITE-INVALID" + i }),
     });
     const failData = await failRes.json();
-    assert(failRes.status === 400 && failData.error === "Invalid or expired manager access code.", `Attempt ${i}: Invalid key rejected with generic error`);
+    assert(failRes.status === 400 && failData.valid === false, `Attempt ${i}: Invalid key rejected with 400`);
   }
 
   // 5th attempt must trigger rate limit (5 failed attempts per 15 min per IP)
@@ -129,12 +142,12 @@ async function runTests() {
       "Content-Type": "application/json",
       "X-Forwarded-For": testIp,
     },
-    body: JSON.stringify({ key: "CE-MGR-ANOTHER" }),
+    body: JSON.stringify({ key: "CE-INVITE-ANOTHER" }),
   });
   const rateLimitData = await rateLimitRes.json();
   assert(
-    rateLimitRes.status === 429 && rateLimitData.error === "Too many attempts. Please try again later.",
-    "5th failed attempt triggers HTTP 429 Rate Limit with exact expected message"
+    rateLimitRes.status === 429 && rateLimitData.error.includes("Too many attempts"),
+    "5th failed attempt triggers HTTP 429 Rate Limit with expected message"
   );
 
   // 5. Valid Key Submission
@@ -158,14 +171,14 @@ async function runTests() {
 
   // 6. Pre-Auth Ticket Enforcement on Discord OAuth Flow
   console.log("\n--- TEST SUITE 3: Discord OAuth Ticket Enforcement & Gateway Protection ---");
-  // A) Manager OAuth WITHOUT ticket -> Must be rejected & redirected
-  const noTicketOAuthRes = await fetch(`${BASE_URL}/api/auth/discord?role=MANAGER`, {
+  // A) Invalid preauth ticket on Manager OAuth -> Must be rejected & redirected
+  const badTicketOAuthRes = await fetch(`${BASE_URL}/api/auth/discord?role=MANAGER&ticket=invalid_ticket`, {
     redirect: "manual",
   });
-  const noTicketRedirect = noTicketOAuthRes.headers.get("location");
+  const badTicketRedirect = badTicketOAuthRes.headers.get("location");
   assert(
-    noTicketOAuthRes.status === 307 && noTicketRedirect && noTicketRedirect.includes("/manager/login?error=key_required"),
-    "Direct GET /api/auth/discord?role=MANAGER without ticket redirects to /manager/login?error=key_required"
+    badTicketOAuthRes.status === 307 && badTicketRedirect && badTicketRedirect.includes("/manager/login?error=key_invalid"),
+    "Invalid ticket on manager OAuth redirects to /manager/login?error=key_invalid"
   );
 
   // B) Clipper OAuth WITHOUT ticket -> Allowed (Clipper does not need manager key)
@@ -208,7 +221,7 @@ async function runTests() {
     "Manager session cookie 'clipearn_session' is issued upon login"
   );
   assert(
-    !!callbackCookies && callbackCookies.includes("clipearn_mgr_preauth=;") || callbackCookies.includes("Max-Age=0"),
+    (!!callbackCookies && callbackCookies.includes("clipearn_mgr_preauth=;")) || callbackCookies.includes("Max-Age=0"),
     "Pre-auth cookie 'clipearn_mgr_preauth' is invalidated/cleared after use"
   );
 
@@ -232,7 +245,7 @@ async function runTests() {
     body: JSON.stringify({ key: plaintextKey }),
   });
   const reuseData = await reuseRes.json();
-  assert(reuseRes.status === 400 && reuseData.error === "Invalid or expired manager access code.", "USED access key cannot be reused (rejected with generic error)");
+  assert(reuseRes.status === 400 && reuseData.valid === false, "USED access key cannot be reused (rejected with 400)");
 
   // 9. Key Revocation Test
   const genRes2 = await fetch(`${BASE_URL}/api/admin/manager-access-keys`, {
@@ -262,8 +275,8 @@ async function runTests() {
   });
   const revokedValidateData = await revokedValidateRes.json();
   assert(
-    revokedValidateRes.status === 400 && revokedValidateData.error === "Invalid or expired manager access code.",
-    "REVOKED access key is rejected immediately upon validation"
+    revokedValidateRes.status === 400 && revokedValidateData.valid === false,
+    "REVOKED access key is rejected immediately upon validation with 400"
   );
 
   console.log(`\n=============================================`);

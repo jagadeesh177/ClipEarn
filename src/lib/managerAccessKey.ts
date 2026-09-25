@@ -6,8 +6,7 @@ export const PREAUTH_COOKIE_NAME = "clipearn_mgr_preauth";
 
 /**
  * Returns the secret used to sign pre-auth tickets. Throws if SESSION_SECRET
- * isn't set, instead of silently falling back to a hardcoded value that's
- * visible in the public repo (which would let anyone forge a valid ticket).
+ * isn't set, instead of silently falling back to a hardcoded value.
  */
 function getSessionSecret(): string {
   const secret = process.env.SESSION_SECRET;
@@ -21,6 +20,13 @@ function getSessionSecret(): string {
 
 /**
  * Normalizes an access key into canonical uppercase format.
+ * Handles:
+ * - "CE-INVITE-XXXXXXXX" -> "CE-INVITE-XXXXXXXX"
+ * - "ce-invite-xxxxxxxx" -> "CE-INVITE-XXXXXXXX"
+ * - "CEINVITEXXXXXXXX"  -> "CE-INVITE-XXXXXXXX"
+ * - "XXXXXXXX" (8 chars) -> "CE-INVITE-XXXXXXXX"
+ * - "CE-MGR-XXXXXXXX"   -> "CE-MGR-XXXXXXXX"
+ * - Trailing/leading whitespace and stray hyphens/spaces
  */
 export function normalizeManagerAccessKey(key: string): string {
   const raw = key.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -29,6 +35,9 @@ export function normalizeManagerAccessKey(key: string): string {
   }
   if (raw.startsWith("CEMGR")) {
     return `CE-MGR-${raw.slice(5)}`;
+  }
+  if (raw.length === 8) {
+    return `CE-INVITE-${raw}`;
   }
   return key.trim().toUpperCase();
 }

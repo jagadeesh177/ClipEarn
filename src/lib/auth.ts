@@ -176,11 +176,21 @@ export async function getSessionUser(): Promise<User | null> {
     }
 
     // Strict Role Enforcement:
-    // 1. Managers strictly remain Managers and must NEVER be elevated or promoted to Admin.
-    if (payload.role === UserRole.MANAGER || user.role === UserRole.MANAGER) {
+    // 1. Invalidate session if token claims MANAGER role but database has been revoked (e.g., downgraded to CLIPPER)
+    if (payload.role === UserRole.MANAGER && user.role !== UserRole.MANAGER) {
+      return null;
+    }
+
+    // 2. Strict Admin Role Restriction:
+    // Only the two designated real Admin accounts are allowed the ADMIN role.
+    if (payload.role === UserRole.ADMIN || user.role === UserRole.ADMIN) {
+      if (!isAllowedAdminEmail(user.email)) {
+        return null;
+      }
+      user.role = UserRole.ADMIN;
+    } else if (user.role === UserRole.MANAGER) {
       user.role = UserRole.MANAGER;
-    } else if (user.role === UserRole.ADMIN && !isAllowedAdminEmail(user.email)) {
-      // 2. Only the two designated real Admin accounts are allowed the ADMIN role in active sessions.
+    } else {
       user.role = UserRole.CLIPPER;
     }
 
