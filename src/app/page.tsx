@@ -18,7 +18,15 @@ import {
   ChevronRight,
   Flame,
   Zap,
+  Building2,
+  Plus,
 } from "lucide-react";
+
+const PLATFORM_PRIORITY: Record<string, number> = {
+  TikTok: 1,
+  Instagram: 2,
+  YouTube: 3,
+};
 
 export default function LandingPage() {
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
@@ -31,7 +39,7 @@ export default function LandingPage() {
       cpm: "$1.00",
       budget: "$10,000",
       used: "$122.02",
-      views: "363,523 / 10m views",
+      views: "363.5K / 10M views",
       platforms: ["Instagram", "TikTok", "YouTube"],
       image: "https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=600",
     },
@@ -41,7 +49,7 @@ export default function LandingPage() {
       cpm: "$1.50",
       budget: "$15,000",
       used: "$3,450.00",
-      views: "2,300,000 / 10m views",
+      views: "2.3M / 10M views",
       platforms: ["TikTok", "Instagram"],
       image: "https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600",
     },
@@ -51,7 +59,7 @@ export default function LandingPage() {
       cpm: "$2.00",
       budget: "$25,000",
       used: "$8,940.00",
-      views: "4,470,000 / 12.5m views",
+      views: "4.5M / 12.5M views",
       platforms: ["YouTube", "TikTok", "Instagram"],
       image: "https://images.unsplash.com/photo-1621416894569-0f39ed31d247?w=600",
     },
@@ -88,16 +96,17 @@ export default function LandingPage() {
     <div className="min-h-screen bg-[#070A0F] text-slate-100 flex flex-col selection:bg-brand-cyan/20 selection:text-brand-cyan">
       {/* Top Navbar */}
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#070A0F]/90 border-b border-slate-800/80 w-full">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-4 sm:gap-8 shrink-0">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
+          <div className="flex items-center shrink-0">
             <ClipEarnLogo size="sm" href="/" className="sm:hidden" />
             <ClipEarnLogo size="md" href="/" className="hidden sm:inline-flex" />
-            <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-400">
-              <a href="#how-it-works" className="hover:text-white transition-colors">How It Works</a>
-              <a href="#campaigns" className="hover:text-white transition-colors">Campaigns</a>
-              <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
-            </nav>
           </div>
+
+          <nav aria-label="Global navigation" className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-400">
+            <a href="#how-it-works" className="hover:text-white transition-colors">How It Works</a>
+            <a href="#campaigns" className="hover:text-white transition-colors">Campaigns</a>
+            <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
+          </nav>
 
           <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             <Link
@@ -109,13 +118,10 @@ export default function LandingPage() {
             </Link>
             <Link
               href="/login"
-              className="relative group overflow-hidden rounded-lg sm:rounded-xl p-[1px] focus:outline-none focus:ring-2 focus:ring-brand-cyan shrink-0 whitespace-nowrap"
+              className="px-3.5 py-1.5 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-black font-bold text-xs sm:text-sm transition-all shadow-sm flex items-center gap-1.5 sm:gap-2 shrink-0 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-brand-cyan focus:ring-offset-2 focus:ring-offset-[#070A0F]"
             >
-              <span className="absolute inset-0 bg-gradient-to-r from-brand-cyan to-brand-emerald rounded-lg sm:rounded-xl group-hover:opacity-90 transition-opacity"></span>
-              <span className="relative flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#090E17] text-white text-xs sm:text-sm font-semibold transition-all group-hover:bg-opacity-90 whitespace-nowrap">
-                <span>Start Clipping</span>
-                <ArrowRight className="w-3.5 h-3.5 text-brand-cyan group-hover:translate-x-0.5 transition-transform shrink-0" />
-              </span>
+              <span>Start Clipping</span>
+              <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-black shrink-0" />
             </Link>
           </div>
         </div>
@@ -155,29 +161,30 @@ export default function LandingPage() {
 
             <button
               onClick={() => setBrandModalOpen(true)}
-              className="w-full sm:w-auto px-8 py-4 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-600 hover:border-slate-500 text-white font-bold text-base transition-all flex items-center justify-center gap-2 shadow-sm"
+              className="w-full sm:w-auto px-8 py-4 rounded-xl bg-slate-800/80 hover:bg-slate-800 border-2 border-slate-500/80 hover:border-brand-cyan text-white hover:text-brand-cyan font-bold text-base transition-all flex items-center justify-center gap-2.5 shadow-md hover:shadow-[0_0_20px_-3px_rgba(28,247,253,0.15)] focus:outline-none focus:ring-2 focus:ring-brand-cyan"
             >
-              For Brands & Advertisers
+              <Building2 className="w-5 h-5 text-brand-cyan shrink-0" />
+              <span>For Brands & Advertisers</span>
             </button>
           </div>
 
           {/* Social Proof Strip */}
-          <div className="mt-16 pt-8 border-t border-slate-800/60 max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-            <div>
+          <div className="mt-16 pt-8 border-t border-slate-800/60 max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 text-center">
+            <div className="w-full px-2 flex flex-col items-center">
               <div className="text-2xl sm:text-3xl font-black text-white">$150,000+</div>
               <div className="text-xs text-slate-400 uppercase tracking-wider mt-1">Paid to Clippers</div>
             </div>
-            <div>
+            <div className="w-full px-2 flex flex-col items-center">
               <div className="text-2xl sm:text-3xl font-black text-brand-cyan">18.5M+</div>
               <div className="text-xs text-slate-400 uppercase tracking-wider mt-1">Verified Views</div>
             </div>
-            <div>
+            <div className="w-full px-2 flex flex-col items-center">
               <div className="text-2xl sm:text-3xl font-black text-brand-cyan">3 Platforms</div>
               <div className="text-xs text-slate-400 uppercase tracking-wider mt-1">TikTok, IG & YouTube</div>
             </div>
-            <div>
+            <div className="w-full px-2 flex flex-col items-center">
               <div className="text-2xl sm:text-3xl font-black text-white">8-Hour Sync</div>
-              <div className="text-xs text-slate-400 uppercase tracking-wider mt-1">Automated View Tracking</div>
+              <div className="text-xs text-slate-400 uppercase tracking-wider mt-1">Automated Tracking</div>
             </div>
           </div>
         </div>
@@ -283,34 +290,58 @@ export default function LandingPage() {
                     </span>
                     <h3 className="text-xl font-bold text-white mt-1 mb-3">{camp.name}</h3>
 
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {camp.platforms.map((p, pidx) => (
-                        <span
-                          key={pidx}
-                          className="px-2.5 py-1 rounded-md bg-slate-800/80 text-xs font-medium text-slate-300"
-                        >
-                          {p}
-                        </span>
-                      ))}
+                    <div className="flex flex-wrap gap-2 mb-4" aria-label="Supported platforms">
+                      {camp.platforms
+                        .slice()
+                        .sort((a, b) => (PLATFORM_PRIORITY[a] ?? 99) - (PLATFORM_PRIORITY[b] ?? 99))
+                        .map((p, pidx) => (
+                          <span
+                            key={pidx}
+                            className="px-2.5 py-1 rounded-md bg-slate-800/80 border border-slate-700/50 text-xs font-medium text-slate-300"
+                          >
+                            {p}
+                          </span>
+                        ))}
                     </div>
 
-                    <div className="space-y-2 py-3 border-y border-slate-800/80 text-xs">
-                      <div className="flex justify-between text-slate-400">
-                        <span>Budget Allocated:</span>
-                        <span className="text-white font-medium">{camp.used} / {camp.budget}</span>
+                    <div className="space-y-3 py-3 border-y border-slate-800/80 text-xs">
+                      <div>
+                        <div className="flex justify-between items-center mb-1.5">
+                          <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Budget Allocated</span>
+                          <span className="text-white font-semibold">
+                            {camp.used} <span className="text-slate-500 font-normal">/ {camp.budget}</span>
+                          </span>
+                        </div>
+                        <div
+                          className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden"
+                          role="progressbar"
+                          aria-label={`${camp.name} budget allocated`}
+                          aria-valuenow={Math.round((parseFloat(camp.used.replace(/[$,]/g, '')) / parseFloat(camp.budget.replace(/[$,]/g, ''))) * 100)}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                        >
+                          <div
+                            className="h-full bg-gradient-to-r from-brand-cyan to-brand-emerald rounded-full transition-all duration-300"
+                            style={{
+                              width: `${Math.min(100, Math.max(2, (parseFloat(camp.used.replace(/[$,]/g, '')) / parseFloat(camp.budget.replace(/[$,]/g, ''))) * 100))}%`
+                            }}
+                          />
+                        </div>
                       </div>
-                      <div className="flex justify-between text-slate-400">
-                        <span>Views Delivered:</span>
-                        <span className="text-white font-medium">{camp.views}</span>
+
+                      <div className="flex justify-between items-center pt-1">
+                        <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Views Delivered</span>
+                        <span className="text-white font-semibold">{camp.views}</span>
                       </div>
                     </div>
                   </div>
 
                   <Link
                     href="/login"
-                    className="mt-6 w-full py-2.5 rounded-xl bg-brand-cyan/15 hover:bg-brand-cyan text-brand-cyan hover:text-black border border-brand-cyan/30 hover:border-brand-cyan font-bold text-xs transition-all shadow-[0_0_15px_-3px_rgba(28,247,253,0.15)] hover:shadow-[0_0_20px_-3px_rgba(28,247,253,0.4)] flex items-center justify-center gap-2"
+                    className="mt-6 w-full py-2.5 px-4 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-black font-bold text-xs sm:text-sm transition-all shadow-[0_0_15px_-3px_rgba(28,247,253,0.3)] hover:shadow-[0_0_20px_-3px_rgba(28,247,253,0.5)] flex items-center justify-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-brand-cyan"
                   >
-                    + Join Campaign
+                    <span>Join Campaign</span>
+                    <ArrowRight className="w-4 h-4 text-black" />
                   </Link>
                 </div>
               </div>
@@ -329,23 +360,32 @@ export default function LandingPage() {
             </h2>
           </div>
 
-          <div className="space-y-4">
+          <div className="rounded-2xl bg-[#0F141F] border border-slate-800/80 divide-y divide-slate-800/80 overflow-hidden shadow-sm">
             {faqs.map((faq, idx) => (
-              <div
-                key={idx}
-                className="rounded-xl bg-[#0F141F] border border-slate-800 overflow-hidden"
-              >
+              <div key={idx} className="transition-colors">
                 <button
+                  id={`faq-btn-${idx}`}
+                  aria-expanded={activeFaq === idx}
+                  aria-controls={`faq-answer-${idx}`}
                   onClick={() => setActiveFaq(activeFaq === idx ? null : idx)}
-                  className="w-full p-5 text-left flex justify-between items-center text-sm sm:text-base font-semibold text-white hover:text-brand-cyan transition-colors"
+                  className="w-full p-5 text-left flex justify-between items-center text-sm sm:text-base font-semibold text-white hover:text-brand-cyan hover:bg-slate-900/40 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-cyan group"
                 >
-                  <span>{faq.q}</span>
-                  <span className="text-slate-400 text-xl font-mono">
-                    {activeFaq === idx ? "−" : "+"}
+                  <span className="pr-4">{faq.q}</span>
+                  <span className="shrink-0 flex items-center justify-center w-7 h-7 rounded-full bg-slate-800/80 border border-slate-700/80 text-slate-300 group-hover:border-brand-cyan/50 group-hover:text-brand-cyan transition-all">
+                    <Plus
+                      className={`w-4 h-4 stroke-[2.5] transition-transform duration-200 ${
+                        activeFaq === idx ? "rotate-45 text-brand-cyan" : ""
+                      }`}
+                    />
                   </span>
                 </button>
                 {activeFaq === idx && (
-                  <div className="px-5 pb-5 text-sm text-slate-400 leading-relaxed border-t border-slate-800/60 pt-3">
+                  <div
+                    id={`faq-answer-${idx}`}
+                    role="region"
+                    aria-labelledby={`faq-btn-${idx}`}
+                    className="px-5 pb-5 text-sm text-slate-400 leading-relaxed border-t border-slate-800/50 pt-3"
+                  >
                     {faq.a}
                   </div>
                 )}
