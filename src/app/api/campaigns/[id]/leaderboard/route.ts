@@ -30,7 +30,8 @@ export async function GET(
         userId: string;
         username: string;
         avatarUrl: string | null;
-        eligibleViews: number;
+        approvedViews: number;   // real platform views for approved clips
+        eligibleViews: number;   // capped eligible views for earnings
         earnings: number;
         clipsCount: number;
       }
@@ -41,11 +42,13 @@ export async function GET(
         userId: sub.user.id,
         username: sub.user.username,
         avatarUrl: sub.user.avatar_url,
+        approvedViews: 0,
         eligibleViews: 0,
         earnings: 0,
         clipsCount: 0,
       };
 
+      existing.approvedViews += sub.current_views;
       existing.eligibleViews += sub.eligible_views;
       existing.earnings += Number(sub.current_earnings);
       existing.clipsCount += 1;
@@ -53,7 +56,7 @@ export async function GET(
     }
 
     const leaderboard = Array.from(userMap.values())
-      .sort((a, b) => b.eligibleViews - a.eligibleViews)
+      .sort((a, b) => b.approvedViews - a.approvedViews)
       .map((entry, index) => ({
         rank: index + 1,
         ...entry,

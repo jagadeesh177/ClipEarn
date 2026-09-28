@@ -287,25 +287,22 @@ export async function syncSubmissionViews(submissionId: string): Promise<SyncRes
       };
     }
 
-    // 3. Calculate earnings delta using exact CPM rate (Approved eligible views ONLY)
-    // Likes, comments, shares, and saves NEVER generate CPM earnings
-    const minPayoutViews = campaign.minimum_views_for_payout || 0;
-    const qualifiesForPayout = minPayoutViews > 0 ? totalPotentialEligible >= minPayoutViews : true;
-
+    // 3. Calculate earnings delta (Approved submissions ONLY)
+    // NOTE: minimum_views_for_payout is an AGGREGATE gate checked at payout time (stats API),
+    // not a per-submission gate. Eligible views always accumulate once approved.
     const cpmRate = Number(campaign.cpm);
-    const eligibleViewsToCredit = qualifiesForPayout ? Math.max(0, totalPotentialEligible - previousEligible) : 0;
-    let rawEarningsDelta = (eligibleViewsToCredit / 1000) * cpmRate;
 
     // Check budget cap
     const currentUsedBudget = Number(campaign.used_budget);
     const totalBudget = Number(campaign.total_budget);
+    let rawEarningsDelta = (deltaEligibleViews / 1000) * cpmRate;
     let finalEarningsDelta = rawEarningsDelta;
-    let actualEligibleDelta = eligibleViewsToCredit;
+    let actualEligibleDelta = deltaEligibleViews;
 
-    if (qualifiesForPayout && currentUsedBudget + rawEarningsDelta > totalBudget) {
+    if (currentUsedBudget + rawEarningsDelta > totalBudget) {
       finalEarningsDelta = Math.max(0, totalBudget - currentUsedBudget);
       // Adjust eligible views delta to correspond to capped budget
-      actualEligibleDelta = Math.floor((finalEarningsDelta / cpmRate) * 1000);
+      actualEligibleDelta = cpmRate > 0 ? Math.floor((finalEarningsDelta / cpmRate) * 1000) : 0;
     }
 
     // 4. Create immutable EarningsLedger entry if any earnings generated
@@ -334,6 +331,8 @@ export async function syncSubmissionViews(submissionId: string): Promise<SyncRes
     }
 
     // 5. Update submission metrics & earnings
+    // current_views always reflects real platform views (even past the cap)
+    // eligible_views is capped at maximum_views_per_clip
     const newCurrentEarnings = Number(submission.current_earnings) + finalEarningsDelta;
     const newEligibleViews = previousEligible + actualEligibleDelta;
 
