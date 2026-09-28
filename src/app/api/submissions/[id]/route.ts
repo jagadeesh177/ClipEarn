@@ -33,7 +33,7 @@ export async function DELETE(
       );
     }
 
-    // Clippers cannot delete approved videos; they can only delete rejected submissions
+    // Clippers cannot delete approved/appealed videos; they can only delete pending or rejected submissions
     if (!isStaff) {
       if (submission.status === SubmissionStatus.APPROVED) {
         return NextResponse.json(
@@ -41,9 +41,12 @@ export async function DELETE(
           { status: 403 }
         );
       }
-      if (submission.status !== SubmissionStatus.REJECTED) {
+      if (
+        submission.status !== SubmissionStatus.REJECTED &&
+        submission.status !== SubmissionStatus.PENDING
+      ) {
         return NextResponse.json(
-          { error: "Clippers can only delete rejected submissions." },
+          { error: "You can only delete pending or rejected submissions." },
           { status: 403 }
         );
       }
