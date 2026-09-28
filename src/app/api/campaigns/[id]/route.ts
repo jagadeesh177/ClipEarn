@@ -48,17 +48,17 @@ export async function GET(
     const approvedSubmissions = campaign.submissions.filter(
       (s) => s.status === SubmissionStatus.APPROVED
     );
-    const calcApprovedViews = approvedSubmissions.reduce(
+    const totalApprovedViews = approvedSubmissions.reduce(
       (sum, s) => sum + (s.eligible_views || s.current_views),
       0
     );
-    const totalApprovedViews = calcApprovedViews > 0 ? calcApprovedViews : 3124198;
-    const eligibleViews = calcApprovedViews > 0 ? approvedSubmissions.reduce((sum, s) => sum + s.eligible_views, 0) : 3124198;
+    const eligibleViews = approvedSubmissions.reduce((sum, s) => sum + s.eligible_views, 0);
     const minViews = campaign.minimum_views_for_payout || 0;
+    // Once approved views reach minimum_views_for_payout, then only budget used increases; otherwise view progress increases while budget used stays 0
     const hasReachedMinViews = minViews > 0 ? totalApprovedViews >= minViews : true;
-    const computedUsedBudget = Number(campaign.used_budget) > 0 ? Number(campaign.used_budget) : 2176.27;
+    const computedUsedBudget = hasReachedMinViews ? Number(campaign.used_budget) : 0;
     const isJoined = user ? campaign.memberships.length > 0 : false;
-    const maxPayableViews = Math.floor((Number(campaign.total_budget) / Number(campaign.cpm)) * 1000) || 15000000;
+    const maxPayableViews = Math.floor((Number(campaign.total_budget) / Number(campaign.cpm)) * 1000);
 
     return NextResponse.json({
       data: {
