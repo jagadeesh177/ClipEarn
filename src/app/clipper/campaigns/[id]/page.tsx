@@ -277,12 +277,12 @@ export default function CampaignDetailsPage() {
     }
   };
 
-  const handleDeleteSubmission = async (submissionId: string) => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this rejected submission? This will remove the clip so you can re-submit it to another campaign if needed."
-      )
-    ) {
+  const handleDeleteSubmission = async (submissionId: string, status: string) => {
+    const msg =
+      status === "PENDING"
+        ? "Are you sure you want to delete this pending submission? It will be removed from the review queue."
+        : "Are you sure you want to delete this rejected submission? This will remove the clip so you can re-submit it to another campaign if needed.";
+    if (!confirm(msg)) {
       return;
     }
 
@@ -754,13 +754,13 @@ export default function CampaignDetailsPage() {
                             </div>
                           )}
 
-                          {/* Delete Submission Button - Only for rejected clips */}
-                          {sub.status === "REJECTED" && (
+                          {/* Delete Submission Button - Only for PENDING and REJECTED (not APPROVED) */}
+                          {(sub.status === "PENDING" || sub.status === "REJECTED") && (
                             <button
                               type="button"
-                              onClick={() => handleDeleteSubmission(sub.id)}
+                              onClick={() => handleDeleteSubmission(sub.id, sub.status)}
                               disabled={deletingSubId === sub.id}
-                              title="Delete rejected submission"
+                              title={sub.status === "PENDING" ? "Cancel pending submission" : "Delete rejected submission"}
                               className="p-1.5 rounded-lg border border-slate-800 bg-slate-900/80 hover:bg-red-500/20 hover:border-red-500/40 text-slate-400 hover:text-red-400 transition-colors shrink-0 flex items-center justify-center disabled:opacity-50"
                             >
                               {deletingSubId === sub.id ? (
