@@ -52,7 +52,7 @@ export async function GET(request: Request) {
         approvedClips: 0,
       };
 
-      existing.eligibleViews += sub.eligible_views;
+      existing.eligibleViews += sub.current_views;
       existing.earnings += Number(sub.current_earnings);
       existing.approvedClips += 1;
       userMap.set(sub.user_id, existing);

@@ -236,24 +236,11 @@ export async function syncSubmissionViews(submissionId: string): Promise<SyncRes
       };
     }
 
-    // 3. Calculate baseline for eligible views based on campaign mode (Approved submissions ONLY)
-    let baselineViews = 0;
-    const snapshots = submission.view_snapshots;
-
-    if (campaign.view_eligibility_mode === ViewEligibilityMode.FROM_SUBMISSION) {
-      baselineViews = snapshots.length > 0 ? snapshots[0].views : 0;
-    } else if (campaign.view_eligibility_mode === ViewEligibilityMode.FROM_APPROVAL) {
-      // Find snapshot closest to reviewed_at
-      const approvalSnapshot = snapshots.find(
-        (s) => submission.reviewed_at && s.captured_at >= submission.reviewed_at
-      );
-      baselineViews = approvalSnapshot ? approvalSnapshot.views : (snapshots[0]?.views || 0);
-    } else if (campaign.view_eligibility_mode === ViewEligibilityMode.LIFETIME) {
-      baselineViews = 0;
-    }
-
-    // Maximum views per clip cap (if defined by campaign)
-    let totalPotentialEligible = Math.max(0, latestViews - baselineViews);
+    // 3. Calculate eligible views (Approved submissions ONLY)
+    // ClipEarn Business Rule:
+    // Once a manager approves a clip submission, the clip's current verified platform views
+    // MUST count as Approved Views / Eligible Views. No baseline views are subtracted.
+    let totalPotentialEligible = latestViews;
     if (campaign.maximum_views_per_clip && totalPotentialEligible > campaign.maximum_views_per_clip) {
       totalPotentialEligible = campaign.maximum_views_per_clip;
     }
@@ -410,3 +397,104 @@ export async function syncAllApprovedSubmissions(options?: {
 
   return results;
 }
+
+export interface ApprovalResult {
+  submission: any;
+  approvedViews: number;
+  eligibleViews: number;
+  earningsDelta: number;
+}
+
+/**
+ * Executes the business approval workflow inside a transaction:
+ * 1. Sets submission status to APPROVED.
+ * 2. Preserves current verified metrics.
+ * 3. Those current views immediately become Approved / Eligible Views (capped if campaign specifies).
+ * 4. Calculates earnings for newly approved views based on campaign CPM & remaining budget.
+ * 5. Logs to EarningsLedger and increments campaign.used_budget.
+ */
+export async function processApprovalInTx(
+  tx: Prisma.TransactionClient,
+  submissionId: string,
+  managerId: string
+): Promise<ApprovalResult> {
+  const submission = await tx.submission.findUnique({
+    where: { id: submissionId },
+    include: { campaign: true },
+  });
+
+  if (!submission) {
+    throw new Error(`Submission ${submissionId} not found`);
+  }
+
+  const campaign = submission.campaign;
+  const currentViews = submission.current_views;
+
+  // Once approved, current verified views count as Approved / Eligible Views (capped if campaign specifies)
+  let potentialEligible = currentViews;
+  if (campaign.maximum_views_per_clip && potentialEligible > campaign.maximum_views_per_clip) {
+    potentialEligible = campaign.maximum_views_per_clip;
+  }
+
+  const previousEligible = submission.eligible_views;
+  const deltaEligible = Math.max(0, potentialEligible - previousEligible);
+
+  const cpmRate = Number(campaign.cpm);
+  const currentUsedBudget = Number(campaign.used_budget);
+  const totalBudget = Number(campaign.total_budget);
+
+  let rawEarningsDelta = (deltaEligible / 1000) * cpmRate;
+  let finalEarningsDelta = rawEarningsDelta;
+  let actualEligibleDelta = deltaEligible;
+
+  if (currentUsedBudget + rawEarningsDelta > totalBudget) {
+    finalEarningsDelta = Math.max(0, totalBudget - currentUsedBudget);
+    actualEligibleDelta = cpmRate > 0 ? Math.floor((finalEarningsDelta / cpmRate) * 1000) : 0;
+  }
+
+  if (finalEarningsDelta > 0) {
+    await tx.earningsLedger.create({
+      data: {
+        user_id: submission.user_id,
+        campaign_id: campaign.id,
+        submission_id: submission.id,
+        event_type: "SUBMISSION_APPROVED",
+        views: actualEligibleDelta,
+        rate_per_1000: new Prisma.Decimal(cpmRate),
+        amount: new Prisma.Decimal(finalEarningsDelta),
+      },
+    });
+
+    const newUsedBudget = currentUsedBudget + finalEarningsDelta;
+    await tx.campaign.update({
+      where: { id: campaign.id },
+      data: {
+        used_budget: new Prisma.Decimal(newUsedBudget),
+        status: newUsedBudget >= totalBudget ? CampaignStatus.PAUSED : campaign.status,
+      },
+    });
+  }
+
+  const newEligibleViews = previousEligible + actualEligibleDelta;
+  const newCurrentEarnings = Number(submission.current_earnings) + finalEarningsDelta;
+
+  const updatedSub = await tx.submission.update({
+    where: { id: submission.id },
+    data: {
+      status: SubmissionStatus.APPROVED,
+      reviewed_at: new Date(),
+      reviewed_by: managerId,
+      rejection_reason: null,
+      eligible_views: newEligibleViews,
+      current_earnings: new Prisma.Decimal(newCurrentEarnings),
+    },
+  });
+
+  return {
+    submission: updatedSub,
+    approvedViews: currentViews,
+    eligibleViews: newEligibleViews,
+    earningsDelta: finalEarningsDelta,
+  };
+}
+

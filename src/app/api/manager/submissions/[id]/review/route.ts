@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
 import { UserRole, SubmissionStatus, ReferralStatus } from "@prisma/client";
 import { logAuditEvent } from "@/lib/audit";
-import { syncSubmissionViews } from "@/lib/earnings/engine";
+import { syncSubmissionViews, processApprovalInTx } from "@/lib/earnings/engine";
 
 export async function POST(
   request: Request,
@@ -38,15 +38,7 @@ export async function POST(
 
     if (action === "APPROVE") {
       const updated = await prisma.$transaction(async (tx) => {
-        const sub = await tx.submission.update({
-          where: { id: params.id },
-          data: {
-            status: SubmissionStatus.APPROVED,
-            reviewed_at: new Date(),
-            reviewed_by: manager.id,
-            rejection_reason: null,
-          },
-        });
+        const { submission: sub } = await processApprovalInTx(tx, params.id, manager.id);
 
         // Check if this approval qualifies a referral (Rule 41: At least one submission approved)
         const pendingReferral = await tx.referral.findUnique({

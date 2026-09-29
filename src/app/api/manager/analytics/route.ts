@@ -70,7 +70,7 @@ export async function GET() {
     let totalComments = 0;
     let totalShares = 0;
     let totalSaves = 0;
-    let eligibleViews = 0;
+    let approvedViews = 0;
 
     for (const group of submissionsCounts) {
       totalSubmissions += group._count;
@@ -79,12 +79,16 @@ export async function GET() {
       totalComments += group._sum.current_comments || 0;
       totalShares += group._sum.current_shares || 0;
       totalSaves += group._sum.current_saves || 0;
-      eligibleViews += group._sum.eligible_views || 0;
 
       if (group.status === SubmissionStatus.PENDING) pendingReviews = group._count;
-      if (group.status === SubmissionStatus.APPROVED) approvedSubmissions = group._count;
+      if (group.status === SubmissionStatus.APPROVED) {
+        approvedSubmissions = group._count;
+        approvedViews = group._sum.current_views || 0;
+      }
       if (group.status === SubmissionStatus.REJECTED) rejectedSubmissions = group._count;
     }
+
+    const eligibleViews = approvedViews;
 
     let pendingPayoutAmount = 0;
     let paidOutAmount = 0;
@@ -117,6 +121,7 @@ export async function GET() {
         totalComments,
         totalShares,
         totalSaves,
+        approvedViews,
         eligibleViews,
         totalBudget,
         usedBudget,

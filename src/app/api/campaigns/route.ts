@@ -75,10 +75,10 @@ export async function GET(request: Request) {
         (s) => s.status === SubmissionStatus.APPROVED
       );
       const totalApprovedViews = approvedSubmissions.reduce(
-        (sum, s) => sum + (s.eligible_views || s.current_views),
+        (sum, s) => sum + s.current_views,
         0
       );
-      const eligibleViews = approvedSubmissions.reduce((sum, s) => sum + s.eligible_views, 0);
+      const eligibleViews = totalApprovedViews;
       const minViews = c.minimum_views_for_payout || 0;
       // Only once approved views reach minimum_views_for_payout does budget used increase
       const hasReachedMinViews = minViews > 0 ? totalApprovedViews >= minViews : true;

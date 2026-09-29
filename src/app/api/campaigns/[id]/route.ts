@@ -49,10 +49,10 @@ export async function GET(
       (s) => s.status === SubmissionStatus.APPROVED
     );
     const totalApprovedViews = approvedSubmissions.reduce(
-      (sum, s) => sum + (s.eligible_views || s.current_views),
+      (sum, s) => sum + s.current_views,
       0
     );
-    const eligibleViews = approvedSubmissions.reduce((sum, s) => sum + s.eligible_views, 0);
+    const eligibleViews = totalApprovedViews;
     const minViews = campaign.minimum_views_for_payout || 0;
     // Once approved views reach minimum_views_for_payout, then only budget used increases; otherwise view progress increases while budget used stays 0
     const hasReachedMinViews = minViews > 0 ? totalApprovedViews >= minViews : true;

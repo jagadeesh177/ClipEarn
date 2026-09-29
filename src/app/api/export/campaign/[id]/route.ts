@@ -46,7 +46,7 @@ export async function GET(
     const rejectedSubmissions = campaign.submissions.filter((s) => s.status === "REJECTED");
 
     const totalViews = campaign.submissions.reduce((acc, s) => acc + (s.current_views || 0), 0);
-    const eligibleViews = campaign.submissions.reduce((acc, s) => acc + (s.eligible_views || 0), 0);
+    const eligibleViews = approvedSubmissions.reduce((acc, s) => acc + (s.current_views || 0), 0);
     const totalSpent = Number(campaign.used_budget);
     const totalBudget = Number(campaign.total_budget);
     const remainingBudget = Math.max(0, totalBudget - totalSpent);
@@ -57,7 +57,7 @@ export async function GET(
     const platformBreakdown = platforms.map((plat) => {
       const platSubmissions = campaign.submissions.filter((s) => s.platform === plat);
       const platApproved = platSubmissions.filter((s) => s.status === "APPROVED");
-      const platViews = platSubmissions.reduce((acc, s) => acc + (s.eligible_views || 0), 0);
+      const platViews = platApproved.reduce((acc, s) => acc + (s.current_views || 0), 0);
       const platSpend = platSubmissions.reduce((acc, s) => acc + Number(s.current_earnings || 0), 0);
 
       return {

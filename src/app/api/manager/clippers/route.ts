@@ -41,10 +41,11 @@ export async function GET(request: Request) {
 
     const formatted = clippers.map((c) => {
       const totalClips = c.submissions.length;
-      const approvedClips = c.submissions.filter((s) => s.status === SubmissionStatus.APPROVED).length;
+      const approvedSubmissions = c.submissions.filter((s) => s.status === SubmissionStatus.APPROVED);
+      const approvedClips = approvedSubmissions.length;
       const totalViews = c.submissions.reduce((sum, s) => sum + s.current_views, 0);
-      const eligibleViews = c.submissions.reduce((sum, s) => sum + s.eligible_views, 0);
-      const totalEarnings = c.submissions.reduce((sum, s) => sum + Number(s.current_earnings), 0);
+      const eligibleViews = approvedSubmissions.reduce((sum, s) => sum + s.current_views, 0);
+      const totalEarnings = approvedSubmissions.reduce((sum, s) => sum + Number(s.current_earnings), 0);
 
       return {
         id: c.id,

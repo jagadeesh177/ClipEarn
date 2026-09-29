@@ -38,7 +38,7 @@ export async function GET(
       if (sub.status === SubmissionStatus.APPROVED) {
         approvedClips += 1;
         approvedViews += sub.current_views;
-        eligibleViews += sub.eligible_views;
+        eligibleViews += sub.current_views;
         totalEarnings += Number(sub.current_earnings);
       }
     }

@@ -32,10 +32,11 @@ export async function GET() {
       }),
     ]);
 
+    const approvedSubs = submissions.filter((s) => s.status === SubmissionStatus.APPROVED);
     const totalClips = submissions.length;
-    const approvedClips = submissions.filter((s) => s.status === SubmissionStatus.APPROVED).length;
+    const approvedClips = approvedSubs.length;
     const totalViews = submissions.reduce((sum, s) => sum + s.current_views, 0);
-    const eligibleViews = Number(ledgerSum._sum.views || 0);
+    const eligibleViews = approvedSubs.reduce((sum, s) => sum + s.current_views, 0);
     const totalEarnings = Number(ledgerSum._sum.amount || 0);
 
     return NextResponse.json({

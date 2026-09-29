@@ -49,7 +49,7 @@ export async function GET(
       };
 
       existing.approvedViews += sub.current_views;
-      existing.eligibleViews += sub.eligible_views;
+      existing.eligibleViews += sub.current_views;
       existing.earnings += Number(sub.current_earnings);
       existing.clipsCount += 1;
       userMap.set(sub.user_id, existing);
