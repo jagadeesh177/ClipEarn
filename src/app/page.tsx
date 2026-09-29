@@ -1,44 +1,59 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
-import { CampaignStatus, SubmissionStatus, PayoutStatus } from "@prisma/client";
-import LandingView, { HomepageCampaign, HomepageStats } from "@/components/landing/LandingView";
+import { CampaignStatus, SubmissionStatus } from "@prisma/client";
+import LandingView, { HomepageCampaign } from "@/components/landing/LandingView";
+
+export const metadata: Metadata = {
+  title: "ClipEarn — Performance-Based Short-Form Content Distribution",
+  description:
+    "ClipEarn helps brands scale their reach through performance-based short-form content distribution across TikTok, Instagram, and YouTube, while creators earn from verified campaign performance.",
+  openGraph: {
+    title: "ClipEarn — Performance-Based Short-Form Content Distribution",
+    description:
+      "ClipEarn helps brands scale their reach through performance-based short-form content distribution across TikTok, Instagram, and YouTube, while creators earn from verified campaign performance.",
+    url: "https://clipearn.vercel.app/",
+    siteName: "ClipEarn",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ClipEarn — Performance-Based Short-Form Content Distribution",
+    description:
+      "ClipEarn helps brands scale their reach through performance-based short-form content distribution across TikTok, Instagram, and YouTube, while creators earn from verified campaign performance.",
+  },
+  alternates: {
+    canonical: "https://clipearn.vercel.app/",
+  },
+};
 
 export default async function LandingPage() {
   const now = new Date();
 
-  // Query database for active, publicly visible campaigns and platform metrics
-  const [dbCampaigns, paidAgg, viewsAgg] = await Promise.all([
-    prisma.campaign.findMany({
-      where: {
-        status: CampaignStatus.ACTIVE,
-        start_date: { lte: now },
-        OR: [
-          { end_date: null },
-          { end_date: { gte: now } },
-        ],
-      },
-      orderBy: { created_at: "desc" },
-      include: {
-        submissions: {
-          where: { status: SubmissionStatus.APPROVED },
-          select: {
-            current_views: true,
-          },
+  // Query database for active, publicly visible campaigns
+  const dbCampaigns = await prisma.campaign.findMany({
+    where: {
+      status: CampaignStatus.ACTIVE,
+      start_date: { lte: now },
+      OR: [
+        { end_date: null },
+        { end_date: { gte: now } },
+      ],
+    },
+    orderBy: { created_at: "desc" },
+    include: {
+      submissions: {
+        where: { status: SubmissionStatus.APPROVED },
+        select: {
+          current_views: true,
         },
       },
-      take: 9,
-    }),
-    prisma.payout.aggregate({
-      where: { status: PayoutStatus.PAID },
-      _sum: { amount: true },
-    }),
-    prisma.submission.aggregate({
-      where: { status: SubmissionStatus.APPROVED },
-      _sum: { current_views: true },
-    }),
-  ]);
+    },
+    take: 6,
+  });
 
   const campaigns: HomepageCampaign[] = dbCampaigns.map((c) => {
     const totalApprovedViews = c.submissions.reduce(
@@ -67,10 +82,5 @@ export default async function LandingPage() {
     };
   });
 
-  const stats: HomepageStats = {
-    totalPaid: Number(paidAgg._sum.amount || 0),
-    totalViews: viewsAgg._sum.current_views || 0,
-  };
-
-  return <LandingView campaigns={campaigns} stats={stats} />;
+  return <LandingView campaigns={campaigns} />;
 }
