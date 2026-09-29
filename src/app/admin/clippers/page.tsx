@@ -128,7 +128,7 @@ export default function AdminClippersPage() {
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Global directory of all content creators registered on ClipEarn, their verified submissions, approved views, and account standing.
+            Global directory of all clippers registered on ClipEarn, their verified submissions, approved views, and account standing.
           </p>
         </div>
       </div>

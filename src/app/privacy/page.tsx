@@ -23,7 +23,7 @@ import {
 export const metadata: Metadata = {
   title: "Privacy Policy | ClipEarn",
   description:
-    "Learn how ClipEarn collects, uses, protects, and handles your data for creator payouts and performance clipping.",
+    "Learn how ClipEarn collects, uses, protects, and handles your data for clipper payouts and performance clipping.",
 };
 
 export default function PrivacyPolicyPage() {
@@ -92,7 +92,7 @@ export default function PrivacyPolicyPage() {
           </div>
 
           <p className="mt-6 text-base sm:text-lg text-slate-300 leading-relaxed max-w-4xl">
-            This Privacy Policy explains how <span className="font-semibold text-white">ClipEarn</span> (&quot;ClipEarn&quot;, &quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) collects, uses, discloses, and protects your information when you access or use our website (including <Link href="https://clipearn.vercel.app" className="text-brand-cyan underline underline-offset-4">https://clipearn.vercel.app</Link>), our creator clipping platform, social verification workflows, and view-based payout services.
+            This Privacy Policy explains how <span className="font-semibold text-white">ClipEarn</span> (&quot;ClipEarn&quot;, &quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) collects, uses, discloses, and protects your information when you access or use our website (including <Link href="https://clipearn.vercel.app" className="text-brand-cyan underline underline-offset-4">https://clipearn.vercel.app</Link>), our clipper platform, social verification workflows, and view-based payout services.
           </p>
         </div>
 
@@ -140,7 +140,7 @@ export default function PrivacyPolicyPage() {
               <span>Overview &amp; Scope</span>
             </h2>
             <p className="mb-4">
-              ClipEarn operates a specialized creator marketplace and performance-based clipping platform. Our services enable content creators (&quot;clippers&quot;) to discover campaigns sponsored by brands and advertisers, post engaging short-form video clips on platforms including Instagram, TikTok, and YouTube, and earn monetary payouts based on verified view counts (CPM) delivered to campaigns.
+              ClipEarn operates a specialized clipper marketplace and performance-based clipping platform. Our services enable clippers to discover campaigns sponsored by brands and advertisers, post engaging short-form video clips on platforms including Instagram, TikTok, and YouTube, and earn monetary payouts based on verified view counts (CPM) delivered to campaigns.
             </p>
             <p>
               By accessing ClipEarn, authenticating with Discord, connecting social media account handles, or submitting video clip links, you acknowledge and agree to the data collection and processing practices described in this Privacy Policy.
@@ -164,7 +164,7 @@ export default function PrivacyPolicyPage() {
                   <span>Account &amp; Discord Information</span>
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-400">
-                  When you sign in using Discord OAuth2, we receive your Discord User ID, Discord username, discriminator, profile avatar hash, and verified email address associated with your Discord account. We use this to establish your ClipEarn creator identity and prevent duplicate accounts.
+                  When you sign in using Discord OAuth2, we receive your Discord User ID, Discord username, discriminator, profile avatar hash, and verified email address associated with your Discord account. We use this to establish your ClipEarn clipper identity and prevent duplicate accounts.
                 </p>
               </div>
 
@@ -194,7 +194,7 @@ export default function PrivacyPolicyPage() {
                   <span>Views, Performance Analytics &amp; Earnings Data</span>
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-400">
-                  Our automated view sync engine captures historical view snapshots (scheduled every 8 hours) for approved video submissions. We record starting views, cumulative views, delta changes, and calculate payable creator earnings based on the campaign&apos;s published CPM rate. These calculations are recorded into an auditable financial transaction ledger.
+                  Our automated view sync engine captures historical view snapshots (scheduled every 8 hours) for approved video submissions. We record starting views, cumulative views, delta changes, and calculate payable clipper earnings based on the campaign&apos;s published CPM rate. These calculations are recorded into an auditable financial transaction ledger.
                 </p>
               </div>
 

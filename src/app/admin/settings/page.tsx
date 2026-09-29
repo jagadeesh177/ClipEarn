@@ -178,7 +178,7 @@ export default function AdminSettingsPage() {
           </div>
           <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between">
             <span className="text-brand-cyan font-semibold">https://clipearn.vercel.app/clipper/dashboard</span>
-            <span className="text-slate-500">Clipper Creator Portal</span>
+            <span className="text-slate-500">Clipper Portal</span>
           </div>
         </div>
       </div>

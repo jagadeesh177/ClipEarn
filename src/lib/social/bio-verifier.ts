@@ -346,7 +346,7 @@ async function checkTikTokBio(username: string, verificationCode: string): Promi
 
 /**
  * Universal online social bio verification function.
- * Connects directly to the social network and validates that the creator has placed
+ * Connects directly to the social network and validates that the clipper has placed
  * their ClipEarn verification code in their public bio.
  */
 export async function verifySocialBio(

@@ -231,7 +231,7 @@ function ProfileAndAccountsContent() {
             <span>Profile &amp; Accounts</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Manage your creator profile and connected social channels.
+            Manage your clipper profile and connected social channels.
           </p>
         </div>
 
@@ -273,7 +273,7 @@ function ProfileAndAccountsContent() {
         </div>
       )}
 
-      {/* Creator Profile Card */}
+      {/* Clipper Profile Card */}
       <div className="rounded-2xl bg-[#0F141F] border border-slate-800 p-6 sm:p-8">
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-brand-cyan to-brand-emerald p-[2px] shrink-0">

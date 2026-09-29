@@ -9,11 +9,11 @@ import LandingView, { HomepageCampaign } from "@/components/landing/LandingView"
 export const metadata: Metadata = {
   title: "ClipEarn — Performance-Based Short-Form Content Distribution",
   description:
-    "ClipEarn helps brands scale their reach through performance-based short-form content distribution across TikTok, Instagram, and YouTube, while creators earn from verified campaign performance.",
+    "ClipEarn helps brands scale their reach through performance-based short-form content distribution across TikTok, Instagram, and YouTube, while clippers earn from verified campaign performance.",
   openGraph: {
     title: "ClipEarn — Performance-Based Short-Form Content Distribution",
     description:
-      "ClipEarn helps brands scale their reach through performance-based short-form content distribution across TikTok, Instagram, and YouTube, while creators earn from verified campaign performance.",
+      "ClipEarn helps brands scale their reach through performance-based short-form content distribution across TikTok, Instagram, and YouTube, while clippers earn from verified campaign performance.",
     url: "https://clipearn.vercel.app/",
     siteName: "ClipEarn",
     locale: "en_US",
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "ClipEarn — Performance-Based Short-Form Content Distribution",
     description:
-      "ClipEarn helps brands scale their reach through performance-based short-form content distribution across TikTok, Instagram, and YouTube, while creators earn from verified campaign performance.",
+      "ClipEarn helps brands scale their reach through performance-based short-form content distribution across TikTok, Instagram, and YouTube, while clippers earn from verified campaign performance.",
   },
   alternates: {
     canonical: "https://clipearn.vercel.app/",

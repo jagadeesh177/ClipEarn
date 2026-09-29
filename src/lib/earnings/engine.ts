@@ -94,7 +94,7 @@ export async function syncSubmissionViews(submissionId: string): Promise<SyncRes
           data: {
             last_sync_status: "UNAVAILABLE",
             last_sync_error: norm.isPrivate
-              ? "Clip is marked private on the platform by the creator"
+              ? "Clip is marked private on the platform by the clipper"
               : "Clip is unavailable or has been removed from the platform",
             last_view_update: new Date(),
           },
