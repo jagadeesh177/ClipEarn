@@ -9,15 +9,14 @@ import {
   Compass,
   FileCheck,
   Trophy,
-  CreditCard,
-  Key,
+  Users,
+  Settings,
   LogOut,
   RefreshCw,
   Shield,
   Menu,
   X,
   Loader2,
-  ArrowRight,
 } from "lucide-react";
 
 export default function ManagerLayout({ children }: { children: React.ReactNode }) {
@@ -25,6 +24,7 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [syncingViews, setSyncingViews] = useState(false);
   const [syncSummary, setSyncSummary] = useState<string | null>(null);
 
@@ -43,11 +43,14 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
         if (!data) return;
         if (data.authenticated && (data.user.role === "MANAGER" || data.user.role === "ADMIN")) {
           setUser(data.user);
+          setLoading(false);
           if (isLoginPage) {
             router.push("/manager/dashboard");
           }
         } else if (!isLoginPage) {
           router.push("/manager/login");
+        } else {
+          setLoading(false);
         }
       })
       .catch(() => {
@@ -57,6 +60,17 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
 
   if (isLoginPage) {
     return <>{children}</>;
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#070A0F] text-slate-100 flex items-center justify-center p-6">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
+          <p className="text-xs font-semibold text-slate-400">Verifying Manager Access...</p>
+        </div>
+      </div>
+    );
   }
 
   const handleLogout = async () => {
@@ -87,11 +101,11 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
 
   const navItems = [
     { label: "Dashboard", href: "/manager/dashboard", icon: LayoutDashboard },
-    { label: "Assigned Campaigns", href: "/manager/campaigns", icon: Compass },
-    { label: "Submissions Review", href: "/manager/submissions", icon: FileCheck },
-    { label: "Leaderboards", href: "/manager/leaderboard", icon: Trophy },
-    { label: "Payout Eligibility", href: "/manager/payouts", icon: CreditCard },
-    { label: "Redeem Access Code", href: "/manager/redeem", icon: Key },
+    { label: "Campaigns", href: "/manager/campaigns", icon: Compass },
+    { label: "Submissions", href: "/manager/submissions", icon: FileCheck },
+    { label: "Clippers", href: "/manager/clippers", icon: Users },
+    { label: "Leaderboard", href: "/manager/leaderboard", icon: Trophy },
+    { label: "Settings", href: "/manager/settings", icon: Settings },
   ];
 
   return (
@@ -103,7 +117,7 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-300"
         >
-          {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
       </div>
 
@@ -136,7 +150,7 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
             <div className="mt-2 space-y-2">
               {navItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = pathname === item.href;
+                const isActive = pathname === item.href || (item.href !== "/manager/dashboard" && pathname.startsWith(item.href));
                 return (
                   <Link
                     key={item.href}
@@ -159,17 +173,6 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
 
         {/* Manager User & Worker Trigger */}
         <div className="p-5 border-t border-slate-800/80 bg-[#080C17] space-y-3.5">
-          {/* Admin Switch Link */}
-          {user?.role === "ADMIN" && (
-            <Link
-              href="/admin/dashboard"
-              className="w-full py-2 px-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-400 text-xs font-bold transition flex items-center justify-between group"
-            >
-              <span>Switch to Admin Console</span>
-              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-          )}
-
           {/* Worker Sync Button */}
           <div className="space-y-1.5">
             <span className="text-xs font-semibold text-slate-400 px-1 tracking-normal">

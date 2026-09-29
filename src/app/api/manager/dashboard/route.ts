@@ -8,39 +8,36 @@ export async function GET() {
   try {
     const user = await requireRole([UserRole.MANAGER, UserRole.ADMIN]);
 
-    // Managers can only see assigned campaigns
-    let assignedCampaignIds: string[] = [];
-    if (user.role === UserRole.MANAGER) {
-      assignedCampaignIds = await getAccessibleCampaignIdsForManager(user.id);
-      if (assignedCampaignIds.length === 0) {
-        return NextResponse.json({
-          data: {
-            hasAssignedCampaigns: false,
-            assignedCampaignsCount: 0,
-            activeCampaignsCount: 0,
-            approvedViews: 0,
-            approvedLikes: 0,
-            approvedComments: 0,
-            approvedShares: 0,
-            approvedSaves: 0,
-            pendingReviewsCount: 0,
-            qualifiedClippersCount: 0,
-            campaigns: [],
-            pendingSubmissions: [],
-          },
-        });
+    // Managers can only see assigned campaigns.
+    // If an Admin enters manager dashboard, only allow if they have manager access.
+    const assignedCampaignIds = await getAccessibleCampaignIdsForManager(user.id);
+    if (assignedCampaignIds.length === 0) {
+      if (user.role === UserRole.ADMIN) {
+        return NextResponse.json(
+          { error: "Access Denied. You do not have Campaign Manager access to any campaigns." },
+          { status: 403 }
+        );
       }
+      return NextResponse.json({
+        data: {
+          hasAssignedCampaigns: false,
+          assignedCampaignsCount: 0,
+          activeCampaignsCount: 0,
+          approvedViews: 0,
+          approvedLikes: 0,
+          approvedComments: 0,
+          approvedShares: 0,
+          approvedSaves: 0,
+          pendingReviewsCount: 0,
+          qualifiedClippersCount: 0,
+          campaigns: [],
+          pendingSubmissions: [],
+        },
+      });
     }
 
-    const campaignWhere =
-      user.role === UserRole.MANAGER
-        ? { id: { in: assignedCampaignIds } }
-        : {};
-
-    const submissionWhere =
-      user.role === UserRole.MANAGER
-        ? { campaign_id: { in: assignedCampaignIds } }
-        : {};
+    const campaignWhere = { id: { in: assignedCampaignIds } };
+    const submissionWhere = { campaign_id: { in: assignedCampaignIds } };
 
     const [
       assignedCampaignsCount,

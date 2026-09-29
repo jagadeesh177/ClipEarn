@@ -8,8 +8,11 @@ import {
   LayoutDashboard,
   Compass,
   PlusCircle,
+  FileCheck,
   CreditCard,
   Users,
+  UserCheck,
+  Settings,
   History,
   LogOut,
   RefreshCw,
@@ -18,7 +21,6 @@ import {
   X,
   Loader2,
   AlertTriangle,
-  ArrowRight,
 } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -31,11 +33,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [syncingViews, setSyncingViews] = useState(false);
   const [syncSummary, setSyncSummary] = useState<string | null>(null);
 
+  const isLoginPage = pathname === "/admin/login";
+
   useEffect(() => {
     fetch("/api/auth/me")
       .then((res) => {
         if (!res.ok) {
-          router.push("/manager/login");
+          if (!isLoginPage) router.push("/admin/login");
           return null;
         }
         return res.json();
@@ -45,19 +49,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         if (data.authenticated && data.user.role === "ADMIN") {
           setUser(data.user);
           setLoading(false);
-        } else {
+          if (isLoginPage) {
+            router.push("/admin/dashboard");
+          }
+        } else if (!isLoginPage) {
           setUnauthorized(true);
+          setLoading(false);
+        } else {
           setLoading(false);
         }
       })
       .catch(() => {
-        router.push("/manager/login");
+        if (!isLoginPage) router.push("/admin/login");
       });
-  }, [router]);
+  }, [router, isLoginPage]);
+
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/manager/login");
+    router.push("/admin/login");
   };
 
   const handleTriggerSync = async () => {
@@ -101,14 +114,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
           <h2 className="text-xl font-bold text-white">Access Denied</h2>
           <p className="text-xs text-slate-400 leading-relaxed">
-            The Admin Portal is strictly restricted to platform administrators. Campaign Managers should access their assigned campaigns via the Campaign Manager Portal.
+            The Admin Portal is strictly restricted to platform administrators. Please sign in with an authorized administrator account.
           </p>
           <div className="pt-2 flex flex-col gap-2">
             <Link
-              href="/manager/dashboard"
-              className="w-full py-2.5 rounded-xl bg-brand-cyan text-slate-950 font-bold text-xs hover:bg-brand-cyan/90 transition text-center"
+              href="/admin/login"
+              className="w-full py-2.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs hover:bg-amber-400 transition text-center"
             >
-              Go to Campaign Manager Portal
+              Sign In as Administrator
             </Link>
             <button
               onClick={handleLogout}
@@ -124,10 +137,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const navItems = [
     { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-    { label: "All Campaigns", href: "/admin/campaigns", icon: Compass },
+    { label: "Campaigns", href: "/admin/campaigns", icon: Compass },
     { label: "Create Campaign", href: "/admin/campaigns/create", icon: PlusCircle },
-    { label: "Clipper Payouts", href: "/admin/payouts", icon: CreditCard },
-    { label: "Campaign Managers", href: "/admin/managers", icon: Users },
+    { label: "Submissions", href: "/admin/submissions", icon: FileCheck },
+    { label: "Clippers", href: "/admin/clippers", icon: Users },
+    { label: "Payouts", href: "/admin/payouts", icon: CreditCard },
+    { label: "Campaign Managers", href: "/admin/managers", icon: UserCheck },
+    { label: "Settings", href: "/admin/settings", icon: Settings },
     { label: "Audit Logs", href: "/admin/audit-logs", icon: History },
   ];
 
@@ -155,7 +171,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
-        <div className="p-5 flex flex-col gap-6">
+        <div className="p-5 flex flex-col gap-6 overflow-y-auto">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
               <ClipEarnLogo size="md" href="/admin/dashboard" />
@@ -175,7 +191,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               const isActive =
                 item.href === "/admin/dashboard"
                   ? pathname === "/admin" || pathname === "/admin/dashboard"
-                  : pathname.startsWith(item.href);
+                  : pathname === item.href || (item.href !== "/admin/dashboard" && pathname.startsWith(item.href));
 
               return (
                 <Link
@@ -198,15 +214,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Sidebar Footer */}
         <div className="p-4 border-t border-slate-800/80 space-y-3">
-          {/* Switch to Manager Hub Link */}
-          <Link
-            href="/manager/dashboard"
-            className="w-full py-2 px-3 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 text-xs font-bold transition flex items-center justify-between group"
-          >
-            <span>Switch to Manager Hub</span>
-            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-          </Link>
-
           {syncSummary && (
             <div className="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-[11px] text-emerald-400 leading-tight">
               {syncSummary}

@@ -15,21 +15,16 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get("limit") || "50", 10);
     const skip = (page - 1) * limit;
 
-    let accessibleCampaignIds: string[] = [];
-    if (user.role === UserRole.MANAGER) {
-      accessibleCampaignIds = await getAccessibleCampaignIdsForManager(user.id);
-      if (accessibleCampaignIds.length === 0) {
-        return NextResponse.json({
-          data: [],
-          pagination: { page, limit, total: 0, totalPages: 0 },
-        });
-      }
+    const accessibleCampaignIds = await getAccessibleCampaignIdsForManager(user.id);
+    if (accessibleCampaignIds.length === 0) {
+      return NextResponse.json({
+        data: [],
+        pagination: { page, limit, total: 0, totalPages: 0 },
+      });
     }
 
     const where: Prisma.CampaignWhereInput = {
-      ...(user.role === UserRole.MANAGER
-        ? { id: { in: accessibleCampaignIds } }
-        : {}),
+      id: { in: accessibleCampaignIds },
       ...(status ? { status } : {}),
       ...(search
         ? {

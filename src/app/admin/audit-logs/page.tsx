@@ -11,7 +11,7 @@ export default function AdminAuditLogsPage() {
   const fetchLogs = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/manager/audit-logs");
+      const res = await fetch("/api/admin/audit-logs");
       const json = await res.json();
       if (res.ok && json.data) {
         setLogs(json.data);

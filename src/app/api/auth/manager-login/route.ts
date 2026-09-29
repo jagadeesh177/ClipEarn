@@ -81,7 +81,7 @@ export async function POST(request: Request) {
           email: user.email,
           role: user.role,
         },
-        redirectTo: "/manager/dashboard",
+        redirectTo: "/admin/dashboard",
       });
 
       const isHttps =

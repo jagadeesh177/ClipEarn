@@ -408,6 +408,7 @@ export default function LandingPage() {
             <Link href="/data-deletion" className="text-slate-400 hover:text-slate-200 transition-colors">Data Deletion</Link>
             <Link href="/clipper/guidelines" className="text-slate-400 hover:text-slate-200 transition-colors">Guidelines</Link>
             <Link href="/manager/login" className="text-slate-400 hover:text-slate-200 transition-colors">Manager Login</Link>
+            <Link href="/admin/login" className="text-slate-400 hover:text-slate-200 transition-colors">Admin Login</Link>
             <Link href="/login" className="text-slate-400 hover:text-slate-200 transition-colors">Clipper Sign In</Link>
           </nav>
         </div>

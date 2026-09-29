@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   const state = searchParams.get("state");
 
   let referralCode: string | null = null;
-  let requestedPortal: "clipper" | "manager" = "clipper";
+  let requestedPortal: "clipper" | "manager" | "admin" = "clipper";
   let managerKeyId: string | null = null;
   let stateTicket: string | null = null;
 
@@ -20,12 +20,9 @@ export async function GET(request: Request) {
       referralCode = decoded.ref || null;
       managerKeyId = decoded.managerKeyId || null;
       stateTicket = decoded.ticket || null;
-      if (
-        decoded.portal === "manager" ||
-        decoded.role === "MANAGER" ||
-        decoded.portal === "admin" ||
-        decoded.role === "ADMIN"
-      ) {
+      if (decoded.portal === "admin" || decoded.role === "ADMIN") {
+        requestedPortal = "admin";
+      } else if (decoded.portal === "manager" || decoded.role === "MANAGER") {
         requestedPortal = "manager";
       } else {
         requestedPortal = "clipper";
@@ -36,7 +33,12 @@ export async function GET(request: Request) {
   }
 
   const getLoginRedirect = (errorParam: string, reason?: string) => {
-    const base = requestedPortal === "manager" ? "/manager/login" : "/login";
+    const base =
+      requestedPortal === "admin"
+        ? "/admin/login"
+        : requestedPortal === "manager"
+        ? "/manager/login"
+        : "/login";
     const reasonParam = reason ? `&reason=${encodeURIComponent(reason)}` : "";
     return `${base}?error=${errorParam}${reasonParam}`;
   };
@@ -99,8 +101,16 @@ export async function GET(request: Request) {
     // Development / automated test mock profile
     const suffix = code.replace(/[^a-zA-Z0-9_]/g, "");
     discordId = `mock_${suffix}`;
-    username = requestedPortal === "manager" ? `Manager_${suffix.slice(-4)}` : `Clipper_${suffix.slice(-4)}`;
-    email = `${discordId.toLowerCase()}@clipearn.test`;
+    username =
+      requestedPortal === "admin"
+        ? `Admin_${suffix.slice(-4)}`
+        : requestedPortal === "manager"
+        ? `Manager_${suffix.slice(-4)}`
+        : `Clipper_${suffix.slice(-4)}`;
+    email =
+      requestedPortal === "admin"
+        ? "aronyesh63@gmail.com"
+        : `${discordId.toLowerCase()}@clipearn.test`;
     avatarUrl = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150";
   } else {
     // Official Discord OAuth token exchange
@@ -161,13 +171,37 @@ export async function GET(request: Request) {
     // 2. Server-Side Authorization Check for Requested Portal
     // (Never trust client; authenticate intent against actual database permissions)
 
-    // A. MANAGER PORTAL CHECK:
+    // A. ADMIN PORTAL CHECK:
+    if (requestedPortal === "admin") {
+      const isAllowedAdmin =
+        (user && isAllowedAdminEmail(user.email)) || (email && isAllowedAdminEmail(email));
+
+      if (!isAllowedAdmin) {
+        return NextResponse.redirect(new URL("/admin/login?error=not_authorized", request.url));
+      }
+
+      if (user && (user.status === UserStatus.SUSPENDED || user.status === UserStatus.BANNED)) {
+        return NextResponse.redirect(
+          new URL(getLoginRedirect("account_suspended", user.suspension_reason || undefined), request.url)
+        );
+      }
+    }
+
+    // B. MANAGER PORTAL CHECK:
     if (requestedPortal === "manager") {
-      const hasManagerAccess = user && (
-        user.role === UserRole.MANAGER ||
-        (user.role === UserRole.ADMIN && isAllowedAdminEmail(user.email)) ||
-        isManagerInvite
-      );
+      let hasManagerAccess = false;
+      if (isManagerInvite) {
+        hasManagerAccess = true;
+      } else if (user) {
+        if (user.role === UserRole.MANAGER) {
+          hasManagerAccess = true;
+        } else if (user.role === UserRole.ADMIN && isAllowedAdminEmail(user.email)) {
+          // Admin visiting manager portal: only if they have manager access (assigned/created campaigns or memberships)
+          const { getAccessibleCampaignIdsForManager } = await import("@/lib/campaignAccess");
+          const accessibleIds = await getAccessibleCampaignIdsForManager(user.id);
+          hasManagerAccess = accessibleIds.length > 0;
+        }
+      }
 
       if (user && (user.status === UserStatus.SUSPENDED || user.status === UserStatus.BANNED)) {
         return NextResponse.redirect(
@@ -175,16 +209,12 @@ export async function GET(request: Request) {
         );
       }
 
-      if (!hasManagerAccess && !isManagerInvite) {
-        // If this user was previously a manager and was revoked, inform them cleanly
-        if (user && user.role === UserRole.CLIPPER) {
-          return NextResponse.redirect(new URL("/manager/login?error=revoked", request.url));
-        }
+      if (!hasManagerAccess) {
         return NextResponse.redirect(new URL("/manager/login?error=not_authorized", request.url));
       }
     }
 
-    // B. CLIPPER PORTAL CHECK:
+    // C. CLIPPER PORTAL CHECK:
     if (requestedPortal === "clipper") {
       if (user && (user.status === UserStatus.SUSPENDED || user.status === UserStatus.BANNED)) {
         return NextResponse.redirect(
@@ -200,6 +230,11 @@ export async function GET(request: Request) {
         return NextResponse.redirect(new URL("/manager/login?error=not_authorized", request.url));
       }
 
+      // Admin portal auto-creates ONLY if email is in ALLOWED_ADMIN_EMAILS
+      if (requestedPortal === "admin" && !isAllowedAdminEmail(email)) {
+        return NextResponse.redirect(new URL("/admin/login?error=not_authorized", request.url));
+      }
+
       let referrerId: string | null = null;
       if (referralCode && requestedPortal === "clipper") {
         const referrer = await prisma.user.findUnique({
@@ -210,6 +245,13 @@ export async function GET(request: Request) {
         }
       }
 
+      const assignedRole =
+        requestedPortal === "admin"
+          ? UserRole.ADMIN
+          : isManagerInvite
+          ? UserRole.MANAGER
+          : UserRole.CLIPPER;
+
       const uniqueCode = `CLIP${Math.floor(100000 + Math.random() * 900000)}`;
       user = await prisma.user.create({
         data: {
@@ -217,8 +259,7 @@ export async function GET(request: Request) {
           username,
           email,
           avatar_url: avatarUrl,
-          // Strict Role Separation: Invitations ONLY grant MANAGER, never ADMIN
-          role: isManagerInvite ? UserRole.MANAGER : UserRole.CLIPPER,
+          role: assignedRole,
           status: UserStatus.ACTIVE,
           referral_code: uniqueCode,
           referred_by_id: referrerId,
@@ -238,15 +279,14 @@ export async function GET(request: Request) {
       }
     } else {
       // User already exists.
-      // Strict Role Separation:
-      // If user is already an Admin, preserve ADMIN.
-      // If redeeming a manager invite, set role to MANAGER (never promote to ADMIN).
-      // Otherwise, preserve existing role.
       let targetRole = user.role;
-      if (isManagerInvite) {
-        targetRole = (user.role === UserRole.ADMIN && isAllowedAdminEmail(user.email))
-          ? UserRole.ADMIN
-          : UserRole.MANAGER;
+      if (requestedPortal === "admin" && isAllowedAdminEmail(user.email || email)) {
+        targetRole = UserRole.ADMIN;
+      } else if (isManagerInvite) {
+        targetRole =
+          user.role === UserRole.ADMIN && isAllowedAdminEmail(user.email)
+            ? UserRole.ADMIN
+            : UserRole.MANAGER;
       }
 
       user = await prisma.user.update({
@@ -277,7 +317,6 @@ export async function GET(request: Request) {
       });
 
       if (updateResult.count === 0) {
-        // Key was redeemed concurrently by another request
         return NextResponse.redirect(new URL("/manager/login?error=key_already_used", request.url));
       }
     }
@@ -289,9 +328,12 @@ export async function GET(request: Request) {
       email: user.email,
     });
 
-    const destination = requestedPortal === "manager"
-      ? "/manager/dashboard"
-      : "/clipper/dashboard";
+    const destination =
+      requestedPortal === "admin"
+        ? "/admin/dashboard"
+        : requestedPortal === "manager"
+        ? "/manager/dashboard"
+        : "/clipper/dashboard";
 
     const response = NextResponse.redirect(new URL(destination, request.url));
     const isHttps = request.headers.get("x-forwarded-proto") === "https" || request.url.startsWith("https://");

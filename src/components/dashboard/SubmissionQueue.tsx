@@ -125,7 +125,7 @@ export function SubmissionQueue({
         </div>
 
         <Link
-          href="/manager/submissions"
+          href={portalType === "admin" ? "/admin/submissions" : "/manager/submissions"}
           className="text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5 transition"
         >
           <span>Open Full Review Queue ({submissions.length})</span>

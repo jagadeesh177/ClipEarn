@@ -42,7 +42,7 @@ export function ActionCenter({
       {
         title: "Review Submissions",
         desc: `${pendingSubmissionsCount} submissions in queue`,
-        href: "/manager/submissions",
+        href: "/admin/submissions",
         icon: FileCheck,
         badge: pendingSubmissionsCount > 0 ? `${pendingSubmissionsCount} Pending` : undefined,
         color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20 hover:border-emerald-500/40",

@@ -13,18 +13,12 @@ export async function GET() {
   try {
     const user = await requireRole([UserRole.MANAGER, UserRole.ADMIN]);
 
-    let assignedCampaignIds: string[] = [];
-    if (user.role === UserRole.MANAGER) {
-      assignedCampaignIds = await getAccessibleCampaignIdsForManager(user.id);
-      if (assignedCampaignIds.length === 0) {
-        return NextResponse.json({ data: [] });
-      }
+    const assignedCampaignIds = await getAccessibleCampaignIdsForManager(user.id);
+    if (assignedCampaignIds.length === 0) {
+      return NextResponse.json({ data: [] });
     }
 
-    const campaignWhere =
-      user.role === UserRole.MANAGER
-        ? { id: { in: assignedCampaignIds } }
-        : {};
+    const campaignWhere = { id: { in: assignedCampaignIds } };
 
     // Fetch campaigns, their approved submissions, and payouts
     const campaigns = await prisma.campaign.findMany({

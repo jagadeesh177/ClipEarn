@@ -86,11 +86,19 @@ function ClipperLoginContent() {
             </button>
           </div>
 
-          <div className="mt-6 pt-6 border-t border-slate-800/80 text-center text-xs text-slate-400">
-            <span>Looking for campaign administration? </span>
-            <Link href="/manager/login" className="text-brand-cyan hover:underline font-semibold">
-              Manager Login
-            </Link>
+          <div className="mt-6 pt-6 border-t border-slate-800/80 text-center text-xs text-slate-400 space-y-1.5">
+            <div>
+              <span>Looking for campaign administration? </span>
+              <Link href="/manager/login" className="text-purple-400 hover:underline font-semibold">
+                Manager Sign In
+              </Link>
+            </div>
+            <div>
+              <span>Platform administration? </span>
+              <Link href="/admin/login" className="text-amber-400 hover:underline font-semibold">
+                Administrator Sign In
+              </Link>
+            </div>
           </div>
         </div>
 

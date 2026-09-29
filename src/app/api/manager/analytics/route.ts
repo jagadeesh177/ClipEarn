@@ -8,44 +8,33 @@ export async function GET() {
   try {
     const user = await requireRole([UserRole.MANAGER, UserRole.ADMIN]);
 
-    // Managers can only see assigned campaigns
-    let assignedCampaignIds: string[] = [];
-    if (user.role === UserRole.MANAGER) {
-      assignedCampaignIds = await getAccessibleCampaignIdsForManager(user.id);
-      if (assignedCampaignIds.length === 0) {
-        return NextResponse.json({
-          data: {
-            hasAssignedCampaigns: false,
-            assignedCampaignsCount: 0,
-            activeCampaignsCount: 0,
-            totalSubmissions: 0,
-            pendingReviews: 0,
-            approvedSubmissions: 0,
-            rejectedSubmissions: 0,
-            approvedViews: 0,
-            approvedLikes: 0,
-            approvedComments: 0,
-            approvedShares: 0,
-            approvedSaves: 0,
-            eligibleViews: 0,
-            totalBudget: 0,
-            usedBudget: 0,
-            remainingBudget: 0,
-            totalEarnings: 0,
-          },
-        });
-      }
+    const assignedCampaignIds = await getAccessibleCampaignIdsForManager(user.id);
+    if (assignedCampaignIds.length === 0) {
+      return NextResponse.json({
+        data: {
+          hasAssignedCampaigns: false,
+          assignedCampaignsCount: 0,
+          activeCampaignsCount: 0,
+          totalSubmissions: 0,
+          pendingReviews: 0,
+          approvedSubmissions: 0,
+          rejectedSubmissions: 0,
+          approvedViews: 0,
+          approvedLikes: 0,
+          approvedComments: 0,
+          approvedShares: 0,
+          approvedSaves: 0,
+          eligibleViews: 0,
+          totalBudget: 0,
+          usedBudget: 0,
+          remainingBudget: 0,
+          totalEarnings: 0,
+        },
+      });
     }
 
-    const campaignWhere =
-      user.role === UserRole.MANAGER
-        ? { id: { in: assignedCampaignIds } }
-        : {};
-
-    const submissionWhere =
-      user.role === UserRole.MANAGER
-        ? { campaign_id: { in: assignedCampaignIds } }
-        : {};
+    const campaignWhere = { id: { in: assignedCampaignIds } };
+    const submissionWhere = { campaign_id: { in: assignedCampaignIds } };
 
     const [
       activeCampaignsCount,

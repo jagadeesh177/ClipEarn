@@ -10,8 +10,10 @@ export async function GET(request: Request) {
   const roleParam = searchParams.get("role")?.toLowerCase();
   const ticketParam = searchParams.get("ticket");
 
-  let requestedPortal: "clipper" | "manager" = "clipper";
-  if (portalParam === "manager" || roleParam === "manager" || portalParam === "admin" || roleParam === "admin") {
+  let requestedPortal: "clipper" | "manager" | "admin" = "clipper";
+  if (portalParam === "admin" || roleParam === "admin") {
+    requestedPortal = "admin";
+  } else if (portalParam === "manager" || roleParam === "manager") {
     requestedPortal = "manager";
   } else {
     requestedPortal = "clipper";

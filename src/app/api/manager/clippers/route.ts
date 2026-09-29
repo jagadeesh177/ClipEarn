@@ -6,27 +6,44 @@ import { logAuditEvent } from "@/lib/audit";
 
 export async function GET(request: Request) {
   try {
-    await requireRole([UserRole.MANAGER, UserRole.ADMIN]);
+    const user = await requireRole([UserRole.MANAGER, UserRole.ADMIN]);
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
+
+    const { getAccessibleCampaignIdsForManager } = await import("@/lib/campaignAccess");
+    const assignedCampaignIds = await getAccessibleCampaignIdsForManager(user.id);
+    if (assignedCampaignIds.length === 0) {
+      return NextResponse.json({ data: [] });
+    }
 
     const clippers = await prisma.user.findMany({
       where: {
         role: UserRole.CLIPPER,
+        OR: [
+          { campaign_memberships: { some: { campaign_id: { in: assignedCampaignIds } } } },
+          { submissions: { some: { campaign_id: { in: assignedCampaignIds } } } },
+        ],
         ...(search
           ? {
-              OR: [
-                { username: { contains: search, mode: "insensitive" } },
-                { email: { contains: search, mode: "insensitive" } },
-                { discord_id: { contains: search, mode: "insensitive" } },
+              AND: [
+                {
+                  OR: [
+                    { username: { contains: search, mode: "insensitive" } },
+                    { email: { contains: search, mode: "insensitive" } },
+                    { discord_id: { contains: search, mode: "insensitive" } },
+                  ],
+                },
               ],
             }
           : {}),
       },
       include: {
         social_accounts: true,
-        campaign_memberships: true,
+        campaign_memberships: {
+          where: { campaign_id: { in: assignedCampaignIds } },
+        },
         submissions: {
+          where: { campaign_id: { in: assignedCampaignIds } },
           select: {
             id: true,
             status: true,

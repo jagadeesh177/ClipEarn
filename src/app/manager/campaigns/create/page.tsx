@@ -10,17 +10,8 @@ export default function ManagerCampaignCreateRedirect() {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    fetch("/api/auth/me")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.authenticated && data.user.role === "ADMIN") {
-          router.replace("/admin/campaigns/create");
-        } else {
-          setChecking(false);
-        }
-      })
-      .catch(() => setChecking(false));
-  }, [router]);
+    setChecking(false);
+  }, []);
 
   if (checking) {
     return (

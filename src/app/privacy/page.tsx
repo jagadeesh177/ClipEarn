@@ -533,6 +533,9 @@ export default function PrivacyPolicyPage() {
             <Link href="/manager/login" className="text-slate-400 hover:text-slate-200 transition-colors">
               Manager Login
             </Link>
+            <Link href="/admin/login" className="text-slate-400 hover:text-slate-200 transition-colors">
+              Admin Login
+            </Link>
             <Link href="/login" className="text-slate-400 hover:text-slate-200 transition-colors">
               Clipper Sign In
             </Link>

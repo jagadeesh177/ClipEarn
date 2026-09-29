@@ -5,7 +5,7 @@ import { UserRole, SubmissionStatus, Platform, Prisma } from "@prisma/client";
 
 export async function GET(request: Request) {
   try {
-    const user = await requireRole([UserRole.MANAGER, UserRole.ADMIN]);
+    await requireRole([UserRole.ADMIN]);
     const { searchParams } = new URL(request.url);
 
     const campaignId = searchParams.get("campaign_id");
@@ -13,26 +13,11 @@ export async function GET(request: Request) {
     const status = searchParams.get("status") as SubmissionStatus | null;
     const search = searchParams.get("search") || "";
     const page = parseInt(searchParams.get("page") || "1", 10);
-    const limit = parseInt(searchParams.get("limit") || "15", 10);
+    const limit = parseInt(searchParams.get("limit") || "20", 10);
     const skip = (page - 1) * limit;
 
-    const { getAccessibleCampaignIdsForManager } = await import("@/lib/campaignAccess");
-    const managerCampaignIds = await getAccessibleCampaignIdsForManager(user.id);
-    if (managerCampaignIds.length === 0) {
-      return NextResponse.json({
-        data: [],
-        pagination: { page, limit, total: 0, totalPages: 0 },
-      });
-    }
-    if (campaignId && !managerCampaignIds.includes(campaignId)) {
-      return NextResponse.json({
-        data: [],
-        pagination: { page, limit, total: 0, totalPages: 0 },
-      });
-    }
-
     const where: Prisma.SubmissionWhereInput = {
-      campaign_id: campaignId ? campaignId : { in: managerCampaignIds },
+      ...(campaignId ? { campaign_id: campaignId } : {}),
       ...(platform ? { platform } : {}),
       ...(status ? { status } : {}),
       ...(search
@@ -42,6 +27,7 @@ export async function GET(request: Request) {
               { social_account: { username: { contains: search, mode: "insensitive" } } },
               { post_url: { contains: search, mode: "insensitive" } },
               { platform_post_id: { contains: search, mode: "insensitive" } },
+              { campaign: { name: { contains: search, mode: "insensitive" } } },
             ],
           }
         : {}),
@@ -61,23 +47,24 @@ export async function GET(request: Request) {
               name: true,
               brand_name: true,
               cpm: true,
-              requirements: true,
+              total_budget: true,
+              used_budget: true,
             },
           },
           user: {
             select: {
               id: true,
               username: true,
+              email: true,
               avatar_url: true,
-              discord_id: true,
+              status: true,
             },
           },
           social_account: {
             select: {
               id: true,
-              username: true,
               platform: true,
-              profile_url: true,
+              username: true,
               verification_status: true,
             },
           },
@@ -93,28 +80,34 @@ export async function GET(request: Request) {
 
     const formatted = submissions.map((s) => ({
       id: s.id,
-      campaign: s.campaign,
-      clipper: s.user,
-      social_account: s.social_account,
+      campaignId: s.campaign_id,
+      campaignName: s.campaign.name,
+      brandName: s.campaign.brand_name,
+      cpm: Number(s.campaign.cpm),
+      userId: s.user_id,
+      username: s.user.username,
+      userAvatar: s.user.avatar_url,
+      userStatus: s.user.status,
       platform: s.platform,
-      post_url: s.post_url,
-      platform_post_id: s.platform_post_id,
+      postUrl: s.post_url,
+      platformPostId: s.platform_post_id,
+      socialUsername: s.social_account?.username || null,
+      socialVerified: s.social_account?.verification_status === "VERIFIED",
       status: s.status,
-      current_views: s.current_views,
-      current_likes: s.current_likes,
-      current_comments: s.current_comments,
-      current_shares: s.current_shares,
-      current_saves: s.current_saves,
-      eligible_views: s.eligible_views,
-      current_earnings: Number(s.current_earnings),
-      rejection_reason: s.rejection_reason,
-      appeal_reason: s.appeal_reason,
-      appealed_at: s.appealed_at,
-      submitted_at: s.submitted_at,
-      reviewed_at: s.reviewed_at,
-      reviewer_username: s.reviewer?.username,
-      last_sync_status: s.last_sync_status,
-      created_at: s.created_at,
+      submittedAt: s.submitted_at.toISOString(),
+      reviewedAt: s.reviewed_at?.toISOString() || null,
+      reviewedBy: s.reviewer?.username || null,
+      rejectionReason: s.rejection_reason,
+      appealReason: s.appeal_reason,
+      currentViews: s.current_views,
+      currentLikes: s.current_likes || 0,
+      currentComments: s.current_comments || 0,
+      currentShares: s.current_shares || 0,
+      currentSaves: s.current_saves || 0,
+      eligibleViews: s.eligible_views,
+      currentEarnings: Number(s.current_earnings),
+      lastSyncStatus: s.last_sync_status,
+      lastSyncError: s.last_sync_error,
     }));
 
     return NextResponse.json({
@@ -127,6 +120,9 @@ export async function GET(request: Request) {
       },
     });
   } catch (err: any) {
-    return NextResponse.json({ error: err?.message || "Failed to fetch manager submissions" }, { status: 500 });
+    return NextResponse.json(
+      { error: err?.message || "Failed to fetch admin submissions" },
+      { status: 500 }
+    );
   }
 }
