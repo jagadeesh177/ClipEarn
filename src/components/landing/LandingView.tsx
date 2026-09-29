@@ -21,6 +21,10 @@ import {
   Menu,
   X,
   Compass,
+  FileCheck2,
+  Lock,
+  Layers,
+  Zap,
 } from "lucide-react";
 
 export interface HomepageCampaign {
@@ -75,136 +79,125 @@ export default function LandingView({ campaigns }: LandingViewProps) {
   const [brandModalOpen, setBrandModalOpen] = useState(false);
   const [modalSubmitted, setModalSubmitted] = useState(false);
 
+  // 4 Core Capabilities (Section 6)
   const capabilities = [
     {
       num: "01",
       title: "PERFORMANCE-BASED",
-      desc: "Brands pay based on measurable campaign performance, aligning budgets with verified short-form reach.",
+      desc: "Campaigns built around measurable performance.",
       icon: Target,
     },
     {
       num: "02",
       title: "MULTI-PLATFORM",
-      desc: "Distribute content seamlessly across TikTok, Instagram Reels, and YouTube Shorts from one unified dashboard.",
+      desc: "Distribute content across TikTok, Instagram and YouTube.",
       icon: Share2,
     },
     {
       num: "03",
       title: "VERIFIED METRICS",
-      desc: "Track campaign performance using direct platform APIs, eliminating manual reporting and guesswork.",
+      desc: "Track performance using platform data.",
       icon: CheckCircle2,
     },
     {
       num: "04",
       title: "AUTOMATED TRACKING",
-      desc: "Campaign metrics and creator view snapshots are synchronized automatically on an automated schedule.",
+      desc: "Keep campaign metrics synchronized automatically.",
       icon: RefreshCw,
     },
   ];
 
+  // 4 Steps (Section 7)
   const steps = [
     {
       num: "01",
-      title: "Launch a Campaign",
-      desc: "Brands provide content, campaign requirements, budget, and performance goals.",
+      title: "Launch",
+      desc: "Brands set budgets, CPM rates, editorial guidelines, and campaign goals.",
     },
     {
       num: "02",
-      title: "Creators Distribute",
-      desc: "Creators turn approved content into short-form videos and publish across supported platforms.",
+      title: "Create",
+      desc: "Distributed creators turn content into engaging clips published across platforms.",
     },
     {
       num: "03",
-      title: "ClipEarn Tracks",
-      desc: "Published content is submitted and tracked using verified platform metrics.",
+      title: "Track",
+      desc: "Submissions enter automated sync to verify real views via direct platform APIs.",
     },
     {
       num: "04",
-      title: "Performance Pays",
-      desc: "Eligible creators earn based on verified campaign performance and CPM rates.",
+      title: "Earn",
+      desc: "Verified performance converts to clear, transparent creator payouts.",
     },
   ];
 
+  // Brand Pillars (Section 9)
   const brandPillars = [
     {
       tag: "DISTRIBUTION",
-      title: "Creator Network",
-      desc: "Get your content in front of a distributed network of short-form creators specializing in hooks, edits, and viral formats.",
+      title: "Reach Distributed Audiences",
+      desc: "Reach audiences through a distributed network of short-form creators specializing in hooks, edits, and viral formats.",
       icon: Share2,
     },
     {
       tag: "PERFORMANCE",
       title: "Verified Analytics",
-      desc: "Track views, engagement, and reach through verified platform metrics captured directly from social endpoints.",
+      desc: "Measure campaign performance using verified platform metrics pulled directly from social endpoints.",
       icon: BarChart3,
     },
     {
       tag: "SCALE",
-      title: "Predictable Growth",
-      desc: "Scale campaigns with defined budgets, CPM caps, and view thresholds that ensure predictable unit economics.",
+      title: "Controlled Expansion",
+      desc: "Expand campaigns based on measurable results with predictable CPM costs and view caps.",
       icon: Sliders,
     },
   ];
 
-  const creatorBenefits = [
-    {
-      title: "Find active campaigns",
-      desc: "Browse vetted campaigns with clear CPM payout rates, brand rules, and available budgets.",
-    },
-    {
-      title: "Connect your social accounts",
-      desc: "Verify ownership easily via bio verification codes across TikTok, Instagram, and YouTube.",
-    },
-    {
-      title: "Submit published clips",
-      desc: "Paste your video link with campaign hashtags to enter our automated review queue.",
-    },
-    {
-      title: "Track verified performance",
-      desc: "Our engine tracks your clip views and automatically calculates eligible payouts.",
-    },
-    {
-      title: "Earn from eligible views",
-      desc: "Get compensated directly based on verified view milestones deposited into your ledger balance.",
-    },
+  // Creator Workflow (Section 10)
+  const creatorWorkflow = [
+    { step: "01", title: "Find Campaign", desc: "Discover active campaigns with high CPM rates and brand assets." },
+    { step: "02", title: "Create Clip", desc: "Edit compelling short-form videos aligned with campaign guidelines." },
+    { step: "03", title: "Submit", desc: "Submit published clip URLs with your verified social handles." },
+    { step: "04", title: "Get Verified", desc: "Automated engine checks guidelines and establishes live sync." },
+    { step: "05", title: "Earn", desc: "Accrue auditable earnings per 1,000 verified platform views." },
   ];
 
-  const engineFlow = [
-    { step: "01", label: "Creator publishes", note: "TikTok, IG, YouTube" },
-    { step: "02", label: "Clip submitted", note: "Post link & ID validation" },
-    { step: "03", label: "Clip reviewed", note: "Compliance & guidelines" },
-    { step: "04", label: "Metrics verified", note: "Direct API snapshot" },
-    { step: "05", label: "Performance tracked", note: "Continuous view sync" },
-    { step: "06", label: "Earnings calculated", note: "Ledger recorded" },
+  // Performance Engine Pipeline (Section 11)
+  const engineStages = [
+    { step: "01", label: "CREATOR", desc: "Authentic channel account" },
+    { step: "02", label: "PUBLISHED CLIP", desc: "TikTok / IG / YouTube" },
+    { step: "03", label: "SUBMISSION", desc: "URL & post ID captured" },
+    { step: "04", label: "REVIEW", desc: "Guidelines validation" },
+    { step: "05", label: "PLATFORM METRICS", desc: "Direct API snapshot" },
+    { step: "06", label: "APPROVED VIEWS", desc: "Verified attention count" },
+    { step: "07", label: "EARNINGS", desc: "Immutable ledger deposit" },
   ];
 
+  // Trust Section (Section 12)
   const trustPoints = [
     {
-      title: "Platform-Based Metric Verification",
-      desc: "Views are verified directly through official platform APIs to ensure accurate performance metrics.",
+      title: "VERIFIED METRICS",
+      desc: "Platform-based performance tracking.",
+      icon: CheckCircle2,
     },
     {
-      title: "Submission Review",
-      desc: "Clips are checked against brand guidelines, caption tags, and editorial criteria before approval.",
+      title: "SUBMISSION REVIEW",
+      desc: "Campaign managers review submitted content.",
+      icon: FileCheck2,
     },
     {
-      title: "Duplicate Detection",
-      desc: "Platform post identifiers ensure the same video cannot be submitted multiple times or across accounts.",
+      title: "FRAUD MONITORING",
+      desc: "Suspicious activity can be identified and reviewed.",
+      icon: ShieldCheck,
     },
     {
-      title: "Campaign-Specific Tracking",
-      desc: "Views are tracked accurately within the active campaign lifecycle to align with brand budgets.",
-    },
-    {
-      title: "Audit-Ready Earnings",
-      desc: "Every view increment and rate calculation is stored in an auditable ledger for complete transparency.",
-    },
-    {
-      title: "Fraud Monitoring",
-      desc: "Designed to protect campaigns from invalid activity, artificial view spikes, and non-organic engagement.",
+      title: "AUDITABLE EARNINGS",
+      desc: "Campaign performance and earnings are traceable.",
+      icon: Lock,
     },
   ];
 
+  // FAQs (Section 21)
   const faqs = [
     {
       q: "What is ClipEarn?",
@@ -233,11 +226,11 @@ export default function LandingView({ campaigns }: LandingViewProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-[#070A0F] text-[#F8FAFC] flex flex-col font-sans selection:bg-blue-500/20 selection:text-blue-400">
+    <div className="min-h-screen bg-[#05080C] text-[#F8FAFC] flex flex-col font-sans selection:bg-[#1CF7FD]/20 selection:text-[#1CF7FD]">
       {/* ================================================== */}
       {/* 1. NAVIGATION                                      */}
       {/* ================================================== */}
-      <header className="sticky top-0 z-50 backdrop-blur-md bg-[#070A0F]/85 border-b border-[#1E293B] w-full transition-colors">
+      <header className="sticky top-0 z-50 backdrop-blur-md bg-[#05080C]/85 border-b border-[#1B2A35] w-full transition-colors">
         <div className="max-w-[1200px] mx-auto px-6 h-20 flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center shrink-0">
@@ -247,7 +240,7 @@ export default function LandingView({ campaigns }: LandingViewProps) {
           {/* Desktop Navigation */}
           <nav
             aria-label="Primary navigation"
-            className="hidden lg:flex items-center gap-8 text-sm font-medium text-[#94A3B8]"
+            className="hidden lg:flex items-center gap-8 text-sm font-medium text-[#A7B4C2]"
           >
             <a href="#how-it-works" className="hover:text-white transition-colors">
               How It Works
@@ -270,16 +263,16 @@ export default function LandingView({ campaigns }: LandingViewProps) {
           <div className="hidden sm:flex items-center gap-3 shrink-0">
             <Link
               href="/manager/login"
-              className="text-xs sm:text-sm font-semibold text-[#94A3B8] hover:text-white px-4 py-2 rounded-lg bg-[#0B111A] hover:bg-[#101722] border border-[#1E293B] transition-all"
+              className="text-xs sm:text-sm font-medium text-[#A7B4C2] hover:text-white px-4 py-2.5 rounded-[11px] bg-transparent hover:bg-[#0C131B] border border-[#1B2A35] hover:border-[#33424D] transition-all"
             >
               Manager Portal
             </Link>
             <Link
               href="/login"
-              className="text-xs sm:text-sm font-semibold text-white px-4 py-2 rounded-lg bg-[#3B82F6] hover:bg-[#2563EB] transition-all shadow-sm flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2 focus:ring-offset-[#070A0F]"
+              className="text-xs sm:text-sm font-bold text-[#05080C] px-5 py-2.5 rounded-[11px] bg-[#1CF7FD] hover:bg-[#34f8fe] hover:shadow-[0_0_24px_rgba(28,247,253,0.22)] transition-all flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-[#1CF7FD] focus:ring-offset-2 focus:ring-offset-[#05080C]"
             >
               <span>Start Clipping</span>
-              <ArrowRight className="w-4 h-4 text-white" />
+              <ArrowRight className="w-4 h-4 text-[#05080C]" />
             </Link>
           </div>
 
@@ -287,18 +280,18 @@ export default function LandingView({ campaigns }: LandingViewProps) {
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 rounded-lg text-[#94A3B8] hover:text-white hover:bg-[#101722] border border-[#1E293B] transition focus:outline-none focus:ring-2 focus:ring-[#3B82F6]"
+            className="lg:hidden p-2.5 rounded-xl text-[#A7B4C2] hover:text-white hover:bg-[#0C131B] border border-[#1B2A35] transition focus:outline-none focus:ring-2 focus:ring-[#1CF7FD]"
             aria-label="Toggle navigation menu"
             aria-expanded={mobileMenuOpen}
           >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {mobileMenuOpen ? <X className="w-5 h-5 text-white" /> : <Menu className="w-5 h-5 text-white" />}
           </button>
         </div>
 
         {/* Mobile Dropdown Menu */}
         {mobileMenuOpen && (
-          <div className="lg:hidden border-b border-[#1E293B] bg-[#0B111A] px-6 py-6 space-y-4">
-            <nav className="flex flex-col gap-3 text-sm font-medium text-[#94A3B8]">
+          <div className="lg:hidden border-b border-[#1B2A35] bg-[#080D13] px-6 py-6 space-y-4">
+            <nav className="flex flex-col gap-3 text-sm font-medium text-[#A7B4C2]">
               <a
                 href="#how-it-works"
                 onClick={() => setMobileMenuOpen(false)}
@@ -335,18 +328,18 @@ export default function LandingView({ campaigns }: LandingViewProps) {
                 FAQ
               </a>
             </nav>
-            <div className="pt-4 border-t border-[#1E293B] flex flex-col gap-2.5">
+            <div className="pt-4 border-t border-[#1B2A35] flex flex-col gap-2.5">
               <Link
                 href="/login"
                 onClick={() => setMobileMenuOpen(false)}
-                className="w-full py-2.5 px-4 rounded-lg bg-[#3B82F6] hover:bg-[#2563EB] text-white text-center font-semibold text-sm transition"
+                className="w-full py-2.5 px-4 rounded-[11px] bg-[#1CF7FD] hover:bg-[#34f8fe] text-[#05080C] text-center font-bold text-sm transition"
               >
                 Start Clipping
               </Link>
               <Link
                 href="/manager/login"
                 onClick={() => setMobileMenuOpen(false)}
-                className="w-full py-2.5 px-4 rounded-lg bg-[#101722] hover:bg-[#141C2B] border border-[#1E293B] text-[#F8FAFC] text-center font-medium text-sm transition"
+                className="w-full py-2.5 px-4 rounded-[11px] bg-[#0C131B] hover:bg-[#111C26] border border-[#1B2A35] text-[#F8FAFC] text-center font-medium text-sm transition"
               >
                 Manager Portal
               </Link>
@@ -357,149 +350,151 @@ export default function LandingView({ campaigns }: LandingViewProps) {
 
       <main className="flex-1">
         {/* ================================================== */}
-        {/* 2. HERO SECTION                                    */}
+        {/* 2. HERO SECTION (2 Columns on Desktop)              */}
         {/* ================================================== */}
-        <section className="relative pt-20 pb-24 sm:pt-28 sm:pb-32 overflow-hidden border-b border-[#1E293B]/60">
+        <section className="relative pt-24 pb-28 sm:pt-32 sm:pb-36 overflow-hidden border-b border-[#1B2A35]">
+          {/* Very subtle radial cyan glow behind hero (rgba(28, 247, 253, 0.08)) */}
+          <div
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] pointer-events-none rounded-full"
+            style={{
+              background: "radial-gradient(ellipse at center, rgba(28, 247, 253, 0.08) 0%, rgba(5, 8, 12, 0) 70%)",
+            }}
+          />
+
           <div className="max-w-[1200px] mx-auto px-6 relative z-10">
-            <div className="max-w-3xl mx-auto text-center">
-              {/* Eyebrow */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#101722] border border-[#1E293B] text-[11px] sm:text-xs font-semibold text-[#60A5FA] tracking-wider uppercase mb-8">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#3B82F6] animate-pulse" />
-                <span>PERFORMANCE-BASED CONTENT DISTRIBUTION</span>
-              </div>
-
-              {/* Main Headline */}
-              <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-[1.1]">
-                Turn Content Into{" "}
-                <span className="text-[#60A5FA]">Massive Reach.</span>
-              </h1>
-
-              {/* Subheading */}
-              <p className="mt-6 text-base sm:text-lg lg:text-xl text-[#94A3B8] leading-relaxed max-w-2xl mx-auto">
-                ClipEarn connects brands with a distributed network of short-form creators who turn existing content into high-performing videos across TikTok, Instagram, and YouTube.
-              </p>
-
-              {/* CTAs */}
-              <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link
-                  href="/login"
-                  className="w-full sm:w-auto px-8 py-4 rounded-xl bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold text-base transition-all shadow-sm flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#3B82F6]"
-                >
-                  <span>Start Clipping</span>
-                  <ArrowRight className="w-4 h-4 text-white" />
-                </Link>
-
-                <button
-                  type="button"
-                  onClick={() => setBrandModalOpen(true)}
-                  className="w-full sm:w-auto px-8 py-4 rounded-xl bg-[#101722] hover:bg-[#141C2B] border border-[#1E293B] text-[#F8FAFC] font-semibold text-base transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#60A5FA]"
-                >
-                  <Building2 className="w-4 h-4 text-[#60A5FA]" />
-                  <span>Launch a Campaign</span>
-                </button>
-              </div>
-            </div>
-
-            {/* ================================================== */}
-            {/* 3. HERO VISUAL (Engine Composition)                */}
-            {/* ================================================== */}
-            <div className="mt-16 sm:mt-20 max-w-4xl mx-auto">
-              <div className="rounded-2xl bg-[#101722] border border-[#1E293B] p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-                {/* Visual Top Bar */}
-                <div className="flex flex-wrap items-center justify-between pb-6 border-b border-[#1E293B] gap-4">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-3 h-3 rounded-full bg-red-500/80" />
-                    <div className="w-3 h-3 rounded-full bg-amber-500/80" />
-                    <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
-                    <span className="text-xs font-mono text-[#64748B] ml-2">clipearn-distribution-engine</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-mono uppercase tracking-wider text-[#60A5FA] bg-blue-500/10 px-2.5 py-1 rounded border border-blue-500/20">
-                      LIVE PIPELINE
-                    </span>
-                  </div>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+              {/* Left Column: Hero Content */}
+              <div className="lg:col-span-7 flex flex-col items-start text-left">
+                {/* Small Eyebrow */}
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0C131B] border border-[#1B2A35] text-[11px] sm:text-xs font-mono font-semibold text-[#1CF7FD] tracking-wider uppercase mb-8">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#1CF7FD] animate-pulse" />
+                  <span>PERFORMANCE-BASED CONTENT DISTRIBUTION</span>
                 </div>
 
-                {/* Engine Flow Grid */}
-                <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="p-4 rounded-xl bg-[#0B111A] border border-[#1E293B]/80 flex flex-col justify-between">
-                    <div>
-                      <div className="text-[10px] font-mono uppercase tracking-wider text-[#64748B]">STAGE 01</div>
-                      <div className="text-sm font-bold text-white mt-1">Brand Content</div>
-                      <p className="text-xs text-[#94A3B8] mt-1.5 leading-relaxed">
-                        Source video, podcast, or campaign assets deposited.
-                      </p>
-                    </div>
-                    <div className="mt-4 pt-3 border-t border-[#1E293B] text-[11px] font-mono text-[#60A5FA]">
-                      CAMPAIGN ASSETS
-                    </div>
-                  </div>
+                {/* Headline */}
+                <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-[1.08]">
+                  Turn Content Into{" "}
+                  <span className="text-[#1CF7FD]">Massive Reach.</span>
+                </h1>
 
-                  <div className="p-4 rounded-xl bg-[#0B111A] border border-[#1E293B]/80 flex flex-col justify-between">
-                    <div>
-                      <div className="text-[10px] font-mono uppercase tracking-wider text-[#64748B]">STAGE 02</div>
-                      <div className="text-sm font-bold text-white mt-1">Creator Network</div>
-                      <p className="text-xs text-[#94A3B8] mt-1.5 leading-relaxed">
-                        Distributed editors produce native short-form clips.
-                      </p>
-                    </div>
-                    <div className="mt-4 pt-3 border-t border-[#1E293B] text-[11px] font-mono text-emerald-400">
-                      ACTIVE CREATORS
-                    </div>
-                  </div>
+                {/* Description */}
+                <p className="mt-6 text-base sm:text-lg lg:text-xl text-[#A7B4C2] leading-relaxed max-w-xl">
+                  ClipEarn connects brands with a distributed network of short-form creators who turn content into high-performing videos across TikTok, Instagram, and YouTube.
+                </p>
 
-                  <div className="p-4 rounded-xl bg-[#0B111A] border border-[#1E293B]/80 flex flex-col justify-between">
-                    <div>
-                      <div className="text-[10px] font-mono uppercase tracking-wider text-[#64748B]">STAGE 03</div>
-                      <div className="text-sm font-bold text-white mt-1">Multi-Platform</div>
-                      <p className="text-xs text-[#94A3B8] mt-1.5 leading-relaxed">
-                        Published across TikTok, Instagram Reels & YouTube.
-                      </p>
-                    </div>
-                    <div className="mt-4 pt-3 border-t border-[#1E293B] text-[11px] font-mono text-blue-300">
-                      TIKTOK / IG / YT
-                    </div>
-                  </div>
+                {/* Action Buttons */}
+                <div className="mt-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto">
+                  <Link
+                    href="/login"
+                    className="px-8 py-4 rounded-[11px] bg-[#1CF7FD] hover:bg-[#34f8fe] text-[#05080C] font-bold text-base transition-all hover:shadow-[0_0_24px_rgba(28,247,253,0.18)] flex items-center justify-center gap-2 text-center"
+                  >
+                    <span>Start Clipping</span>
+                    <ArrowRight className="w-4 h-4 text-[#05080C]" />
+                  </Link>
 
-                  <div className="p-4 rounded-xl bg-[#0B111A] border border-blue-500/30 flex flex-col justify-between bg-gradient-to-b from-[#101722] to-[#0B111A]">
-                    <div>
-                      <div className="text-[10px] font-mono uppercase tracking-wider text-[#60A5FA]">STAGE 04</div>
-                      <div className="text-sm font-bold text-white mt-1">Verified Output</div>
-                      <p className="text-xs text-[#94A3B8] mt-1.5 leading-relaxed">
-                        Automated API verification & measurable CPM payouts.
-                      </p>
-                    </div>
-                    <div className="mt-4 pt-3 border-t border-[#1E293B] text-[11px] font-mono text-white">
-                      PERFORMANCE-BASED
-                    </div>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setBrandModalOpen(true)}
+                    className="px-8 py-4 rounded-[11px] bg-transparent hover:bg-[#0C131B] border border-[#33424D] hover:border-[#1CF7FD] text-[#F8FAFC] hover:text-[#1CF7FD] font-semibold text-base transition-all flex items-center justify-center gap-2"
+                  >
+                    <Building2 className="w-4 h-4" />
+                    <span>Launch a Campaign</span>
+                  </button>
                 </div>
+              </div>
 
-                {/* Capability Badges Strip */}
-                <div className="mt-6 pt-6 border-t border-[#1E293B] flex flex-wrap items-center justify-between text-xs text-[#64748B] gap-4">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#22C55E]" />
-                    <span className="text-[#94A3B8] font-mono text-[11px] uppercase">
-                      VERIFIED VIEWS
+              {/* Right Column: Abstract Performance Engine Visual */}
+              <div className="lg:col-span-5 w-full">
+                <div className="rounded-[18px] bg-[#0C131B] border border-[#1B2A35] p-6 sm:p-7 shadow-2xl relative overflow-hidden">
+                  {/* Visual Top Bar */}
+                  <div className="flex items-center justify-between pb-4 border-b border-[#1B2A35]">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#1CF7FD]/80" />
+                      <span className="text-xs font-mono text-[#A7B4C2] tracking-wider uppercase">
+                        DISTRIBUTION PIPELINE
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-mono text-[#1CF7FD] bg-[#1CF7FD]/10 px-2 py-0.5 rounded border border-[#1CF7FD]/20">
+                      ACTIVE
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#3B82F6]" />
-                    <span className="text-[#94A3B8] font-mono text-[11px] uppercase">
-                      TRACKED PERFORMANCE
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-purple-400" />
-                    <span className="text-[#94A3B8] font-mono text-[11px] uppercase">
-                      CREATOR DISTRIBUTION
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-amber-400" />
-                    <span className="text-[#94A3B8] font-mono text-[11px] uppercase">
-                      AUDITABLE LEDGER
-                    </span>
+
+                  {/* Flow Diagram */}
+                  <div className="mt-6 space-y-3">
+                    {/* Node 1: Brand Content */}
+                    <div className="p-3.5 rounded-xl bg-[#080D13] border border-[#1B2A35] flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-[#1CF7FD]/10 border border-[#1CF7FD]/20 flex items-center justify-center text-[#1CF7FD]">
+                          <Video className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-white uppercase tracking-wider">BRAND CONTENT</div>
+                          <div className="text-[11px] text-[#64748B]">Source video & guidelines</div>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-mono text-[#1CF7FD]">INSPECTED</span>
+                    </div>
+
+                    {/* Connecting indicator */}
+                    <div className="flex justify-center">
+                      <div className="w-px h-4 bg-[#1CF7FD]/40" />
+                    </div>
+
+                    {/* Node 2: ClipEarn Core Engine */}
+                    <div className="p-3.5 rounded-xl bg-[#080D13] border border-[#1CF7FD]/30 flex items-center justify-between relative shadow-[0_0_15px_rgba(28,247,253,0.06)]">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-[#1CF7FD] flex items-center justify-center text-[#05080C] font-black text-xs">
+                          CE
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-white uppercase tracking-wider">CLIPEARN PLATFORM</div>
+                          <div className="text-[11px] text-[#A7B4C2]">Campaign allocation & ledger</div>
+                        </div>
+                      </div>
+                      <span className="w-2 h-2 rounded-full bg-[#1CF7FD] animate-ping" />
+                    </div>
+
+                    {/* Connecting indicator */}
+                    <div className="flex justify-center">
+                      <div className="w-px h-4 bg-[#1CF7FD]/40" />
+                    </div>
+
+                    {/* Node 3: Creator Distribution Channels */}
+                    <div className="p-3 rounded-xl bg-[#080D13] border border-[#1B2A35]">
+                      <div className="text-[10px] font-mono uppercase text-[#64748B] mb-2 tracking-wider">
+                        CREATOR DISTRIBUTION
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-center">
+                        <div className="py-2 px-2 rounded-lg bg-[#0C131B] border border-[#1B2A35] text-[11px] font-medium text-slate-200">
+                          TikTok
+                        </div>
+                        <div className="py-2 px-2 rounded-lg bg-[#0C131B] border border-[#1B2A35] text-[11px] font-medium text-slate-200">
+                          Instagram
+                        </div>
+                        <div className="py-2 px-2 rounded-lg bg-[#0C131B] border border-[#1B2A35] text-[11px] font-medium text-slate-200">
+                          YouTube
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Connecting indicator */}
+                    <div className="flex justify-center">
+                      <div className="w-px h-4 bg-[#1CF7FD]/40" />
+                    </div>
+
+                    {/* Node 4: Verified Performance */}
+                    <div className="p-3.5 rounded-xl bg-[#080D13] border border-[#1CF7FD]/40 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-[#1CF7FD]/10 border border-[#1CF7FD]/20 flex items-center justify-center text-[#1CF7FD]">
+                          <BarChart3 className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-white uppercase tracking-wider">VERIFIED PERFORMANCE</div>
+                          <div className="text-[11px] text-[#A7B4C2]">API snapshots & CPM settlement</div>
+                        </div>
+                      </div>
+                      <CheckCircle2 className="w-4 h-4 text-[#1CF7FD]" />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -508,9 +503,9 @@ export default function LandingView({ campaigns }: LandingViewProps) {
         </section>
 
         {/* ================================================== */}
-        {/* 4. CORE PLATFORM CAPABILITIES                      */}
+        {/* 3. CORE PLATFORM CAPABILITIES (Section 6)          */}
         {/* ================================================== */}
-        <section className="py-20 sm:py-28 bg-[#0B111A] border-b border-[#1E293B]">
+        <section className="py-24 sm:py-32 bg-[#080D13] border-b border-[#1B2A35]">
           <div className="max-w-[1200px] mx-auto px-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {capabilities.map((item, idx) => {
@@ -518,21 +513,21 @@ export default function LandingView({ campaigns }: LandingViewProps) {
                 return (
                   <div
                     key={idx}
-                    className="p-6 rounded-2xl bg-[#101722] border border-[#1E293B] hover:border-[#3B82F6]/50 transition-all flex flex-col justify-between"
+                    className="p-7 rounded-[18px] bg-[#0C131B] border border-[#1B2A35] hover:bg-[#111C26] hover:border-[#1CF7FD]/45 transition-all flex flex-col justify-between"
                   >
                     <div>
-                      <div className="flex items-center justify-between mb-4">
-                        <span className="text-xs font-mono font-bold text-[#60A5FA]">
+                      <div className="flex items-center justify-between mb-5">
+                        <span className="text-xs font-mono font-bold text-[#1CF7FD]">
                           {item.num}
                         </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#0B111A] border border-[#1E293B] flex items-center justify-center text-[#60A5FA]">
+                        <div className="w-8 h-8 rounded-lg bg-[#080D13] border border-[#1B2A35] flex items-center justify-center text-[#1CF7FD]">
                           <IconComponent className="w-4 h-4" />
                         </div>
                       </div>
                       <h3 className="text-base font-bold text-white tracking-wide">
                         {item.title}
                       </h3>
-                      <p className="mt-2.5 text-sm text-[#94A3B8] leading-relaxed">
+                      <p className="mt-2.5 text-sm text-[#A7B4C2] leading-relaxed">
                         {item.desc}
                       </p>
                     </div>
@@ -544,19 +539,19 @@ export default function LandingView({ campaigns }: LandingViewProps) {
         </section>
 
         {/* ================================================== */}
-        {/* 5. HOW IT WORKS                                    */}
+        {/* 4. HOW IT WORKS (Section 7)                        */}
         {/* ================================================== */}
-        <section id="how-it-works" className="py-24 sm:py-32 border-b border-[#1E293B] scroll-mt-20">
+        <section id="how-it-works" className="py-24 sm:py-32 border-b border-[#1B2A35] scroll-mt-20">
           <div className="max-w-[1200px] mx-auto px-6">
             <div className="max-w-2xl mb-16">
-              <p className="text-xs font-bold text-[#60A5FA] uppercase tracking-wider">
+              <p className="text-xs font-mono font-semibold text-[#1CF7FD] uppercase tracking-wider">
                 HOW IT WORKS
               </p>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mt-2 tracking-tight">
-                From Content to Measurable Reach.
+                From Content to Performance.
               </h2>
-              <p className="text-base sm:text-lg text-[#94A3B8] mt-4 leading-relaxed">
-                A streamlined end-to-end pipeline connecting brand content to short-form attention with verified performance.
+              <p className="text-base sm:text-lg text-[#A7B4C2] mt-4 leading-relaxed">
+                A streamlined, 4-step pipeline that connects brand campaign goals to verified short-form creator output.
               </p>
             </div>
 
@@ -564,16 +559,16 @@ export default function LandingView({ campaigns }: LandingViewProps) {
               {steps.map((st, idx) => (
                 <div
                   key={idx}
-                  className="p-6 rounded-2xl bg-[#101722] border border-[#1E293B] flex flex-col justify-between relative group hover:border-[#3B82F6]/40 transition-colors"
+                  className="p-7 rounded-[18px] bg-[#0C131B] border border-[#1B2A35] hover:bg-[#111C26] hover:border-[#1CF7FD]/40 transition-all flex flex-col justify-between relative group"
                 >
                   <div>
-                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 text-[#60A5FA] font-bold text-sm flex items-center justify-center mb-6">
+                    <div className="w-10 h-10 rounded-xl bg-[#1CF7FD]/10 border border-[#1CF7FD]/20 text-[#1CF7FD] font-mono font-bold text-sm flex items-center justify-center mb-6">
                       {st.num}
                     </div>
                     <h3 className="text-lg font-bold text-white mb-2">
                       {st.title}
                     </h3>
-                    <p className="text-sm text-[#94A3B8] leading-relaxed">
+                    <p className="text-sm text-[#A7B4C2] leading-relaxed">
                       {st.desc}
                     </p>
                   </div>
@@ -584,51 +579,51 @@ export default function LandingView({ campaigns }: LandingViewProps) {
         </section>
 
         {/* ================================================== */}
-        {/* 6. FEATURED CAMPAIGNS                              */}
+        {/* 5. FEATURED CAMPAIGNS (Section 8)                  */}
         {/* ================================================== */}
-        <section id="campaigns" className="py-24 sm:py-32 bg-[#0B111A] border-b border-[#1E293B] scroll-mt-20">
+        <section id="campaigns" className="py-24 sm:py-32 bg-[#080D13] border-b border-[#1B2A35] scroll-mt-20">
           <div className="max-w-[1200px] mx-auto px-6">
             <div className="max-w-2xl mb-16">
-              <p className="text-xs font-bold text-[#60A5FA] uppercase tracking-wider">
-                CAMPAIGNS
+              <p className="text-xs font-mono font-semibold text-[#1CF7FD] uppercase tracking-wider">
+                FEATURED CAMPAIGNS
               </p>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mt-2 tracking-tight">
                 Featured Campaigns
               </h2>
-              <p className="text-base sm:text-lg text-[#94A3B8] mt-4 leading-relaxed">
+              <p className="text-base sm:text-lg text-[#A7B4C2] mt-4 leading-relaxed">
                 Explore active campaigns and start earning from verified performance.
               </p>
             </div>
 
             {campaigns.length === 0 ? (
-              /* Intentional, High-Quality Empty State */
-              <div className="rounded-2xl bg-[#101722] border border-[#1E293B] p-10 sm:p-14 text-center max-w-2xl mx-auto shadow-sm">
-                <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mx-auto mb-6 text-[#60A5FA]">
+              /* Intentional Dark Premium Empty State */
+              <div className="rounded-[20px] bg-[#0C131B] border border-[#1CF7FD]/30 p-10 sm:p-14 text-center max-w-2xl mx-auto shadow-sm relative">
+                <div className="w-14 h-14 rounded-2xl bg-[#1CF7FD]/10 border border-[#1CF7FD]/25 flex items-center justify-center mx-auto mb-6 text-[#1CF7FD]">
                   <Compass className="w-7 h-7" />
                 </div>
-                <div className="inline-block text-[11px] font-mono uppercase tracking-wider text-[#60A5FA] bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20 mb-3">
+                <div className="inline-block text-[11px] font-mono uppercase tracking-wider text-[#1CF7FD] bg-[#1CF7FD]/10 px-3 py-1 rounded-full border border-[#1CF7FD]/20 mb-3">
                   NO ACTIVE CAMPAIGNS
                 </div>
                 <h3 className="text-2xl font-bold text-white mb-3 tracking-tight">
                   New campaigns are launching soon.
                 </h3>
-                <p className="text-sm sm:text-base text-[#94A3B8] max-w-md mx-auto mb-8 leading-relaxed">
+                <p className="text-sm sm:text-base text-[#A7B4C2] max-w-md mx-auto mb-8 leading-relaxed">
                   Create your ClipEarn account now so you're ready when the next campaign goes live.
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                   <Link
                     href="/login"
-                    className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold text-sm transition shadow-sm flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto px-6 py-3 rounded-[11px] bg-[#1CF7FD] hover:bg-[#34f8fe] text-[#05080C] font-bold text-sm transition hover:shadow-[0_0_24px_rgba(28,247,253,0.18)] flex items-center justify-center gap-2"
                   >
                     <span>Create Clipper Account</span>
-                    <ArrowRight className="w-4 h-4 text-white" />
+                    <ArrowRight className="w-4 h-4 text-[#05080C]" />
                   </Link>
                   <button
                     type="button"
                     onClick={() => setBrandModalOpen(true)}
-                    className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#0B111A] hover:bg-[#141C2B] text-slate-200 hover:text-white font-medium text-sm border border-[#1E293B] transition flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto px-6 py-3 rounded-[11px] bg-transparent hover:bg-[#111C26] text-[#F8FAFC] hover:text-[#1CF7FD] font-medium text-sm border border-[#33424D] hover:border-[#1CF7FD] transition flex items-center justify-center gap-2"
                   >
-                    <Building2 className="w-4 h-4 text-[#60A5FA]" />
+                    <Building2 className="w-4 h-4 text-[#1CF7FD]" />
                     <span>Launch a Campaign</span>
                   </button>
                 </div>
@@ -663,9 +658,9 @@ export default function LandingView({ campaigns }: LandingViewProps) {
                   return (
                     <div
                       key={camp.id}
-                      className="rounded-2xl bg-[#101722] border border-[#1E293B] overflow-hidden flex flex-col justify-between hover:border-slate-700 transition"
+                      className="rounded-[18px] bg-[#0C131B] border border-[#1B2A35] hover:border-[#1CF7FD]/40 transition overflow-hidden flex flex-col justify-between"
                     >
-                      <div className="h-44 w-full relative overflow-hidden bg-[#0B111A]">
+                      <div className="h-44 w-full relative overflow-hidden bg-[#080D13]">
                         {camp.image_url ? (
                           <img
                             src={camp.image_url}
@@ -673,20 +668,20 @@ export default function LandingView({ campaigns }: LandingViewProps) {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-[#101722] to-[#0B111A] flex items-center justify-center p-4 text-center">
-                            <span className="text-base font-bold text-slate-500 uppercase tracking-widest line-clamp-1">
+                          <div className="w-full h-full bg-gradient-to-br from-[#0C131B] to-[#080D13] flex items-center justify-center p-4 text-center">
+                            <span className="text-base font-bold text-[#64748B] uppercase tracking-widest line-clamp-1">
                               {camp.brand_name || camp.name}
                             </span>
                           </div>
                         )}
-                        <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/10 text-xs font-bold text-[#60A5FA]">
+                        <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-black/75 backdrop-blur-md border border-white/10 text-xs font-bold text-[#1CF7FD]">
                           {cpmFormatted} CPM
                         </div>
                       </div>
 
                       <div className="p-6 flex-1 flex flex-col justify-between">
                         <div>
-                          <span className="text-xs text-blue-400 font-semibold uppercase tracking-wider">
+                          <span className="text-xs text-[#1CF7FD] font-semibold uppercase tracking-wider">
                             {camp.brand_name}
                           </span>
                           <h3 className="text-xl font-bold text-white mt-1 mb-3 line-clamp-1">
@@ -698,7 +693,7 @@ export default function LandingView({ campaigns }: LandingViewProps) {
                               {displayPlatforms.map((p, pidx) => (
                                 <span
                                   key={pidx}
-                                  className="px-2.5 py-1 rounded-md bg-[#0B111A] border border-[#1E293B] text-xs font-medium text-slate-300"
+                                  className="px-2.5 py-1 rounded-md bg-[#080D13] border border-[#1B2A35] text-xs font-medium text-[#A7B4C2]"
                                 >
                                   {p}
                                 </span>
@@ -706,19 +701,19 @@ export default function LandingView({ campaigns }: LandingViewProps) {
                             </div>
                           )}
 
-                          <div className="space-y-3 py-3 border-y border-[#1E293B] text-xs">
+                          <div className="space-y-3 py-3 border-y border-[#1B2A35] text-xs">
                             <div>
                               <div className="flex justify-between items-center mb-1.5">
-                                <span className="text-[11px] font-medium text-[#94A3B8] uppercase tracking-wider">
+                                <span className="text-[11px] font-medium text-[#64748B] uppercase tracking-wider">
                                   Budget Allocated
                                 </span>
                                 <span className="text-white font-semibold">
                                   {usedFormatted}{" "}
-                                  <span className="text-slate-500 font-normal">/ {budgetFormatted}</span>
+                                  <span className="text-[#64748B] font-normal">/ {budgetFormatted}</span>
                                 </span>
                               </div>
                               <div
-                                className="w-full h-1.5 bg-[#0B111A] rounded-full overflow-hidden"
+                                className="w-full h-1.5 bg-[#080D13] rounded-full overflow-hidden"
                                 role="progressbar"
                                 aria-label={`${camp.name} budget allocated`}
                                 aria-valuenow={Math.round(budgetPercent)}
@@ -726,7 +721,7 @@ export default function LandingView({ campaigns }: LandingViewProps) {
                                 aria-valuemax={100}
                               >
                                 <div
-                                  className="h-full bg-blue-500 rounded-full transition-all duration-300"
+                                  className="h-full bg-[#1CF7FD] rounded-full transition-all duration-300"
                                   style={{
                                     width: `${Math.min(100, Math.max(camp.used_budget > 0 ? 2 : 0, budgetPercent))}%`,
                                   }}
@@ -735,7 +730,7 @@ export default function LandingView({ campaigns }: LandingViewProps) {
                             </div>
 
                             <div className="flex justify-between items-center pt-1">
-                              <span className="text-[11px] font-medium text-[#94A3B8] uppercase tracking-wider">
+                              <span className="text-[11px] font-medium text-[#64748B] uppercase tracking-wider">
                                 Views Delivered
                               </span>
                               <span className="text-white font-semibold">{viewsDelivered}</span>
@@ -745,10 +740,10 @@ export default function LandingView({ campaigns }: LandingViewProps) {
 
                         <Link
                           href={`/login?redirect=/clipper/campaigns/${camp.id}`}
-                          className="mt-6 w-full py-2.5 px-4 rounded-xl bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold text-xs sm:text-sm transition flex items-center justify-center gap-1.5"
+                          className="mt-6 w-full py-2.5 px-4 rounded-[11px] bg-[#1CF7FD] hover:bg-[#34f8fe] text-[#05080C] font-bold text-xs sm:text-sm transition flex items-center justify-center gap-1.5"
                         >
                           <span>Join Campaign</span>
-                          <ArrowRight className="w-4 h-4 text-white" />
+                          <ArrowRight className="w-4 h-4 text-[#05080C]" />
                         </Link>
                       </div>
                     </div>
@@ -760,102 +755,108 @@ export default function LandingView({ campaigns }: LandingViewProps) {
         </section>
 
         {/* ================================================== */}
-        {/* 7. BRAND SECTION                                   */}
+        {/* 6. BRAND SECTION (Section 9 - 2 Columns)           */}
         {/* ================================================== */}
-        <section id="for-brands" className="py-24 sm:py-32 border-b border-[#1E293B] scroll-mt-20">
+        <section id="for-brands" className="py-24 sm:py-32 border-b border-[#1B2A35] scroll-mt-20">
           <div className="max-w-[1200px] mx-auto px-6">
-            <div className="max-w-2xl mb-16">
-              <p className="text-xs font-bold text-[#60A5FA] uppercase tracking-wider">
-                FOR BRANDS & ADVERTISERS
-              </p>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mt-2 tracking-tight">
-                Your Content. Distributed at Scale.
-              </h2>
-              <p className="text-base sm:text-lg text-[#94A3B8] mt-4 leading-relaxed">
-                Give ClipEarn your content and campaign goals. Our creator distribution network turns that content into short-form videos across the platforms where attention is happening.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {brandPillars.map((p, idx) => {
-                const IconComp = p.icon;
-                return (
-                  <div
-                    key={idx}
-                    className="p-8 rounded-2xl bg-[#101722] border border-[#1E293B] flex flex-col justify-between"
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
+              {/* Left Column */}
+              <div className="lg:col-span-5">
+                <p className="text-xs font-mono font-semibold text-[#1CF7FD] uppercase tracking-wider">
+                  FOR BRANDS & ADVERTISERS
+                </p>
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mt-2 tracking-tight leading-tight">
+                  Your Content. <br />
+                  <span className="text-[#1CF7FD]">Distributed at Scale.</span>
+                </h2>
+                <p className="text-base sm:text-lg text-[#A7B4C2] mt-4 leading-relaxed">
+                  Give ClipEarn your content and campaign goals. Our creator distribution network turns that content into short-form videos across the platforms where attention is happening.
+                </p>
+                <div className="mt-8">
+                  <button
+                    type="button"
+                    onClick={() => setBrandModalOpen(true)}
+                    className="px-7 py-3.5 rounded-[11px] bg-[#1CF7FD] hover:bg-[#34f8fe] text-[#05080C] font-bold text-sm transition flex items-center gap-2 hover:shadow-[0_0_24px_rgba(28,247,253,0.18)]"
                   >
-                    <div>
-                      <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 text-[#60A5FA] flex items-center justify-center mb-6">
+                    <Building2 className="w-4 h-4 text-[#05080C]" />
+                    <span>Launch a Campaign</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Right Column: 3 Pillar Cards */}
+              <div className="lg:col-span-7 space-y-4">
+                {brandPillars.map((p, idx) => {
+                  const IconComp = p.icon;
+                  return (
+                    <div
+                      key={idx}
+                      className="p-6 sm:p-7 rounded-[18px] bg-[#0C131B] border border-[#1B2A35] hover:bg-[#111C26] hover:border-[#1CF7FD]/40 transition-all flex items-start gap-5"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-[#1CF7FD]/10 border border-[#1CF7FD]/20 text-[#1CF7FD] flex items-center justify-center shrink-0 mt-0.5">
                         <IconComp className="w-5 h-5" />
                       </div>
-                      <span className="text-[11px] font-mono uppercase tracking-wider text-[#60A5FA]">
-                        {p.tag}
-                      </span>
-                      <h3 className="text-xl font-bold text-white mt-1 mb-3">
-                        {p.title}
-                      </h3>
-                      <p className="text-sm text-[#94A3B8] leading-relaxed">
-                        {p.desc}
-                      </p>
+                      <div>
+                        <span className="text-[11px] font-mono uppercase tracking-wider text-[#1CF7FD]">
+                          {p.tag}
+                        </span>
+                        <h3 className="text-lg font-bold text-white mt-0.5 mb-1.5">
+                          {p.title}
+                        </h3>
+                        <p className="text-sm text-[#A7B4C2] leading-relaxed">
+                          {p.desc}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="mt-12">
-              <button
-                type="button"
-                onClick={() => setBrandModalOpen(true)}
-                className="px-8 py-3.5 rounded-xl bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold text-sm transition flex items-center gap-2 shadow-sm"
-              >
-                <Building2 className="w-4 h-4 text-white" />
-                <span>Launch a Campaign</span>
-              </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </section>
 
         {/* ================================================== */}
-        {/* 8. CREATOR SECTION                                 */}
+        {/* 7. CREATOR SECTION (Section 10 - 2 Columns)        */}
         {/* ================================================== */}
-        <section id="for-creators" className="py-24 sm:py-32 bg-[#0B111A] border-b border-[#1E293B] scroll-mt-20">
+        <section id="for-creators" className="py-24 sm:py-32 bg-[#080D13] border-b border-[#1B2A35] scroll-mt-20">
           <div className="max-w-[1200px] mx-auto px-6">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-              <div className="lg:col-span-6">
-                <p className="text-xs font-bold text-[#60A5FA] uppercase tracking-wider">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
+              {/* Left Column */}
+              <div className="lg:col-span-5">
+                <p className="text-xs font-mono font-semibold text-[#1CF7FD] uppercase tracking-wider">
                   FOR SHORT-FORM CREATORS
                 </p>
-                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mt-2 tracking-tight">
-                  Turn Your Editing Into Earnings.
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mt-2 tracking-tight leading-tight">
+                  Turn Your Editing <br />
+                  <span className="text-[#1CF7FD]">Into Earnings.</span>
                 </h2>
-                <p className="text-base sm:text-lg text-[#94A3B8] mt-4 leading-relaxed">
+                <p className="text-base sm:text-lg text-[#A7B4C2] mt-4 leading-relaxed">
                   Join campaigns, create short-form content, submit your published clips, and earn from verified performance.
                 </p>
-
                 <div className="mt-8">
                   <Link
                     href="/login"
-                    className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold text-sm transition shadow-sm"
+                    className="inline-flex items-center gap-2 px-7 py-3.5 rounded-[11px] bg-[#1CF7FD] hover:bg-[#34f8fe] text-[#05080C] font-bold text-sm transition hover:shadow-[0_0_24px_rgba(28,247,253,0.18)]"
                   >
                     <span>Start Clipping</span>
-                    <ArrowRight className="w-4 h-4 text-white" />
+                    <ArrowRight className="w-4 h-4 text-[#05080C]" />
                   </Link>
                 </div>
               </div>
 
-              <div className="lg:col-span-6 space-y-4">
-                {creatorBenefits.map((item, idx) => (
+              {/* Right Column: Workflow Steps with Progression Line */}
+              <div className="lg:col-span-7 space-y-3">
+                {creatorWorkflow.map((cw, idx) => (
                   <div
                     key={idx}
-                    className="p-5 rounded-xl bg-[#101722] border border-[#1E293B] flex items-start gap-4 hover:border-slate-700 transition"
+                    className="p-5 rounded-[16px] bg-[#0C131B] border border-[#1B2A35] hover:border-[#1CF7FD]/35 transition-all flex items-start gap-4"
                   >
-                    <div className="w-6 h-6 rounded-full bg-blue-500/10 border border-blue-500/20 text-[#60A5FA] flex items-center justify-center shrink-0 mt-0.5">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    <div className="w-8 h-8 rounded-lg bg-[#1CF7FD]/10 border border-[#1CF7FD]/20 text-[#1CF7FD] font-mono text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                      {cw.step}
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-white">{item.title}</h4>
-                      <p className="text-xs text-[#94A3B8] mt-1 leading-relaxed">{item.desc}</p>
+                      <h4 className="text-sm font-bold text-white">{cw.title}</h4>
+                      <p className="text-xs text-[#A7B4C2] mt-1 leading-relaxed">{cw.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -865,52 +866,52 @@ export default function LandingView({ campaigns }: LandingViewProps) {
         </section>
 
         {/* ================================================== */}
-        {/* 9. VERIFIED PERFORMANCE ENGINE                     */}
+        {/* 8. PERFORMANCE ENGINE SECTION (Section 11)         */}
         {/* ================================================== */}
-        <section className="py-24 sm:py-32 border-b border-[#1E293B]">
+        <section className="py-24 sm:py-32 border-b border-[#1B2A35]">
           <div className="max-w-[1200px] mx-auto px-6">
             <div className="max-w-2xl mb-16">
-              <p className="text-xs font-bold text-[#60A5FA] uppercase tracking-wider">
+              <p className="text-xs font-mono font-semibold text-[#1CF7FD] uppercase tracking-wider">
                 ENGINE ARCHITECTURE
               </p>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mt-2 tracking-tight">
                 Built Around Verified Performance.
               </h2>
-              <p className="text-base sm:text-lg text-[#94A3B8] mt-4 leading-relaxed">
+              <p className="text-base sm:text-lg text-[#A7B4C2] mt-4 leading-relaxed">
                 ClipEarn's tracking infrastructure directly validates published content and measures real attention across major platforms.
               </p>
             </div>
 
-            {/* Social Platforms Row */}
+            {/* Platform Badges */}
             <div className="mb-10 flex flex-wrap items-center gap-3">
               <span className="text-xs font-mono uppercase text-[#64748B] mr-2">
                 SUPPORTED PLATFORMS:
               </span>
-              <div className="px-4 py-2 rounded-xl bg-[#101722] border border-[#1E293B] text-xs font-semibold text-white flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-cyan-400" />
+              <div className="px-4 py-2 rounded-xl bg-[#0C131B] border border-[#1B2A35] text-xs font-semibold text-white flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#1CF7FD]" />
                 <span>TikTok</span>
               </div>
-              <div className="px-4 py-2 rounded-xl bg-[#101722] border border-[#1E293B] text-xs font-semibold text-white flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-pink-500" />
+              <div className="px-4 py-2 rounded-xl bg-[#0C131B] border border-[#1B2A35] text-xs font-semibold text-white flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#1CF7FD]" />
                 <span>Instagram Reels</span>
               </div>
-              <div className="px-4 py-2 rounded-xl bg-[#101722] border border-[#1E293B] text-xs font-semibold text-white flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-red-500" />
-                <span>YouTube Shorts & Video</span>
+              <div className="px-4 py-2 rounded-xl bg-[#0C131B] border border-[#1B2A35] text-xs font-semibold text-white flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#1CF7FD]" />
+                <span>YouTube Shorts</span>
               </div>
             </div>
 
-            {/* Linear Pipeline Stages */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-              {engineFlow.map((ef, idx) => (
+            {/* Sequential Engine Pipeline */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+              {engineStages.map((es, idx) => (
                 <div
                   key={idx}
-                  className="p-4 rounded-xl bg-[#101722] border border-[#1E293B] flex flex-col justify-between"
+                  className="p-4 rounded-[14px] bg-[#0C131B] border border-[#1B2A35] hover:border-[#1CF7FD]/40 transition-colors flex flex-col justify-between"
                 >
-                  <span className="text-[10px] font-mono text-[#60A5FA] mb-2">{ef.step}</span>
+                  <span className="text-[10px] font-mono text-[#1CF7FD] mb-2">{es.step}</span>
                   <div>
-                    <div className="text-xs font-bold text-white">{ef.label}</div>
-                    <div className="text-[11px] text-[#64748B] mt-1">{ef.note}</div>
+                    <div className="text-xs font-bold text-white tracking-wide">{es.label}</div>
+                    <div className="text-[11px] text-[#64748B] mt-1 leading-snug">{es.desc}</div>
                   </div>
                 </div>
               ))}
@@ -919,50 +920,53 @@ export default function LandingView({ campaigns }: LandingViewProps) {
         </section>
 
         {/* ================================================== */}
-        {/* 10. TRUST / FRAUD PROTECTION                       */}
+        {/* 9. TRUST & INTEGRITY SECTION (Section 12 - 4 Cols) */}
         {/* ================================================== */}
-        <section className="py-24 sm:py-32 bg-[#0B111A] border-b border-[#1E293B]">
+        <section className="py-24 sm:py-32 bg-[#080D13] border-b border-[#1B2A35]">
           <div className="max-w-[1200px] mx-auto px-6">
             <div className="max-w-2xl mb-16">
-              <p className="text-xs font-bold text-[#60A5FA] uppercase tracking-wider">
-                INTEGRITY & COMPLIANCE
+              <p className="text-xs font-mono font-semibold text-[#1CF7FD] uppercase tracking-wider">
+                SECURITY & AUDITABILITY
               </p>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mt-2 tracking-tight">
                 Built for Real Performance.
               </h2>
-              <p className="text-base sm:text-lg text-[#94A3B8] mt-4 leading-relaxed">
+              <p className="text-base sm:text-lg text-[#A7B4C2] mt-4 leading-relaxed">
                 Designed to protect campaigns from invalid activity through multi-layered verification and auditable tracking.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {trustPoints.map((tp, idx) => (
-                <div
-                  key={idx}
-                  className="p-6 rounded-2xl bg-[#101722] border border-[#1E293B]"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 text-[#60A5FA] flex items-center justify-center mb-4">
-                    <ShieldCheck className="w-4 h-4" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {trustPoints.map((tp, idx) => {
+                const IconComponent = tp.icon;
+                return (
+                  <div
+                    key={idx}
+                    className="p-7 rounded-[18px] bg-[#0C131B] border border-[#1B2A35] hover:bg-[#111C26] hover:border-[#1CF7FD]/40 transition-all"
+                  >
+                    <div className="w-9 h-9 rounded-xl bg-[#1CF7FD]/10 border border-[#1CF7FD]/20 text-[#1CF7FD] flex items-center justify-center mb-5">
+                      <IconComponent className="w-4 h-4" />
+                    </div>
+                    <h3 className="text-sm font-bold text-white tracking-wide mb-2">
+                      {tp.title}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-[#A7B4C2] leading-relaxed">
+                      {tp.desc}
+                    </p>
                   </div>
-                  <h3 className="text-base font-bold text-white mb-2">
-                    {tp.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-[#94A3B8] leading-relaxed">
-                    {tp.desc}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </section>
 
         {/* ================================================== */}
-        {/* 11. FAQ                                            */}
+        {/* 10. FAQ SECTION (Section 21)                       */}
         {/* ================================================== */}
-        <section id="faq" className="py-24 sm:py-32 border-b border-[#1E293B] scroll-mt-20">
+        <section id="faq" className="py-24 sm:py-32 border-b border-[#1B2A35] scroll-mt-20">
           <div className="max-w-[1200px] mx-auto px-6">
             <div className="max-w-2xl mb-16">
-              <p className="text-xs font-bold text-[#60A5FA] uppercase tracking-wider">
+              <p className="text-xs font-mono font-semibold text-[#1CF7FD] uppercase tracking-wider">
                 FAQ
               </p>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mt-2 tracking-tight">
@@ -970,69 +974,82 @@ export default function LandingView({ campaigns }: LandingViewProps) {
               </h2>
             </div>
 
-            <div className="max-w-3xl rounded-2xl bg-[#101722] border border-[#1E293B] divide-y divide-[#1E293B] overflow-hidden">
-              {faqs.map((faq, idx) => (
-                <div key={idx} className="transition-colors">
-                  <button
-                    id={`faq-btn-${idx}`}
-                    type="button"
-                    aria-expanded={activeFaq === idx}
-                    aria-controls={`faq-answer-${idx}`}
-                    onClick={() => setActiveFaq(activeFaq === idx ? null : idx)}
-                    className="w-full p-6 text-left flex justify-between items-center text-base font-semibold text-white hover:text-[#60A5FA] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3B82F6]"
-                  >
-                    <span className="pr-4">{faq.q}</span>
-                    <span className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-[#0B111A] border border-[#1E293B] text-[#94A3B8]">
-                      <ChevronDown
-                        className={`w-4 h-4 transition-transform duration-200 ${
-                          activeFaq === idx ? "rotate-180 text-[#60A5FA]" : ""
-                        }`}
-                      />
-                    </span>
-                  </button>
-                  {activeFaq === idx && (
-                    <div
-                      id={`faq-answer-${idx}`}
-                      role="region"
-                      aria-labelledby={`faq-btn-${idx}`}
-                      className="px-6 pb-6 text-sm text-[#94A3B8] leading-relaxed pt-2"
+            <div className="max-w-3xl rounded-[20px] bg-[#0C131B] border border-[#1B2A35] divide-y divide-[#1B2A35] overflow-hidden">
+              {faqs.map((faq, idx) => {
+                const isOpen = activeFaq === idx;
+                return (
+                  <div key={idx} className="transition-colors">
+                    <button
+                      id={`faq-btn-${idx}`}
+                      type="button"
+                      aria-expanded={isOpen}
+                      aria-controls={`faq-answer-${idx}`}
+                      onClick={() => setActiveFaq(isOpen ? null : idx)}
+                      className={`w-full p-6 text-left flex justify-between items-center text-base font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1CF7FD] group ${
+                        isOpen ? "text-[#1CF7FD]" : "text-white hover:text-[#1CF7FD]"
+                      }`}
                     >
-                      {faq.a}
-                    </div>
-                  )}
-                </div>
-              ))}
+                      <span className="pr-4">{faq.q}</span>
+                      <span className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-[#080D13] border border-[#1B2A35] text-[#A7B4C2] group-hover:border-[#1CF7FD]/40 group-hover:text-[#1CF7FD] transition-all">
+                        <ChevronDown
+                          className={`w-4 h-4 transition-transform duration-200 ${
+                            isOpen ? "rotate-180 text-[#1CF7FD]" : ""
+                          }`}
+                        />
+                      </span>
+                    </button>
+                    {isOpen && (
+                      <div
+                        id={`faq-answer-${idx}`}
+                        role="region"
+                        aria-labelledby={`faq-btn-${idx}`}
+                        className="px-6 pb-6 text-sm text-[#A7B4C2] leading-relaxed pt-1 border-l-2 border-[#1CF7FD]"
+                      >
+                        {faq.a}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </section>
 
         {/* ================================================== */}
-        {/* 12. FINAL CTA                                      */}
+        {/* 11. FINAL CTA (Section 22)                         */}
         {/* ================================================== */}
-        <section className="py-24 sm:py-32">
-          <div className="max-w-[1200px] mx-auto px-6">
-            <div className="rounded-3xl bg-gradient-to-b from-[#101722] to-[#0B111A] border border-blue-500/20 p-10 sm:p-16 text-center max-w-4xl mx-auto shadow-2xl relative overflow-hidden">
+        <section className="py-24 sm:py-32 relative overflow-hidden">
+          {/* Subtle cyan glow */}
+          <div
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] pointer-events-none rounded-full"
+            style={{
+              background: "radial-gradient(ellipse at center, rgba(28, 247, 253, 0.07) 0%, rgba(5, 8, 12, 0) 70%)",
+            }}
+          />
+
+          <div className="max-w-[1200px] mx-auto px-6 relative z-10">
+            <div className="rounded-[24px] bg-[#0C131B] border border-[#1CF7FD]/30 p-10 sm:p-16 text-center max-w-4xl mx-auto shadow-2xl">
               <h2 className="text-3xl sm:text-5xl font-bold text-white tracking-tight leading-tight">
                 Ready to Turn Content <br className="hidden sm:inline" />
-                Into Performance?
+                Into <span className="text-[#1CF7FD]">Performance?</span>
               </h2>
-              <p className="text-base sm:text-lg text-[#94A3B8] mt-4 max-w-xl mx-auto leading-relaxed">
-                Whether you're a brand scaling short-form distribution or a creator ready to earn from verified attention, join the ClipEarn platform today.
+              <p className="text-base sm:text-lg text-[#A7B4C2] mt-4 max-w-xl mx-auto leading-relaxed">
+                Whether you're a brand scaling short-form distribution or a creator ready to monetize your attention, join the ClipEarn platform today.
               </p>
               <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link
                   href="/login"
-                  className="w-full sm:w-auto px-8 py-4 rounded-xl bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold text-base transition shadow-sm flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-8 py-4 rounded-[11px] bg-[#1CF7FD] hover:bg-[#34f8fe] text-[#05080C] font-bold text-base transition hover:shadow-[0_0_24px_rgba(28,247,253,0.18)] flex items-center justify-center gap-2"
                 >
                   <span>Start Clipping</span>
-                  <ArrowRight className="w-4 h-4 text-white" />
+                  <ArrowRight className="w-4 h-4 text-[#05080C]" />
                 </Link>
                 <button
                   type="button"
                   onClick={() => setBrandModalOpen(true)}
-                  className="w-full sm:w-auto px-8 py-4 rounded-xl bg-[#0B111A] hover:bg-[#141C2B] border border-[#1E293B] text-[#F8FAFC] font-semibold text-base transition flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-8 py-4 rounded-[11px] bg-transparent hover:bg-[#111C26] border border-[#33424D] hover:border-[#1CF7FD] text-[#F8FAFC] hover:text-[#1CF7FD] font-semibold text-base transition flex items-center justify-center gap-2"
                 >
-                  <Building2 className="w-4 h-4 text-[#60A5FA]" />
+                  <Building2 className="w-4 h-4 text-[#1CF7FD]" />
                   <span>Launch a Campaign</span>
                 </button>
               </div>
@@ -1042,15 +1059,15 @@ export default function LandingView({ campaigns }: LandingViewProps) {
       </main>
 
       {/* ================================================== */}
-      {/* 13. FOOTER                                         */}
+      {/* 12. FOOTER (Section 23)                            */}
       {/* ================================================== */}
-      <footer className="border-t border-[#1E293B] bg-[#070A0F] py-16 text-xs text-[#94A3B8]">
+      <footer className="border-t border-[#1B2A35] bg-[#05080C] py-16 text-xs text-[#A7B4C2]">
         <div className="max-w-[1200px] mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-10 pb-12 border-b border-[#1E293B]">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-10 pb-12 border-b border-[#1B2A35]">
             {/* Brand column */}
             <div className="md:col-span-2">
               <ClipEarnLogo size="md" href="/" />
-              <p className="mt-4 text-sm text-[#94A3B8] max-w-sm leading-relaxed">
+              <p className="mt-4 text-sm text-[#A7B4C2] max-w-sm leading-relaxed">
                 Performance-based short-form content distribution. Connecting brands with distributed creator networks across TikTok, Instagram, and YouTube.
               </p>
             </div>
@@ -1148,11 +1165,11 @@ export default function LandingView({ campaigns }: LandingViewProps) {
       </footer>
 
       {/* ================================================== */}
-      {/* 14. BRAND PARTNERSHIP MODAL                        */}
+      {/* 13. BRAND PARTNERSHIP MODAL                        */}
       {/* ================================================== */}
       {brandModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-[#101722] border border-[#1E293B] rounded-2xl max-w-md w-full p-6 sm:p-8 relative shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
+          <div className="bg-[#0C131B] border border-[#1B2A35] rounded-[20px] max-w-md w-full p-6 sm:p-8 relative shadow-2xl">
             <button
               type="button"
               onClick={() => {
@@ -1167,11 +1184,11 @@ export default function LandingView({ campaigns }: LandingViewProps) {
 
             {modalSubmitted ? (
               <div className="py-8 text-center space-y-3">
-                <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
+                <div className="w-12 h-12 rounded-full bg-[#1CF7FD]/10 border border-[#1CF7FD]/20 text-[#1CF7FD] flex items-center justify-center mx-auto">
                   <CheckCircle2 className="w-6 h-6" />
                 </div>
                 <h3 className="text-xl font-bold text-white">Inquiry Received</h3>
-                <p className="text-xs text-[#94A3B8] max-w-xs mx-auto leading-relaxed">
+                <p className="text-xs text-[#A7B4C2] max-w-xs mx-auto leading-relaxed">
                   Thank you! Our brand partnership director will reach out to schedule your campaign onboarding.
                 </p>
                 <div className="pt-4">
@@ -1181,7 +1198,7 @@ export default function LandingView({ campaigns }: LandingViewProps) {
                       setBrandModalOpen(false);
                       setModalSubmitted(false);
                     }}
-                    className="px-5 py-2.5 rounded-lg bg-[#3B82F6] hover:bg-[#2563EB] text-white font-medium text-xs transition"
+                    className="px-6 py-2.5 rounded-[11px] bg-[#1CF7FD] hover:bg-[#34f8fe] text-[#05080C] font-bold text-xs transition"
                   >
                     Done
                   </button>
@@ -1192,7 +1209,7 @@ export default function LandingView({ campaigns }: LandingViewProps) {
                 <h3 className="text-xl font-bold text-white mb-1.5">
                   Launch a Clipping Campaign
                 </h3>
-                <p className="text-xs text-[#94A3B8] mb-6 leading-relaxed">
+                <p className="text-xs text-[#A7B4C2] mb-6 leading-relaxed">
                   Connect with our team to distribute your brand's content across our verified creator network with custom performance targets.
                 </p>
 
@@ -1210,7 +1227,7 @@ export default function LandingView({ campaigns }: LandingViewProps) {
                     <input
                       required
                       placeholder="e.g. Acme Media"
-                      className="w-full bg-[#0B111A] border border-[#1E293B] rounded-lg p-2.5 text-white placeholder:text-slate-600 focus:outline-none focus:border-[#3B82F6]"
+                      className="w-full bg-[#080D13] border border-[#1B2A35] rounded-[10px] p-3 text-white placeholder:text-slate-600 focus:outline-none focus:border-[#1CF7FD]"
                     />
                   </div>
 
@@ -1222,7 +1239,7 @@ export default function LandingView({ campaigns }: LandingViewProps) {
                       required
                       type="email"
                       placeholder="marketing@acme.com"
-                      className="w-full bg-[#0B111A] border border-[#1E293B] rounded-lg p-2.5 text-white placeholder:text-slate-600 focus:outline-none focus:border-[#3B82F6]"
+                      className="w-full bg-[#080D13] border border-[#1B2A35] rounded-[10px] p-3 text-white placeholder:text-slate-600 focus:outline-none focus:border-[#1CF7FD]"
                     />
                   </div>
 
@@ -1230,7 +1247,7 @@ export default function LandingView({ campaigns }: LandingViewProps) {
                     <label className="block text-slate-300 font-medium mb-1.5">
                       Target Monthly Budget
                     </label>
-                    <select className="w-full bg-[#0B111A] border border-[#1E293B] rounded-lg p-2.5 text-white focus:outline-none focus:border-[#3B82F6]">
+                    <select className="w-full bg-[#080D13] border border-[#1B2A35] rounded-[10px] p-3 text-white focus:outline-none focus:border-[#1CF7FD]">
                       <option>$5,000 - $10,000</option>
                       <option>$10,000 - $25,000</option>
                       <option>$25,000 - $50,000</option>
@@ -1238,17 +1255,17 @@ export default function LandingView({ campaigns }: LandingViewProps) {
                     </select>
                   </div>
 
-                  <div className="flex justify-end gap-3 pt-4 border-t border-[#1E293B]">
+                  <div className="flex justify-end gap-3 pt-4 border-t border-[#1B2A35]">
                     <button
                       type="button"
                       onClick={() => setBrandModalOpen(false)}
-                      className="px-4 py-2.5 rounded-lg bg-[#0B111A] hover:bg-[#141C2B] text-slate-300 font-medium text-xs border border-[#1E293B] transition"
+                      className="px-4 py-2.5 rounded-[10px] bg-transparent hover:bg-[#111C26] text-slate-300 font-medium text-xs border border-[#1B2A35] transition"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="px-5 py-2.5 rounded-lg bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold text-xs transition shadow-sm"
+                      className="px-5 py-2.5 rounded-[10px] bg-[#1CF7FD] hover:bg-[#34f8fe] text-[#05080C] font-bold text-xs transition hover:shadow-[0_0_24px_rgba(28,247,253,0.18)]"
                     >
                       Request Consultation
                     </button>
