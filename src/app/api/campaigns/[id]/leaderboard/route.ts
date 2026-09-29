@@ -1,12 +1,25 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { SubmissionStatus } from "@prisma/client";
+import { SubmissionStatus, UserRole } from "@prisma/client";
+import { getSessionUser } from "@/lib/auth";
+import { hasManagerCampaignAccess } from "@/lib/campaignAccess";
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
+    const user = await getSessionUser();
+    if (user?.role === UserRole.MANAGER) {
+      const hasAccess = await hasManagerCampaignAccess(user.id, params.id, user.role);
+      if (!hasAccess) {
+        return NextResponse.json(
+          { error: "Access denied. You do not have operational access for this campaign." },
+          { status: 403 }
+        );
+      }
+    }
+
     const [campaign, approvedSubmissions, payouts] = await Promise.all([
       prisma.campaign.findUnique({
         where: { id: params.id },

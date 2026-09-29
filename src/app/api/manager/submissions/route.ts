@@ -60,7 +60,7 @@ export async function GET(request: Request) {
         where,
         skip,
         take: limit,
-        orderBy: { created_at: "desc" },
+        orderBy: [{ submitted_at: "asc" }, { id: "asc" }],
         include: {
           campaign: {
             select: {

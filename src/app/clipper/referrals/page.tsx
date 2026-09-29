@@ -22,7 +22,7 @@ export default function ReferralsPage() {
   }, []);
 
   const referralCode = data?.referralCode || "CLIPPER";
-  const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://clipearn.vercel.app";
   const referralLink = `${origin}/login?ref=${referralCode}`;
 
   const copyLink = () => {

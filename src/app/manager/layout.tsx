@@ -162,7 +162,7 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
           {/* Admin Switch Link */}
           {user?.role === "ADMIN" && (
             <Link
-              href="/admin"
+              href="/admin/dashboard"
               className="w-full py-2 px-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-400 text-xs font-bold transition flex items-center justify-between group"
             >
               <span>Switch to Admin Console</span>

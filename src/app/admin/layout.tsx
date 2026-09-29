@@ -18,6 +18,7 @@ import {
   X,
   Loader2,
   AlertTriangle,
+  ArrowRight,
 } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -122,7 +123,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   const navItems = [
-    { label: "Platform Overview", href: "/admin", icon: LayoutDashboard },
+    { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
     { label: "All Campaigns", href: "/admin/campaigns", icon: Compass },
     { label: "Create Campaign", href: "/admin/campaigns/create", icon: PlusCircle },
     { label: "Clipper Payouts", href: "/admin/payouts", icon: CreditCard },
@@ -135,7 +136,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Mobile Topbar */}
       <div className="md:hidden flex items-center justify-between p-4 bg-[#0A0F1D] border-b border-slate-800 sticky top-0 z-40">
         <div className="flex items-center gap-2">
-          <ClipEarnLogo size="sm" href="/admin" />
+          <ClipEarnLogo size="sm" href="/admin/dashboard" />
           <span className="px-2 py-0.5 rounded text-[10px] font-black bg-amber-500/15 text-amber-400 border border-amber-500/30">
             ADMIN
           </span>
@@ -157,7 +158,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="p-5 flex flex-col gap-6">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <ClipEarnLogo size="md" href="/admin" />
+              <ClipEarnLogo size="md" href="/admin/dashboard" />
               <div className="flex items-center gap-1.5 pt-1">
                 <Shield className="w-3 h-3 text-amber-400" />
                 <span className="text-[10px] font-black uppercase tracking-wider text-amber-400">
@@ -172,8 +173,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive =
-                item.href === "/admin"
-                  ? pathname === "/admin"
+                item.href === "/admin/dashboard"
+                  ? pathname === "/admin" || pathname === "/admin/dashboard"
                   : pathname.startsWith(item.href);
 
               return (
@@ -197,6 +198,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Sidebar Footer */}
         <div className="p-4 border-t border-slate-800/80 space-y-3">
+          {/* Switch to Manager Hub Link */}
+          <Link
+            href="/manager/dashboard"
+            className="w-full py-2 px-3 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 text-xs font-bold transition flex items-center justify-between group"
+          >
+            <span>Switch to Manager Hub</span>
+            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+
           {syncSummary && (
             <div className="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-[11px] text-emerald-400 leading-tight">
               {syncSummary}

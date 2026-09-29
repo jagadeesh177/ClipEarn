@@ -46,19 +46,18 @@ export default function ManagerCampaignCreateRedirect() {
 
         <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link
+            href="/manager/dashboard"
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-purple-500 hover:bg-purple-600 text-white text-xs font-bold transition-colors flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20"
+          >
+            <span>Go to Manager Dashboard</span>
+          </Link>
+
+          <Link
             href="/manager/campaigns"
             className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-colors flex items-center justify-center gap-2"
           >
             <Compass className="w-4 h-4 text-purple-400" />
             <span>Assigned Campaigns</span>
-          </Link>
-
-          <Link
-            href="/manager/redeem"
-            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-purple-500 hover:bg-purple-600 text-white text-xs font-bold transition-colors flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20"
-          >
-            <Key className="w-4 h-4" />
-            <span>Redeem Access Code</span>
           </Link>
         </div>
       </div>

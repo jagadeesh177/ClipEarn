@@ -3,41 +3,42 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
-  Compass,
-  FileCheck,
-  Trophy,
-  Eye,
-  Heart,
-  MessageSquare,
-  Clock,
-  ArrowRight,
-  ShieldCheck,
   Key,
   CheckCircle2,
   AlertCircle,
   Loader2,
-  RefreshCw,
-  Share2,
-  Bookmark,
+  Compass,
 } from "lucide-react";
+import {
+  DashboardHeader,
+  MetricCards,
+  ActionCenter,
+  CampaignOverview,
+  SubmissionQueue,
+  Leaderboard,
+  PayoutOverview,
+} from "@/components/dashboard";
 
 export default function ManagerDashboardPage() {
-  const [analytics, setAnalytics] = useState<any>(null);
+  const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   // Quick redeem inline state
   const [redeemCode, setRedeemCode] = useState("");
   const [redeeming, setRedeeming] = useState(false);
-  const [redeemMessage, setRedeemMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [redeemMessage, setRedeemMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
-  const fetchAnalytics = async () => {
+  const fetchDashboardData = async () => {
     try {
       setRefreshing(true);
-      const res = await fetch("/api/manager/analytics");
+      const res = await fetch("/api/manager/dashboard");
       const json = await res.json();
       if (res.ok && json.data) {
-        setAnalytics(json.data);
+        setData(json.data);
       }
     } catch {
       // Ignore
@@ -48,7 +49,7 @@ export default function ManagerDashboardPage() {
   };
 
   useEffect(() => {
-    fetchAnalytics();
+    fetchDashboardData();
   }, []);
 
   const handleInlineRedeem = async (e: React.FormEvent) => {
@@ -69,10 +70,10 @@ export default function ManagerDashboardPage() {
       }
       setRedeemMessage({
         type: "success",
-        text: `Success! You now have access to manage "${json.campaign.name}".`,
+        text: `Success! You now have operational access to manage "${json.campaign.name}".`,
       });
       setRedeemCode("");
-      await fetchAnalytics();
+      await fetchDashboardData();
     } catch (err: any) {
       setRedeemMessage({
         type: "error",
@@ -85,40 +86,38 @@ export default function ManagerDashboardPage() {
 
   if (loading) {
     return (
-      <div className="p-16 flex flex-col items-center justify-center min-h-[60vh] gap-3">
+      <div className="p-8 sm:p-16 flex flex-col items-center justify-center min-h-[60vh] gap-3">
         <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
-        <p className="text-xs font-semibold text-slate-400">Loading assigned campaign operations...</p>
+        <p className="text-xs font-semibold text-slate-400">
+          Loading assigned campaign operations...
+        </p>
       </div>
     );
   }
 
-  const hasAssigned = analytics?.hasAssignedCampaigns !== false && (analytics?.assignedCampaignsCount || 0) > 0;
+  const hasAssigned =
+    data?.hasAssignedCampaigns !== false && (data?.assignedCampaignsCount || 0) > 0;
 
   return (
-    <div className="space-y-8 animate-fadeIn max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-black text-white">Campaign Manager Hub</h1>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-purple-500/20 text-purple-400 border border-purple-500/30">
-              ASSIGNED CAMPAIGNS ONLY
-            </span>
-          </div>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Review submissions and track verified performance for campaigns delegated to you.
-          </p>
-        </div>
-
-        <button
-          onClick={fetchAnalytics}
-          disabled={refreshing}
-          className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 text-xs font-bold transition flex items-center gap-2 w-fit"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin text-purple-400" : ""}`} />
-          Refresh
-        </button>
-      </div>
+    <div className="p-4 sm:p-6 md:p-8 space-y-8 max-w-7xl mx-auto animate-fadeIn">
+      {/* 1. Header with Assigned Campaigns Scope Badge */}
+      <DashboardHeader
+        title="Campaign Manager Hub"
+        scopeBadge="ASSIGNED CAMPAIGNS ONLY"
+        badgeVariant="manager"
+        description="Review submissions and inspect verified performance strictly for campaigns assigned to your account."
+        onRefresh={fetchDashboardData}
+        isRefreshing={refreshing}
+        actions={
+          <Link
+            href="/manager/redeem"
+            className="px-4 py-2.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 text-xs font-bold transition flex items-center gap-2 active:scale-95"
+          >
+            <Key className="w-4 h-4 text-purple-400" />
+            <span>Redeem Access Code</span>
+          </Link>
+        }
+      />
 
       {/* If No Assigned Campaigns Yet */}
       {!hasAssigned ? (
@@ -169,180 +168,60 @@ export default function ManagerDashboardPage() {
             <button
               type="submit"
               disabled={redeeming || !redeemCode.trim()}
-              className="w-full py-2.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-white font-bold text-xs transition shadow-lg shadow-purple-500/20 disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full py-2.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-white font-bold text-xs transition shadow-lg shadow-purple-500/20 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
             >
               {redeeming ? <Loader2 className="w-4 h-4 animate-spin" /> : <Key className="w-4 h-4" />}
-              Redeem Access Code
+              <span>Redeem Access Code</span>
             </button>
           </form>
         </div>
       ) : (
         /* Has Assigned Campaigns Dashboard */
-        <div className="space-y-6">
-          {/* Top Metric Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-            {/* Approved Views */}
-            <div className="p-5 rounded-2xl bg-[#0D131D] border border-purple-500/30 space-y-1">
-              <div className="flex items-center justify-between text-slate-400">
-                <span className="text-xs font-medium">Approved Views</span>
-                <Eye className="w-4 h-4 text-purple-400" />
-              </div>
-              <div className="text-2xl sm:text-3xl font-black text-white font-mono">
-                {(analytics?.approvedViews || 0).toLocaleString()}
-              </div>
-              <p className="text-[10px] text-purple-400/80 font-medium">Your assigned campaigns</p>
-            </div>
+        <div className="space-y-8">
+          {/* 2. Manager-Scoped Approved Social Metrics */}
+          <MetricCards
+            approvedViews={data?.approvedViews || 0}
+            approvedLikes={data?.approvedLikes || 0}
+            approvedComments={data?.approvedComments || 0}
+            approvedShares={data?.approvedShares || 0}
+            approvedSaves={data?.approvedSaves || 0}
+            variant="manager"
+            scopeLabel="Assigned Campaigns Only"
+          />
 
-            {/* Approved Likes */}
-            <div className="p-5 rounded-2xl bg-[#0D131D] border border-slate-800/80 space-y-1">
-              <div className="flex items-center justify-between text-slate-400">
-                <span className="text-xs font-medium">Approved Likes</span>
-                <Heart className="w-4 h-4 text-rose-400" />
-              </div>
-              <div className="text-2xl sm:text-3xl font-black text-white font-mono">
-                {(analytics?.approvedLikes || 0).toLocaleString()}
-              </div>
-              <p className="text-[10px] text-slate-500">Live verified engagement</p>
-            </div>
+          {/* 3. Campaign Manager Action Center */}
+          <ActionCenter
+            portalType="manager"
+            pendingSubmissionsCount={data?.pendingReviewsCount || 0}
+          />
 
-            {/* Approved Comments */}
-            <div className="p-5 rounded-2xl bg-[#0D131D] border border-slate-800/80 space-y-1">
-              <div className="flex items-center justify-between text-slate-400">
-                <span className="text-xs font-medium">Approved Comments</span>
-                <MessageSquare className="w-4 h-4 text-sky-400" />
-              </div>
-              <div className="text-2xl sm:text-3xl font-black text-white font-mono">
-                {(analytics?.approvedComments || 0).toLocaleString()}
-              </div>
-              <p className="text-[10px] text-slate-500">Live verified engagement</p>
-            </div>
+          {/* 4. Manager Payout Qualification Overview */}
+          <PayoutOverview
+            portalType="manager"
+            qualifiedClippersCount={data?.qualifiedClippersCount || 0}
+          />
 
-            {/* Pending Submissions Queue */}
-            <div className="p-5 rounded-2xl bg-[#0D131D] border border-amber-500/30 space-y-1">
-              <div className="flex items-center justify-between text-slate-400">
-                <span className="text-xs font-medium">Pending Reviews</span>
-                <Clock className="w-4 h-4 text-amber-400" />
-              </div>
-              <div className="text-2xl sm:text-3xl font-black text-amber-400 font-mono">
-                {analytics?.pendingReviews || 0}
-              </div>
-              <p className="text-[10px] text-slate-500">Awaiting your approval</p>
-            </div>
-          </div>
+          {/* 5. Assigned Campaigns Overview */}
+          <CampaignOverview
+            portalType="manager"
+            campaigns={data?.campaigns || []}
+            emptyMessage="No campaigns assigned yet. Redeem an access code above to begin."
+          />
 
-          {/* Operational Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {/* Review Pipeline Card */}
-            <div className="p-6 rounded-2xl bg-[#0D131D] border border-slate-800/80 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">
-                  Review Queue
-                </h3>
-                <FileCheck className="w-4 h-4 text-purple-400" />
-              </div>
+          {/* 6. Two-Column Layout: Submission Review Queue (Oldest First) & Campaign Leaderboard */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Submissions Queue: Oldest Submission First (ORDER BY submitted_at ASC, id ASC) */}
+            <SubmissionQueue
+              portalType="manager"
+              submissions={data?.pendingSubmissions || []}
+              onSubmissionReviewed={fetchDashboardData}
+            />
 
-              <div className="space-y-2 text-xs">
-                <div className="flex justify-between py-1 border-b border-slate-800/60">
-                  <span className="text-slate-400">Total Submissions Received</span>
-                  <span className="font-bold text-white font-mono">{analytics?.totalSubmissions || 0}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-800/60">
-                  <span className="text-slate-400">Approved Submissions</span>
-                  <span className="font-bold text-emerald-400 font-mono">{analytics?.approvedSubmissions || 0}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-800/60">
-                  <span className="text-slate-400">Rejected Submissions</span>
-                  <span className="font-bold text-rose-400 font-mono">{analytics?.rejectedSubmissions || 0}</span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span className="text-slate-400 font-semibold">Pending Review Queue</span>
-                  <span className="font-black text-amber-400 font-mono">{analytics?.pendingReviews || 0}</span>
-                </div>
-              </div>
-
-              <Link
-                href="/manager/submissions"
-                className="w-full py-2.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-lg shadow-purple-500/10"
-              >
-                <span>Open Submission Review Queue</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-
-            {/* Assigned Campaigns Card */}
-            <div className="p-6 rounded-2xl bg-[#0D131D] border border-slate-800/80 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">
-                  Assigned Campaigns
-                </h3>
-                <Compass className="w-4 h-4 text-brand-cyan" />
-              </div>
-
-              <div className="space-y-1">
-                <div className="text-3xl font-black text-white font-mono">
-                  {analytics?.assignedCampaignsCount || 0}
-                </div>
-                <div className="text-xs text-slate-400">
-                  {analytics?.activeCampaignsCount || 0} active campaigns
-                </div>
-              </div>
-
-              <p className="text-[11px] text-slate-400 leading-relaxed">
-                You can review submissions, inspect verified live metrics, and view real-time leaderboards for your assigned campaigns.
-              </p>
-
-              <Link
-                href="/manager/campaigns"
-                className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 font-bold text-xs transition flex items-center justify-center gap-1.5"
-              >
-                <span>View Assigned Campaigns</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-
-            {/* Campaign Delegation & Codes */}
-            <div className="p-6 rounded-2xl bg-[#0D131D] border border-slate-800/80 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">
-                  Assign Another Campaign
-                </h3>
-                <Key className="w-4 h-4 text-purple-400" />
-              </div>
-
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Have another Campaign Access Code from your platform administrator? Redeem it to expand your managed portfolio.
-              </p>
-
-              <form onSubmit={handleInlineRedeem} className="space-y-2">
-                <input
-                  type="text"
-                  value={redeemCode}
-                  onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
-                  placeholder="CE-MGR-XXXX-XXXX..."
-                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono text-xs placeholder:text-slate-500 focus:outline-none focus:border-purple-400 uppercase"
-                />
-                <button
-                  type="submit"
-                  disabled={redeeming || !redeemCode.trim()}
-                  className="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 disabled:opacity-50"
-                >
-                  {redeeming ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Key className="w-3.5 h-3.5" />}
-                  Redeem Code
-                </button>
-              </form>
-
-              {redeemMessage && (
-                <div
-                  className={`p-2.5 rounded-lg border text-[11px] ${
-                    redeemMessage.type === "success"
-                      ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
-                      : "bg-rose-500/10 border-rose-500/30 text-rose-300"
-                  }`}
-                >
-                  {redeemMessage.text}
-                </div>
-              )}
-            </div>
+            {/* Campaign Leaderboard: Highest Approved Views to Lowest */}
+            <Leaderboard
+              portalType="manager"
+              campaigns={data?.campaigns || []}
+            />
           </div>
         </div>
       )}
