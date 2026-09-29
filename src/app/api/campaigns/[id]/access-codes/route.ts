@@ -140,6 +140,12 @@ export async function POST(
         success: true,
         message: "Manager access code generated successfully.",
         code: generated.plaintextCode, // Provided once to the authorized Admin
+        plaintextCode: generated.plaintextCode,
+        data: {
+          plaintextCode: generated.plaintextCode,
+          code: generated.plaintextCode,
+          accessCode: accessCodeRecord,
+        },
         accessCode: accessCodeRecord,
       },
       { status: 201 }

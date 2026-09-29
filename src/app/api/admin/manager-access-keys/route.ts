@@ -113,6 +113,12 @@ export async function POST(request: Request) {
         success: true,
         message: "Campaign Manager access code generated successfully.",
         key: generated.plaintextKey, // Returned once to the Admin
+        plaintextKey: generated.plaintextKey,
+        data: {
+          plaintextKey: generated.plaintextKey,
+          key: generated.plaintextKey,
+          accessKey: record,
+        },
         accessKey: record,
       },
       { status: 201 }

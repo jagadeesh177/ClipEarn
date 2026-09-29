@@ -121,7 +121,17 @@ export default function AdminCampaignDetailsPage() {
         throw new Error(json.error || "Failed to generate campaign access code.");
       }
 
-      setGeneratedCodePlaintext(json.data.plaintextCode);
+      const plaintext =
+        json.data?.plaintextCode ||
+        json.code ||
+        json.plaintextCode ||
+        json.data?.code;
+
+      if (!plaintext) {
+        throw new Error(json.error || "Failed to retrieve generated access code from server response.");
+      }
+
+      setGeneratedCodePlaintext(plaintext);
       await fetchCampaignData();
     } catch (err: any) {
       setStatusMessage({

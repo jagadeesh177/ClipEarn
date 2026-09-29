@@ -80,8 +80,18 @@ export default function AdminManagersPage() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        setJustGeneratedKey(data.data.plaintextKey);
-        await fetchKeysData();
+        const plaintext =
+          data.data?.plaintextKey ||
+          data.key ||
+          data.plaintextKey ||
+          data.data?.key;
+
+        if (plaintext) {
+          setJustGeneratedKey(plaintext);
+          await fetchKeysData();
+        } else {
+          setActionErrorMessage("Failed to retrieve generated key from server response");
+        }
       } else {
         setActionErrorMessage(data.error || "Failed to generate key");
       }
