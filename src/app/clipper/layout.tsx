@@ -21,6 +21,7 @@ import {
   ExternalLink,
   MessageCircle,
   ShieldAlert,
+  CreditCard,
 } from "lucide-react";
 import { clientCache } from "@/lib/clientCache";
 
@@ -155,6 +156,7 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
     { label: "My Submissions", href: "/clipper/submissions", icon: FileText },
     { label: "Notifications", href: "/clipper/notifications", icon: Bell, badge: unreadNotifications },
     { label: "Profile & Accounts", href: "/clipper/profile", icon: UserCheck },
+    { label: "Payment Details", href: "/clipper/payment-details", icon: CreditCard },
     { label: "Earnings", href: "/clipper/earnings", icon: DollarSign },
     { label: "Referrals", href: "/clipper/referrals", icon: Share2 },
   ];

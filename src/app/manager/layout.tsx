@@ -8,17 +8,16 @@ import {
   LayoutDashboard,
   Compass,
   FileCheck,
-  Users,
   Trophy,
   CreditCard,
-  History,
+  Key,
   LogOut,
   RefreshCw,
   Shield,
   Menu,
   X,
-  Plus,
   Loader2,
+  ArrowRight,
 } from "lucide-react";
 
 export default function ManagerLayout({ children }: { children: React.ReactNode }) {
@@ -88,12 +87,11 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
 
   const navItems = [
     { label: "Dashboard", href: "/manager/dashboard", icon: LayoutDashboard },
-    { label: "Campaigns", href: "/manager/campaigns", icon: Compass },
+    { label: "Assigned Campaigns", href: "/manager/campaigns", icon: Compass },
     { label: "Submissions Review", href: "/manager/submissions", icon: FileCheck },
-    { label: "Clippers Directory", href: "/manager/clippers", icon: Users },
     { label: "Leaderboards", href: "/manager/leaderboard", icon: Trophy },
-    { label: "Payout Approvals", href: "/manager/payouts", icon: CreditCard },
-    { label: "System Audit Logs", href: "/manager/audit-logs", icon: History },
+    { label: "Payout Eligibility", href: "/manager/payouts", icon: CreditCard },
+    { label: "Redeem Access Code", href: "/manager/redeem", icon: Key },
   ];
 
   return (
@@ -127,13 +125,13 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
           <div className="pb-6 border-b border-slate-800/80 flex items-center justify-between gap-5">
             <ClipEarnLogo size="sm" href="/manager/dashboard" />
             <span className="px-2.5 py-0.5 rounded bg-purple-500/20 text-purple-400 font-bold text-[9px] uppercase border border-purple-500/30 shrink-0 ml-5">
-              Staff
+              CAMPAIGN MANAGER
             </span>
           </div>
 
           <div className="mt-6">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3">
-              Management
+              Operations
             </span>
             <div className="mt-2 space-y-2">
               {navItems.map((item) => {
@@ -161,6 +159,17 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
 
         {/* Manager User & Worker Trigger */}
         <div className="p-5 border-t border-slate-800/80 bg-[#080C17] space-y-3.5">
+          {/* Admin Switch Link */}
+          {user?.role === "ADMIN" && (
+            <Link
+              href="/admin"
+              className="w-full py-2 px-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-400 text-xs font-bold transition flex items-center justify-between group"
+            >
+              <span>Switch to Admin Console</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+            </Link>
+          )}
+
           {/* Worker Sync Button */}
           <div className="space-y-1.5">
             <span className="text-xs font-semibold text-slate-400 px-1 tracking-normal">

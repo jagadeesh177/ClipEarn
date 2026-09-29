@@ -1,23 +1,36 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSessionUser, requireRole } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
 import { UserRole, CampaignStatus, Platform, Prisma, SubmissionStatus } from "@prisma/client";
-import { logAuditEvent } from "@/lib/audit";
+import { getAccessibleCampaignIdsForManager } from "@/lib/campaignAccess";
 
 export async function GET(request: Request) {
   try {
+    const user = await requireRole([UserRole.MANAGER, UserRole.ADMIN]);
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
     const platform = searchParams.get("platform") as Platform | null;
     const status = searchParams.get("status") as CampaignStatus | null;
     const page = parseInt(searchParams.get("page") || "1", 10);
-    const limit = parseInt(searchParams.get("limit") || "10", 10);
+    const limit = parseInt(searchParams.get("limit") || "50", 10);
     const skip = (page - 1) * limit;
 
-    const user = await getSessionUser();
+    let accessibleCampaignIds: string[] = [];
+    if (user.role === UserRole.MANAGER) {
+      accessibleCampaignIds = await getAccessibleCampaignIdsForManager(user.id);
+      if (accessibleCampaignIds.length === 0) {
+        return NextResponse.json({
+          data: [],
+          pagination: { page, limit, total: 0, totalPages: 0 },
+        });
+      }
+    }
 
     const where: Prisma.CampaignWhereInput = {
-      ...(status ? { status } : { status: { in: [CampaignStatus.ACTIVE, CampaignStatus.PAUSED] } }),
+      ...(user.role === UserRole.MANAGER
+        ? { id: { in: accessibleCampaignIds } }
+        : {}),
+      ...(status ? { status } : {}),
       ...(search
         ? {
             OR: [
@@ -38,21 +51,6 @@ export async function GET(request: Request) {
         take: limit,
         orderBy: { created_at: "desc" },
         include: {
-          memberships: user ? { where: { user_id: user.id } } : false,
-          access_codes: user?.role === UserRole.ADMIN ? {
-            select: {
-              id: true,
-              code_preview: true,
-              status: true,
-              expires_at: true,
-              created_at: true,
-              redeemed_at: true,
-              manager: {
-                select: { id: true, username: true, email: true },
-              },
-            },
-            orderBy: { created_at: "desc" },
-          } : false,
           _count: {
             select: {
               memberships: true,
@@ -63,7 +61,12 @@ export async function GET(request: Request) {
             select: {
               status: true,
               current_views: true,
+              current_likes: true,
+              current_comments: true,
+              current_shares: true,
+              current_saves: true,
               eligible_views: true,
+              current_earnings: true,
             },
           },
         },
@@ -74,16 +77,34 @@ export async function GET(request: Request) {
       const approvedSubmissions = c.submissions.filter(
         (s) => s.status === SubmissionStatus.APPROVED
       );
+      const pendingSubmissions = c.submissions.filter(
+        (s) => s.status === SubmissionStatus.PENDING
+      );
+
       const totalApprovedViews = approvedSubmissions.reduce(
         (sum, s) => sum + s.current_views,
         0
       );
-      const eligibleViews = totalApprovedViews;
+      const totalApprovedLikes = approvedSubmissions.reduce(
+        (sum, s) => sum + (s.current_likes || 0),
+        0
+      );
+      const totalApprovedComments = approvedSubmissions.reduce(
+        (sum, s) => sum + (s.current_comments || 0),
+        0
+      );
+      const totalApprovedShares = approvedSubmissions.reduce(
+        (sum, s) => sum + (s.current_shares || 0),
+        0
+      );
+      const totalApprovedSaves = approvedSubmissions.reduce(
+        (sum, s) => sum + (s.current_saves || 0),
+        0
+      );
+
       const minViews = c.minimum_views_for_payout || 0;
-      // Only once approved views reach minimum_views_for_payout does budget used increase
       const hasReachedMinViews = minViews > 0 ? totalApprovedViews >= minViews : true;
       const usedBudget = hasReachedMinViews ? Number(c.used_budget) : 0;
-      const isJoined = user ? c.memberships.length > 0 : false;
       const maxPayableViews = Math.floor((Number(c.total_budget) / Number(c.cpm)) * 1000);
 
       return {
@@ -98,17 +119,23 @@ export async function GET(request: Request) {
         used_budget: usedBudget,
         remaining_budget: Math.max(0, Number(c.total_budget) - usedBudget),
         minimum_views_for_payout: c.minimum_views_for_payout,
+        maximum_views_per_clip: c.maximum_views_per_clip,
         allowed_platforms: c.allowed_platforms,
         view_eligibility_mode: c.view_eligibility_mode,
         total_views: totalApprovedViews,
-        eligible_views: eligibleViews,
+        approved_views: totalApprovedViews,
+        approved_likes: totalApprovedLikes,
+        approved_comments: totalApprovedComments,
+        approved_shares: totalApprovedShares,
+        approved_saves: totalApprovedSaves,
+        eligible_views: totalApprovedViews,
         max_payable_views: maxPayableViews,
         clippers_count: c._count.memberships,
         submissions_count: c._count.submissions,
-        is_joined: isJoined,
+        approved_submissions_count: approvedSubmissions.length,
+        pending_submissions_count: pendingSubmissions.length,
         requirements: c.requirements,
         created_at: c.created_at,
-        access_codes: user?.role === UserRole.ADMIN ? (c as any).access_codes : undefined,
       };
     });
 
@@ -122,62 +149,9 @@ export async function GET(request: Request) {
       },
     });
   } catch (err: any) {
-    return NextResponse.json({ error: err?.message || "Failed to fetch campaigns" }, { status: 500 });
-  }
-}
-
-export async function POST(request: Request) {
-  try {
-    const user = await requireRole([UserRole.ADMIN]);
-    const body = await request.json();
-
-    const {
-      name,
-      brand_name,
-      description,
-      image_url,
-      cpm,
-      total_budget,
-      minimum_views_for_payout,
-      maximum_views_per_clip,
-      allowed_platforms,
-      requirements,
-      prohibited_content,
-      view_eligibility_mode,
-    } = body;
-
-    if (!name || !cpm || !total_budget) {
-      return NextResponse.json({ error: "Missing required campaign fields (name, cpm, total_budget)" }, { status: 400 });
-    }
-
-    const campaign = await prisma.campaign.create({
-      data: {
-        name,
-        brand_name: brand_name || name,
-        description: description || "",
-        image_url: image_url || null,
-        cpm: new Prisma.Decimal(cpm),
-        total_budget: new Prisma.Decimal(total_budget),
-        minimum_views_for_payout: minimum_views_for_payout || 100000,
-        maximum_views_per_clip: maximum_views_per_clip || null,
-        allowed_platforms: allowed_platforms || [Platform.INSTAGRAM, Platform.TIKTOK, Platform.YOUTUBE],
-        requirements: requirements || [],
-        prohibited_content: prohibited_content || [],
-        view_eligibility_mode: view_eligibility_mode || "FROM_SUBMISSION",
-        created_by: user.id,
-      },
-    });
-
-    await logAuditEvent({
-      actorId: user.id,
-      action: "CAMPAIGN_CREATED",
-      targetType: "CAMPAIGN",
-      targetId: campaign.id,
-      newValue: { name, brand_name, budget: total_budget, cpm },
-    });
-
-    return NextResponse.json({ success: true, campaign }, { status: 201 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message || "Failed to create campaign" }, { status: 500 });
+    return NextResponse.json(
+      { error: err?.message || "Failed to fetch manager campaigns" },
+      { status: 500 }
+    );
   }
 }

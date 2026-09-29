@@ -75,33 +75,83 @@ export function generateAccessCode(): {
 
 /**
  * Checks whether a user has permission to manage/access a campaign.
- * - Admins have global access.
- * - Managers only have access if they have successfully redeemed an access code record.
+ * - Admins have global access to all campaigns.
+ * - Managers only have access if they have redeemed a CampaignAccessCode, created the campaign, or are an active member.
  */
 export async function hasManagerCampaignAccess(
   userId: string,
   campaignId: string,
   role: UserRole
 ): Promise<boolean> {
-  if (role === UserRole.ADMIN || role === UserRole.MANAGER) {
+  if (role === UserRole.ADMIN) {
     return true;
+  }
+  if (role === UserRole.MANAGER) {
+    const [redeemedCode, createdCampaign, membership] = await Promise.all([
+      prisma.campaignAccessCode.findFirst({
+        where: {
+          campaign_id: campaignId,
+          redeemed_by: userId,
+          status: "REDEEMED",
+        },
+      }),
+      prisma.campaign.findFirst({
+        where: {
+          id: campaignId,
+          created_by: userId,
+        },
+      }),
+      prisma.campaignMembership.findFirst({
+        where: {
+          campaign_id: campaignId,
+          user_id: userId,
+          status: "ACTIVE",
+        },
+      }),
+    ]);
+
+    return !!(redeemedCode || createdCampaign || membership);
   }
   return false;
 }
 
 /**
- * Retrieves the list of campaign IDs that a manager has redeemed access to.
+ * Retrieves the list of campaign IDs that a manager has assigned access to.
  */
 export async function getAccessibleCampaignIdsForManager(userId: string): Promise<string[]> {
-  const records = await prisma.campaignAccessCode.findMany({
-    where: {
-      redeemed_by: userId,
-      status: "REDEEMED",
-    },
-    select: {
-      campaign_id: true,
-    },
-  });
+  const [accessCodes, createdCampaigns, memberships] = await Promise.all([
+    prisma.campaignAccessCode.findMany({
+      where: {
+        redeemed_by: userId,
+        status: "REDEEMED",
+      },
+      select: {
+        campaign_id: true,
+      },
+    }),
+    prisma.campaign.findMany({
+      where: {
+        created_by: userId,
+      },
+      select: {
+        id: true,
+      },
+    }),
+    prisma.campaignMembership.findMany({
+      where: {
+        user_id: userId,
+        status: "ACTIVE",
+      },
+      select: {
+        campaign_id: true,
+      },
+    }),
+  ]);
 
-  return records.map((r) => r.campaign_id);
+  const campaignIdSet = new Set<string>();
+  accessCodes.forEach((r) => campaignIdSet.add(r.campaign_id));
+  createdCampaigns.forEach((r) => campaignIdSet.add(r.id));
+  memberships.forEach((r) => campaignIdSet.add(r.campaign_id));
+
+  return Array.from(campaignIdSet);
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   FileCheck,
   CheckCircle2,
@@ -19,8 +20,13 @@ import {
   Bookmark,
 } from "lucide-react";
 
-export default function ManagerSubmissionsReviewPage() {
+function SubmissionsReviewContent() {
+  const searchParams = useSearchParams();
+  const initialCampaignId = searchParams.get("campaign_id") || "";
+
   const [submissions, setSubmissions] = useState<any[]>([]);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string>(initialCampaignId);
   const [statusFilter, setStatusFilter] = useState<string>("PENDING");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -45,10 +51,20 @@ export default function ManagerSubmissionsReviewPage() {
     "Other",
   ];
 
+  useEffect(() => {
+    fetch("/api/manager/campaigns?limit=100")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.data) setCampaigns(data.data);
+      })
+      .catch(() => {});
+  }, []);
+
   const loadSubmissions = () => {
     setLoading(true);
     let url = `/api/manager/submissions?search=${encodeURIComponent(search)}`;
     if (statusFilter !== "ALL") url += `&status=${statusFilter}`;
+    if (selectedCampaignId) url += `&campaign_id=${selectedCampaignId}`;
 
     fetch(url)
       .then((res) => res.json())
@@ -61,7 +77,7 @@ export default function ManagerSubmissionsReviewPage() {
 
   useEffect(() => {
     loadSubmissions();
-  }, [statusFilter]);
+  }, [statusFilter, selectedCampaignId]);
 
   const handleReviewAction = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,6 +142,21 @@ export default function ManagerSubmissionsReviewPage() {
             className="w-full h-10 bg-[#0F141F] border border-slate-800 rounded-xl pl-10 pr-4 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-cyan transition-colors"
           />
         </div>
+
+        {campaigns.length > 0 && (
+          <select
+            value={selectedCampaignId}
+            onChange={(e) => setSelectedCampaignId(e.target.value)}
+            className="h-10 bg-[#0F141F] border border-slate-800 rounded-xl px-3 text-xs text-white focus:outline-none focus:border-brand-cyan shrink-0"
+          >
+            <option value="">All Assigned Campaigns</option>
+            {campaigns.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.brand_name} &bull; {c.name}
+              </option>
+            ))}
+          </select>
+        )}
 
         <div
           role="tablist"
@@ -580,6 +611,21 @@ export default function ManagerSubmissionsReviewPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ManagerSubmissionsReviewPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="py-20 text-center text-slate-500">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-purple-400 mb-2" />
+          <p className="text-xs">Loading submissions review queue...</p>
+        </div>
+      }
+    >
+      <SubmissionsReviewContent />
+    </Suspense>
   );
 }
 

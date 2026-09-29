@@ -1,103 +1,152 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
-import { UserRole, PayoutStatus } from "@prisma/client";
-import { logAuditEvent } from "@/lib/audit";
+import { UserRole, SubmissionStatus } from "@prisma/client";
+import { getAccessibleCampaignIdsForManager } from "@/lib/campaignAccess";
 
+/**
+ * GET /api/manager/payouts
+ * Returns payout eligibility and payment status strictly scoped to assigned campaigns.
+ * Private clipper payment details are NEVER exposed to managers.
+ */
 export async function GET() {
   try {
-    await requireRole([UserRole.MANAGER, UserRole.ADMIN]);
+    const user = await requireRole([UserRole.MANAGER, UserRole.ADMIN]);
 
-    const payouts = await prisma.payout.findMany({
-      orderBy: { requested_at: "desc" },
-      include: {
-        user: {
+    let assignedCampaignIds: string[] = [];
+    if (user.role === UserRole.MANAGER) {
+      assignedCampaignIds = await getAccessibleCampaignIdsForManager(user.id);
+      if (assignedCampaignIds.length === 0) {
+        return NextResponse.json({ data: [] });
+      }
+    }
+
+    const campaignWhere =
+      user.role === UserRole.MANAGER
+        ? { id: { in: assignedCampaignIds } }
+        : {};
+
+    // Fetch campaigns, their approved submissions, and payouts
+    const campaigns = await prisma.campaign.findMany({
+      where: campaignWhere,
+      select: {
+        id: true,
+        name: true,
+        brand_name: true,
+        cpm: true,
+        minimum_views_for_payout: true,
+        status: true,
+        submissions: {
+          where: { status: SubmissionStatus.APPROVED },
+          select: {
+            user_id: true,
+            current_views: true,
+            current_earnings: true,
+            user: {
+              select: {
+                id: true,
+                username: true,
+                avatar_url: true,
+              },
+            },
+          },
+        },
+        payouts: {
           select: {
             id: true,
-            username: true,
-            email: true,
-            discord_id: true,
+            user_id: true,
+            amount: true,
+            status: true,
+            transaction_id: true,
+            paid_at: true,
+            requested_at: true,
           },
         },
       },
     });
 
-    const formatted = payouts.map((p) => ({
-      id: p.id,
-      userId: p.user_id,
-      username: p.user.username,
-      email: p.user.email,
-      amount: Number(p.amount),
-      currency: p.currency,
-      method: p.method,
-      status: p.status,
-      transactionId: p.transaction_id,
-      failureReason: p.failure_reason,
-      requestedAt: p.requested_at,
-      processedAt: p.processed_at,
-    }));
+    const eligibleClippersList: any[] = [];
 
-    return NextResponse.json({ data: formatted });
+    for (const campaign of campaigns) {
+      const minViews = campaign.minimum_views_for_payout || 0;
+
+      // Group approved views and earnings by clipper
+      const clipperMap = new Map<
+        string,
+        {
+          clipperId: string;
+          username: string;
+          avatarUrl: string | null;
+          approvedViews: number;
+          earnings: number;
+        }
+      >();
+
+      for (const sub of campaign.submissions) {
+        const existing = clipperMap.get(sub.user_id) || {
+          clipperId: sub.user.id,
+          username: sub.user.username,
+          avatarUrl: sub.user.avatar_url,
+          approvedViews: 0,
+          earnings: 0,
+        };
+        existing.approvedViews += sub.current_views;
+        existing.earnings += Number(sub.current_earnings);
+        clipperMap.set(sub.user_id, existing);
+      }
+
+      // Map payouts for quick lookup
+      const payoutMap = new Map<string, any>();
+      for (const p of campaign.payouts) {
+        payoutMap.set(p.user_id, p);
+      }
+
+      for (const [, clipper] of clipperMap) {
+        const isEligible = minViews > 0 ? clipper.approvedViews >= minViews : true;
+        const payout = payoutMap.get(clipper.clipperId);
+
+        let payoutStatus = isEligible ? "ELIGIBLE" : "NOT_ELIGIBLE";
+        if (payout) {
+          payoutStatus = payout.status;
+        }
+
+        eligibleClippersList.push({
+          campaignId: campaign.id,
+          campaignName: campaign.name,
+          brandName: campaign.brand_name,
+          clipperId: clipper.clipperId,
+          username: clipper.username,
+          avatarUrl: clipper.avatarUrl,
+          approvedViews: clipper.approvedViews,
+          thresholdViews: minViews,
+          earnings: clipper.earnings,
+          isEligible,
+          payoutStatus,
+          transactionId: payout?.transaction_id || null,
+          paidAt: payout?.paid_at || null,
+        });
+      }
+    }
+
+    return NextResponse.json({ data: eligibleClippersList });
   } catch (err: any) {
-    return NextResponse.json({ error: err?.message || "Failed to fetch payouts" }, { status: 500 });
+    return NextResponse.json(
+      { error: err?.message || "Failed to fetch payout eligibility" },
+      { status: 500 }
+    );
   }
 }
 
-export async function PATCH(request: Request) {
-  try {
-    const manager = await requireRole([UserRole.MANAGER, UserRole.ADMIN]);
-    const { payoutId, status, transactionId, failureReason } = await request.json();
-
-    if (!payoutId || !status) {
-      return NextResponse.json({ error: "Payout ID and status are required." }, { status: 400 });
-    }
-
-    const existing = await prisma.payout.findUnique({
-      where: { id: payoutId },
-    });
-
-    if (!existing) {
-      return NextResponse.json({ error: "Payout not found." }, { status: 404 });
-    }
-
-    const updated = await prisma.$transaction(async (tx) => {
-      const p = await tx.payout.update({
-        where: { id: payoutId },
-        data: {
-          status: status as PayoutStatus,
-          transaction_id: transactionId || existing.transaction_id,
-          failure_reason: failureReason || null,
-          processed_at: status === PayoutStatus.PAID || status === PayoutStatus.FAILED ? new Date() : null,
-        },
-      });
-
-      // Notify user
-      const isPaid = status === PayoutStatus.PAID;
-      await tx.notification.create({
-        data: {
-          user_id: p.user_id,
-          type: isPaid ? "PAYOUT_PROCESSED" : "PAYOUT_FAILED",
-          title: isPaid ? "Payout Completed! 💰" : "Payout Failed",
-          message: isPaid
-            ? `Your payout of $${Number(p.amount).toFixed(2)} via ${p.method} was processed with Transaction ID: ${transactionId || "N/A"}.`
-            : `Your payout request was rejected. Reason: ${failureReason || "Verification issue"}`,
-        },
-      });
-
-      return p;
-    });
-
-    await logAuditEvent({
-      actorId: manager.id,
-      action: `PAYOUT_${status}`,
-      targetType: "PAYOUT",
-      targetId: payoutId,
-      oldValue: { status: existing.status },
-      newValue: { status, transactionId },
-    });
-
-    return NextResponse.json({ success: true, payout: updated });
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message || "Failed to process payout" }, { status: 500 });
-  }
+/**
+ * PATCH /api/manager/payouts
+ * Blocked for managers: Only Administrators can disburse or reject payouts.
+ */
+export async function PATCH() {
+  return NextResponse.json(
+    {
+      error:
+        "Direct payout processing is strictly restricted to Platform Administrators. Campaign Managers have read-only eligibility overview access.",
+    },
+    { status: 403 }
+  );
 }

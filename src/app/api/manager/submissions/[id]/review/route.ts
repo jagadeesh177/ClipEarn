@@ -33,6 +33,17 @@ export async function POST(
       return NextResponse.json({ error: "Submission not found" }, { status: 404 });
     }
 
+    if (manager.role === UserRole.MANAGER) {
+      const { hasManagerCampaignAccess } = await import("@/lib/campaignAccess");
+      const hasAccess = await hasManagerCampaignAccess(manager.id, submission.campaign_id, manager.role);
+      if (!hasAccess) {
+        return NextResponse.json(
+          { error: "Unauthorized. You are not assigned to manage this campaign." },
+          { status: 403 }
+        );
+      }
+    }
+
     const isAppeal = submission.status === SubmissionStatus.APPEALED;
     const wasApproved = submission.status === SubmissionStatus.APPROVED;
 

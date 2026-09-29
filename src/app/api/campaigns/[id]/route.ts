@@ -35,7 +35,20 @@ export async function GET(
           select: {
             status: true,
             current_views: true,
+            current_likes: true,
+            current_comments: true,
+            current_shares: true,
+            current_saves: true,
             eligible_views: true,
+            current_earnings: true,
+            user_id: true,
+          },
+        },
+        payouts: {
+          select: {
+            status: true,
+            amount: true,
+            user_id: true,
           },
         },
       },
@@ -48,17 +61,61 @@ export async function GET(
     const approvedSubmissions = campaign.submissions.filter(
       (s) => s.status === SubmissionStatus.APPROVED
     );
+
     const totalApprovedViews = approvedSubmissions.reduce(
       (sum, s) => sum + s.current_views,
       0
     );
-    const eligibleViews = totalApprovedViews;
+    const totalApprovedLikes = approvedSubmissions.reduce(
+      (sum, s) => sum + (s.current_likes || 0),
+      0
+    );
+    const totalApprovedComments = approvedSubmissions.reduce(
+      (sum, s) => sum + (s.current_comments || 0),
+      0
+    );
+    const totalApprovedShares = approvedSubmissions.reduce(
+      (sum, s) => sum + (s.current_shares || 0),
+      0
+    );
+    const totalApprovedSaves = approvedSubmissions.reduce(
+      (sum, s) => sum + (s.current_saves || 0),
+      0
+    );
+    const totalEarned = approvedSubmissions.reduce(
+      (sum, s) => sum + Number(s.current_earnings || 0),
+      0
+    );
+
     const minViews = campaign.minimum_views_for_payout || 0;
-    // Once approved views reach minimum_views_for_payout, then only budget used increases; otherwise view progress increases while budget used stays 0
     const hasReachedMinViews = minViews > 0 ? totalApprovedViews >= minViews : true;
     const computedUsedBudget = hasReachedMinViews ? Number(campaign.used_budget) : 0;
     const isJoined = user ? campaign.memberships.length > 0 : false;
     const maxPayableViews = Math.floor((Number(campaign.total_budget) / Number(campaign.cpm)) * 1000);
+
+    // Group approved views by clipper to determine payout eligibility
+    const clipperViewsMap = new Map<string, number>();
+    for (const sub of approvedSubmissions) {
+      const prev = clipperViewsMap.get(sub.user_id) || 0;
+      clipperViewsMap.set(sub.user_id, prev + sub.current_views);
+    }
+
+    let eligibleClippersCount = 0;
+    for (const [, views] of clipperViewsMap) {
+      if (minViews > 0 ? views >= minViews : true) {
+        eligibleClippersCount++;
+      }
+    }
+
+    let pendingPaymentAmount = 0;
+    let paidAmount = 0;
+    for (const p of campaign.payouts) {
+      if (p.status === "PENDING" || p.status === "PROCESSING") {
+        pendingPaymentAmount += Number(p.amount);
+      } else if (p.status === "PAID") {
+        paidAmount += Number(p.amount);
+      }
+    }
 
     return NextResponse.json({
       data: {
@@ -79,7 +136,13 @@ export async function GET(
         requirements: campaign.requirements || [],
         prohibited_content: campaign.prohibited_content || [],
         total_views: totalApprovedViews,
-        eligible_views: eligibleViews,
+        approved_views: totalApprovedViews,
+        approved_likes: totalApprovedLikes,
+        approved_comments: totalApprovedComments,
+        approved_shares: totalApprovedShares,
+        approved_saves: totalApprovedSaves,
+        total_earned: totalEarned,
+        eligible_views: totalApprovedViews,
         max_payable_views: maxPayableViews,
         clippers_count: campaign._count.memberships,
         submissions_count: campaign._count.submissions,
@@ -87,6 +150,11 @@ export async function GET(
         start_date: campaign.start_date,
         end_date: campaign.end_date,
         created_at: campaign.created_at,
+        payout_summary: {
+          eligible_clippers_count: eligibleClippersCount,
+          pending_payment_amount: pendingPaymentAmount,
+          paid_amount: paidAmount,
+        },
       },
     });
   } catch (err: any) {
@@ -99,7 +167,7 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await requireRole([UserRole.MANAGER, UserRole.ADMIN]);
+    const user = await requireRole([UserRole.ADMIN]);
     const body = await request.json();
 
     const existing = await prisma.campaign.findUnique({
@@ -108,16 +176,6 @@ export async function PATCH(
 
     if (!existing) {
       return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
-    }
-
-    if (user.role === UserRole.MANAGER) {
-      const hasAccess = await hasManagerCampaignAccess(user.id, params.id, user.role);
-      if (!hasAccess) {
-        return NextResponse.json(
-          { error: "Access denied. You do not have permission to modify this campaign." },
-          { status: 403 }
-        );
-      }
     }
 
     const updated = await prisma.campaign.update({

@@ -786,55 +786,41 @@ export default function CampaignDetailsPage() {
                 aria-labelledby="tab-stats"
                 className="space-y-4"
               >
-                {/* Stat Cards Row */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                  <div className="p-6 rounded-2xl bg-[#0D131D] border border-slate-800/80 text-center space-y-1">
+                {/* 4 Stat Cards in one row - matching reference */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="p-5 rounded-xl bg-[#0D131D] border border-slate-800/60 text-center space-y-1">
                     <div className="text-2xl sm:text-3xl font-black text-white">
                       {(myStats?.totalViews || 0).toLocaleString()}
                     </div>
                     <div className="text-xs font-medium text-slate-400">Total Views</div>
                   </div>
 
-                  <div className="p-6 rounded-2xl bg-[#0D131D] border border-brand-cyan/20 border text-center space-y-1">
-                    <div className="text-2xl sm:text-3xl font-black text-brand-cyan">
-                      {(myStats?.approvedViews || 0).toLocaleString()}
-                    </div>
-                    <div className="text-xs font-medium text-slate-400">Approved Views</div>
-                  </div>
-
-                  <div className="p-6 rounded-2xl bg-[#0D131D] border border-slate-800/80 text-center space-y-1">
-                    <div className="text-2xl sm:text-3xl font-black text-emerald-400">
+                  <div className="p-5 rounded-xl bg-[#0D131D] border border-slate-800/60 text-center space-y-1">
+                    <div className="text-2xl sm:text-3xl font-black text-white">
                       ${(myStats?.totalEarnings || 0).toFixed(2)}
                     </div>
                     <div className="text-xs font-medium text-slate-400">Total Earnings</div>
                   </div>
 
-                  <div className="p-6 rounded-2xl bg-[#0D131D] border border-slate-800/80 text-center space-y-1">
+                  <div className="p-5 rounded-xl bg-[#0D131D] border border-slate-800/60 text-center space-y-1">
                     <div className="text-2xl sm:text-3xl font-black text-white">
                       {myStats?.clipsSubmitted ?? mySubmissions.length}
                     </div>
                     <div className="text-xs font-medium text-slate-400">Clips Submitted</div>
                   </div>
 
-                  <div className="p-6 rounded-2xl bg-[#0D131D] border border-slate-800/80 text-center space-y-1">
-                    <div className="text-2xl sm:text-3xl font-black text-brand-cyan">
+                  <div className="p-5 rounded-xl bg-[#0D131D] border border-slate-800/60 text-center space-y-1">
+                    <div className="text-2xl sm:text-3xl font-black text-white">
                       {myStats?.approvedClips ?? mySubmissions.filter((s) => s.status === "APPROVED").length}
                     </div>
                     <div className="text-xs font-medium text-slate-400">Approved</div>
-                  </div>
-
-                  <div className="p-6 rounded-2xl bg-[#0D131D] border border-slate-800/80 text-center space-y-1">
-                    <div className="text-2xl sm:text-3xl font-black text-purple-400">
-                      {(myStats?.eligibleViews || 0).toLocaleString()}
-                    </div>
-                    <div className="text-xs font-medium text-slate-400">Eligible Views</div>
                   </div>
                 </div>
 
                 {/* Payout Eligibility Status Card */}
                 {myStats && myStats.minimumViewsForPayout > 0 && (
                   (myStats.qualifiesForPayout || (myStats.viewsRemainingForPayout !== undefined && myStats.viewsRemainingForPayout <= 0) || (myStats.progressPercent !== undefined && myStats.progressPercent >= 100)) ? (
-                    <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between gap-3 text-left animate-fadeIn">
+                    <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between gap-3 text-left animate-fadeIn">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
                           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
@@ -853,7 +839,7 @@ export default function CampaignDetailsPage() {
                       </span>
                     </div>
                   ) : (
-                    <div className="p-4 rounded-2xl bg-[#080C14] border border-slate-800/80 space-y-2 text-left">
+                    <div className="p-4 rounded-xl bg-[#080C14] border border-slate-800/80 space-y-2 text-left">
                       <div className="flex justify-between items-center text-xs">
                         <span className="text-slate-400 font-semibold">Payout Eligibility Progress</span>
                         <span className="font-bold text-brand-cyan">
@@ -876,13 +862,13 @@ export default function CampaignDetailsPage() {
               </div>
             )}
 
-            {/* TAB 3: Leaderboard matching Screenshot 3 */}
+            {/* TAB 3: Leaderboard */}
             {activeTab === "leaderboard" && (
               <div
                 role="tabpanel"
                 id="panel-leaderboard"
                 aria-labelledby="tab-leaderboard"
-                className="rounded-2xl bg-[#0D131D] border border-slate-800/80 overflow-hidden"
+                className="rounded-xl bg-[#0D131D] border border-slate-800/80 overflow-hidden"
               >
                 {leaderboard.length === 0 ? (
                   <div className="py-12 text-center text-slate-500 text-xs">
@@ -890,39 +876,32 @@ export default function CampaignDetailsPage() {
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-[#080C14] text-xs font-semibold text-slate-400 border-b border-slate-800">
+                    <table className="w-full text-left">
+                      <thead className="bg-[#080C14] border-b border-slate-800">
                         <tr>
-                          <th className="py-3 px-4 w-12">#</th>
-                          <th className="py-3 px-4">Clipper</th>
-                          <th className="py-3 px-4 text-right">Views</th>
-                          <th className="py-3 px-4 text-right">Clips</th>
-                          <th className="py-3 px-4 text-right">Earnings</th>
+                          <th className="py-3 px-4 w-12 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">#</th>
+                          <th className="py-3 px-4 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Clipper</th>
+                          <th className="py-3 px-4 text-right text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Views</th>
+                          <th className="py-3 px-4 text-right text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Clips</th>
+                          <th className="py-3 px-4 text-right text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Earnings</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-800/60 font-medium">
+                      <tbody className="divide-y divide-slate-800/50">
                         {leaderboard.map((item) => (
-                          <tr key={item.userId} className="hover:bg-slate-900/40">
-                            <td className="py-3.5 px-4 font-bold">
-                              {item.rank === 1 ? "🥇" : item.rank === 2 ? "🥈" : item.rank === 3 ? "🥉" : `#${item.rank}`}
+                          <tr key={item.userId} className="hover:bg-slate-900/40 transition-colors">
+                            <td className="py-4 px-4 text-sm font-bold text-slate-300">
+                              {item.rank === 1 ? "🔥" : item.rank === 2 ? "🥈" : item.rank === 3 ? "🥉" : `${item.rank}`}
                             </td>
-                            <td className="py-3.5 px-4">
-                              <div className="flex items-center gap-2.5 font-bold text-white">
-                                <img
-                                  src={item.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${item.username}`}
-                                  alt="Avatar"
-                                  className="w-6 h-6 rounded-full bg-slate-800 border border-slate-700"
-                                />
-                                <span>{item.username}</span>
-                              </div>
+                            <td className="py-4 px-4">
+                              <span className="text-sm font-bold text-white">{item.username}</span>
                             </td>
-                            <td className="py-3.5 px-4 text-right text-slate-200">
+                            <td className="py-4 px-4 text-right text-sm font-semibold text-slate-200">
                               {(item.approvedViews ?? item.eligibleViews).toLocaleString()}
                             </td>
-                            <td className="py-3.5 px-4 text-right text-slate-400">
+                            <td className="py-4 px-4 text-right text-sm font-semibold text-slate-400">
                               {item.clipsCount}
                             </td>
-                            <td className="py-3.5 px-4 text-right font-bold text-brand-cyan">
+                            <td className="py-4 px-4 text-right text-sm font-bold text-brand-cyan">
                               ${item.earnings.toFixed(2)}
                             </td>
                           </tr>

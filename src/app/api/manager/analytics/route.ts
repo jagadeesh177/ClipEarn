@@ -1,31 +1,63 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
-import { UserRole, SubmissionStatus, CampaignStatus, PayoutStatus } from "@prisma/client";
+import { UserRole, SubmissionStatus, CampaignStatus } from "@prisma/client";
+import { getAccessibleCampaignIdsForManager } from "@/lib/campaignAccess";
 
 export async function GET() {
   try {
     const user = await requireRole([UserRole.MANAGER, UserRole.ADMIN]);
 
-    const campaignFilter =
+    // Managers can only see assigned campaigns
+    let assignedCampaignIds: string[] = [];
+    if (user.role === UserRole.MANAGER) {
+      assignedCampaignIds = await getAccessibleCampaignIdsForManager(user.id);
+      if (assignedCampaignIds.length === 0) {
+        return NextResponse.json({
+          data: {
+            hasAssignedCampaigns: false,
+            assignedCampaignsCount: 0,
+            activeCampaignsCount: 0,
+            totalSubmissions: 0,
+            pendingReviews: 0,
+            approvedSubmissions: 0,
+            rejectedSubmissions: 0,
+            approvedViews: 0,
+            approvedLikes: 0,
+            approvedComments: 0,
+            approvedShares: 0,
+            approvedSaves: 0,
+            eligibleViews: 0,
+            totalBudget: 0,
+            usedBudget: 0,
+            remainingBudget: 0,
+            totalEarnings: 0,
+          },
+        });
+      }
+    }
+
+    const campaignWhere =
       user.role === UserRole.MANAGER
-        ? { access_codes: { some: { redeemed_by: user.id, status: "REDEEMED" } } }
+        ? { id: { in: assignedCampaignIds } }
+        : {};
+
+    const submissionWhere =
+      user.role === UserRole.MANAGER
+        ? { campaign_id: { in: assignedCampaignIds } }
         : {};
 
     const [
       activeCampaignsCount,
-      totalClippersCount,
+      totalAssignedCount,
       submissionsCounts,
-      payoutsCounts,
       budgetAggregate,
-      ledgerAggregate,
-      recentSnapshots,
     ] = await Promise.all([
-      prisma.campaign.count({ where: { status: CampaignStatus.ACTIVE, ...campaignFilter } }),
-      prisma.user.count({ where: { role: UserRole.CLIPPER } }),
+      prisma.campaign.count({ where: { status: CampaignStatus.ACTIVE, ...campaignWhere } }),
+      prisma.campaign.count({ where: campaignWhere }),
       prisma.submission.groupBy({
         by: ["status"],
-        where: user.role === UserRole.MANAGER ? { campaign: campaignFilter } : undefined,
+        where: submissionWhere,
         _count: true,
         _sum: {
           current_views: true,
@@ -37,27 +69,12 @@ export async function GET() {
           current_earnings: true,
         },
       }),
-      prisma.payout.groupBy({
-        by: ["status"],
-        _count: true,
-        _sum: { amount: true },
-      }),
       prisma.campaign.aggregate({
-        where: campaignFilter,
+        where: campaignWhere,
         _sum: {
           total_budget: true,
           used_budget: true,
         },
-      }),
-      prisma.earningsLedger.aggregate({
-        _sum: {
-          amount: true,
-          views: true,
-        },
-      }),
-      prisma.viewSnapshot.findMany({
-        take: 30,
-        orderBy: { captured_at: "desc" },
       }),
     ]);
 
@@ -65,72 +82,55 @@ export async function GET() {
     let pendingReviews = 0;
     let approvedSubmissions = 0;
     let rejectedSubmissions = 0;
-    let totalViews = 0;
-    let totalLikes = 0;
-    let totalComments = 0;
-    let totalShares = 0;
-    let totalSaves = 0;
     let approvedViews = 0;
+    let approvedLikes = 0;
+    let approvedComments = 0;
+    let approvedShares = 0;
+    let approvedSaves = 0;
+    let totalEarnings = 0;
 
     for (const group of submissionsCounts) {
       totalSubmissions += group._count;
-      totalViews += group._sum.current_views || 0;
-      totalLikes += group._sum.current_likes || 0;
-      totalComments += group._sum.current_comments || 0;
-      totalShares += group._sum.current_shares || 0;
-      totalSaves += group._sum.current_saves || 0;
 
-      if (group.status === SubmissionStatus.PENDING) pendingReviews = group._count;
+      if (group.status === SubmissionStatus.PENDING) {
+        pendingReviews = group._count;
+      }
       if (group.status === SubmissionStatus.APPROVED) {
         approvedSubmissions = group._count;
         approvedViews = group._sum.current_views || 0;
+        approvedLikes = group._sum.current_likes || 0;
+        approvedComments = group._sum.current_comments || 0;
+        approvedShares = group._sum.current_shares || 0;
+        approvedSaves = group._sum.current_saves || 0;
+        totalEarnings = Number(group._sum.current_earnings || 0);
       }
-      if (group.status === SubmissionStatus.REJECTED) rejectedSubmissions = group._count;
-    }
-
-    const eligibleViews = approvedViews;
-
-    let pendingPayoutAmount = 0;
-    let paidOutAmount = 0;
-    for (const group of payoutsCounts) {
-      if (group.status === PayoutStatus.PENDING || group.status === PayoutStatus.PROCESSING) {
-        pendingPayoutAmount += Number(group._sum.amount || 0);
-      }
-      if (group.status === PayoutStatus.PAID) {
-        paidOutAmount += Number(group._sum.amount || 0);
+      if (group.status === SubmissionStatus.REJECTED) {
+        rejectedSubmissions = group._count;
       }
     }
 
     const totalBudget = Number(budgetAggregate._sum.total_budget || 0);
     const usedBudget = Number(budgetAggregate._sum.used_budget || 0);
-    const totalEarnings = Number(ledgerAggregate._sum.amount || 0);
-
-    const avgViewsPerClip = approvedSubmissions > 0 ? Math.round(eligibleViews / approvedSubmissions) : 0;
-    const avgEarningsPerClip = approvedSubmissions > 0 ? Number((totalEarnings / approvedSubmissions).toFixed(2)) : 0;
 
     return NextResponse.json({
       data: {
+        hasAssignedCampaigns: true,
+        assignedCampaignsCount: totalAssignedCount,
         activeCampaignsCount,
-        totalClippersCount,
         totalSubmissions,
         pendingReviews,
         approvedSubmissions,
         rejectedSubmissions,
-        totalViews,
-        totalLikes,
-        totalComments,
-        totalShares,
-        totalSaves,
         approvedViews,
-        eligibleViews,
+        approvedLikes,
+        approvedComments,
+        approvedShares,
+        approvedSaves,
+        eligibleViews: approvedViews,
         totalBudget,
         usedBudget,
         remainingBudget: Math.max(0, totalBudget - usedBudget),
         totalEarnings,
-        pendingPayoutAmount,
-        paidOutAmount,
-        avgViewsPerClip,
-        avgEarningsPerClip,
       },
     });
   } catch (err: any) {

@@ -16,8 +16,30 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get("limit") || "15", 10);
     const skip = (page - 1) * limit;
 
+    let managerCampaignIds: string[] = [];
+    if (user.role === UserRole.MANAGER) {
+      const { getAccessibleCampaignIdsForManager } = await import("@/lib/campaignAccess");
+      managerCampaignIds = await getAccessibleCampaignIdsForManager(user.id);
+      if (managerCampaignIds.length === 0) {
+        return NextResponse.json({
+          data: [],
+          pagination: { page, limit, total: 0, totalPages: 0 },
+        });
+      }
+      if (campaignId && !managerCampaignIds.includes(campaignId)) {
+        return NextResponse.json({
+          data: [],
+          pagination: { page, limit, total: 0, totalPages: 0 },
+        });
+      }
+    }
+
     const where: Prisma.SubmissionWhereInput = {
-      ...(campaignId ? { campaign_id: campaignId } : {}),
+      ...(user.role === UserRole.MANAGER
+        ? { campaign_id: campaignId ? campaignId : { in: managerCampaignIds } }
+        : campaignId
+        ? { campaign_id: campaignId }
+        : {}),
       ...(platform ? { platform } : {}),
       ...(status ? { status } : {}),
       ...(search
@@ -28,18 +50,6 @@ export async function GET(request: Request) {
               { post_url: { contains: search, mode: "insensitive" } },
               { platform_post_id: { contains: search, mode: "insensitive" } },
             ],
-          }
-        : {}),
-      ...(user.role === UserRole.MANAGER
-        ? {
-            campaign: {
-              access_codes: {
-                some: {
-                  redeemed_by: user.id,
-                  status: "REDEEMED",
-                },
-              },
-            },
           }
         : {}),
     };
