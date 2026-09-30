@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import {
   hashManagerAccessKey,
-  normalizeManagerAccessKey,
   signPreAuthTicket,
   PREAUTH_COOKIE_NAME,
 } from "@/lib/managerAccessKey";
@@ -17,6 +17,54 @@ import {
 const GENERIC_RATE_LIMIT_ERROR = "Too many attempts. Please try again later.";
 
 /**
+ * Checks if an error is a database connectivity/infrastructure error
+ * (e.g. Neon cold starts, connection closed, timeouts, or missing schema objects).
+ */
+function isDbInfrastructureError(err: any): boolean {
+  if (!err) return false;
+  if (err instanceof Prisma.PrismaClientInitializationError) return true;
+  if (err.name === "PrismaClientInitializationError") return true;
+
+  const dbCodes = ["P1001", "P1002", "P1008", "P1017", "P2021", "P2022"];
+  if (err instanceof Prisma.PrismaClientKnownRequestError && dbCodes.includes(err.code)) {
+    return true;
+  }
+  if (err.name === "PrismaClientKnownRequestError" && dbCodes.includes(err.code)) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Executes the key lookup with a single 800ms retry for transient
+ * connection timeouts / cold-starts (P1001, P1002, P1017).
+ */
+async function findKeyRecordWithRetry(keyHash: string) {
+  try {
+    return await prisma.managerAccessKey.findUnique({
+      where: { key_hash: keyHash },
+    });
+  } catch (err: any) {
+    const isTransientConnectionError =
+      (err instanceof Prisma.PrismaClientKnownRequestError &&
+        ["P1001", "P1002", "P1017"].includes(err.code)) ||
+      (err.name === "PrismaClientKnownRequestError" &&
+        ["P1001", "P1002", "P1017"].includes(err.code)) ||
+      err instanceof Prisma.PrismaClientInitializationError ||
+      err.name === "PrismaClientInitializationError";
+
+    if (isTransientConnectionError) {
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      return await prisma.managerAccessKey.findUnique({
+        where: { key_hash: keyHash },
+      });
+    }
+    throw err;
+  }
+}
+
+/**
  * POST /api/auth/manager-access-key/validate
  *
  * Step 1 of the Campaign Manager two-step authentication flow.
@@ -24,10 +72,11 @@ const GENERIC_RATE_LIMIT_ERROR = "Too many attempts. Please try again later.";
  *
  * Security:
  * - Server-side brute-force protection (5 failed attempts per 15 min per IP).
- * - SHA-256 hash lookup in database (plaintext is never stored).
+ * - Single canonical SHA-256 hash lookup in database.
  * - Clear, specific feedback for invalid, expired, revoked, or already redeemed codes.
  * - Sets an httpOnly, cryptographically signed pre-auth ticket cookie.
- * - Secure server error logging without leaking secrets.
+ * - Discriminated error responses: 503 for DB/infra issues (with retry), 500 for generic bugs.
+ * - Infrastructure errors do NOT consume rate-limit attempts.
  */
 export async function POST(request: Request) {
   const clientIp = getClientIp(request);
@@ -49,7 +98,12 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json().catch(() => ({}));
-    const rawKey = body?.accessKey || body?.key;
+    const rawKey =
+      body?.code ||
+      body?.accessCode ||
+      body?.accessKey ||
+      body?.key ||
+      body?.inviteCode;
 
     if (!rawKey || typeof rawKey !== "string" || rawKey.trim().length === 0) {
       const failure = recordFailedAttempt(rateLimitKey);
@@ -63,31 +117,16 @@ export async function POST(request: Request) {
         );
       }
       return NextResponse.json(
-        { error: "Please enter a valid invitation code.", valid: false },
+        { error: "Please enter a manager access code.", valid: false },
         { status: 400 }
       );
     }
 
-    const normalized = normalizeManagerAccessKey(rawKey);
+    // 2. Canonical single-path lookup: SHA-256 hash on normalized key
     const keyHash = hashManagerAccessKey(rawKey);
 
-    const hashesToCheck = [
-      keyHash,
-      crypto.createHash("sha256").update(normalized).digest("hex"),
-      crypto.createHash("sha256").update(rawKey.trim()).digest("hex"),
-      crypto.createHash("sha256").update(rawKey.trim().toUpperCase()).digest("hex"),
-    ];
-    const uniqueHashes = Array.from(new Set(hashesToCheck));
-
-    // 2. Query key record by hash or normalized key
-    const keyRecord = await prisma.managerAccessKey.findFirst({
-      where: {
-        OR: [
-          ...uniqueHashes.map((h) => ({ key_hash: h })),
-          { key_hash: normalized },
-        ],
-      },
-    });
+    // Query key record by unique key_hash with automatic retry for cold starts
+    const keyRecord = await findKeyRecordWithRetry(keyHash);
 
     if (!keyRecord) {
       const failure = recordFailedAttempt(rateLimitKey);
@@ -101,7 +140,7 @@ export async function POST(request: Request) {
         );
       }
       return NextResponse.json(
-        { error: "Invalid invitation code. Please check the code and try again.", valid: false },
+        { error: "Invalid manager access code", valid: false },
         { status: 400 }
       );
     }
@@ -118,7 +157,7 @@ export async function POST(request: Request) {
         );
       }
       return NextResponse.json(
-        { error: "This invitation code has already been redeemed.", valid: false },
+        { error: "This manager access code has already been used", valid: false },
         { status: 400 }
       );
     }
@@ -135,7 +174,7 @@ export async function POST(request: Request) {
         );
       }
       return NextResponse.json(
-        { error: "This invitation code has been revoked by an administrator.", valid: false },
+        { error: "This manager access code has been revoked", valid: false },
         { status: 400 }
       );
     }
@@ -153,7 +192,7 @@ export async function POST(request: Request) {
         );
       }
       return NextResponse.json(
-        { error: "This invitation code has expired. Please request a new code from an administrator.", valid: false },
+        { error: "This manager access code has expired", valid: false },
         { status: 400 }
       );
     }
@@ -161,7 +200,7 @@ export async function POST(request: Request) {
     // 3. Key is valid! Reset rate limit counter for this IP
     recordSuccessfulAttempt(rateLimitKey);
 
-    // 4. Issue a signed, short-lived pre-auth ticket to authorize the subsequent Discord OAuth step
+    // 4. Issue a signed, short-lived pre-auth ticket to authorize subsequent Discord OAuth step
     const ticketToken = signPreAuthTicket(keyRecord.id);
 
     const isHttps =
@@ -186,9 +225,32 @@ export async function POST(request: Request) {
 
     return response;
   } catch (err: any) {
-    console.error("Manager access key validation error:", err?.message || err);
+    const requestId = crypto.randomUUID().slice(0, 8);
+    console.error(`[ManagerAccessKey][${requestId}] Validation error:`, {
+      name: err?.name,
+      code: err?.code,
+      meta: err?.meta,
+      message: err?.message,
+    });
+
+    // Infrastructure / DB errors return 503 and do not burn rate limit attempts
+    if (isDbInfrastructureError(err)) {
+      return NextResponse.json(
+        {
+          valid: false,
+          error: "Verification service is temporarily unavailable. Please try again in a moment.",
+          requestId,
+        },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json(
-      { error: "A server error occurred during invitation verification. Please try again later.", valid: false },
+      {
+        valid: false,
+        error: "A server error occurred during invitation verification. Please try again later.",
+        requestId,
+      },
       { status: 500 }
     );
   }

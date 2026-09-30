@@ -24,12 +24,13 @@ function ManagerLoginContent() {
   const [ticketToken, setTicketToken] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [requestId, setRequestId] = useState("");
   const [verifiedKeyPreview, setVerifiedKeyPreview] = useState("");
 
   useEffect(() => {
     if (errorParam === "not_authorized") {
       setError(
-        "This Discord account does not have active Campaign Manager access. If you have an invitation code from an administrator, please enter it below."
+        "This Discord account does not have active Campaign Manager access. If you have an access code from an administrator, please enter it below."
       );
     } else if (errorParam === "revoked") {
       setError(
@@ -43,15 +44,15 @@ function ManagerLoginContent() {
           : "Your manager account has been suspended by management."
       );
     } else if (errorParam === "key_invalid") {
-      setError("The invitation code entered is invalid or does not exist. Please check the code and try again.");
+      setError("Invalid manager access code");
     } else if (errorParam === "key_expired") {
-      setError("This invitation code has expired. Please ask an Administrator to generate a new invitation code.");
+      setError("This manager access code has expired");
     } else if (errorParam === "key_already_used") {
-      setError("This invitation code has already been redeemed by another account.");
+      setError("This manager access code has already been used");
     } else if (errorParam === "key_revoked") {
-      setError("This invitation code has been revoked by an Administrator.");
+      setError("This manager access code has been revoked");
     } else if (errorParam === "key_required") {
-      setError("A valid Manager invitation code is required for first-time registration.");
+      setError("A valid manager access code is required for first-time registration.");
     } else if (errorParam === "oauth_failed") {
       setError("Discord authentication was cancelled or failed. Please try again.");
     } else if (errorParam === "profile_failed") {
@@ -65,23 +66,30 @@ function ManagerLoginContent() {
     if (!accessKey.trim()) return;
 
     setError("");
+    setRequestId("");
     setLoading(true);
 
     try {
       const res = await fetch("/api/auth/manager-access-key/validate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ accessKey: accessKey.trim() }),
+        body: JSON.stringify({
+          code: accessKey.trim(),
+          accessKey: accessKey.trim(),
+        }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (res.ok && data.success && data.ticket) {
         setTicketToken(data.ticket);
         setVerifiedKeyPreview(data.preview || accessKey.trim().toUpperCase());
         setStep("INVITE_VERIFIED");
       } else {
-        setError(data.error || "Invalid invitation code. Please check and try again.");
+        setError(data?.error || "Invalid manager access code");
+        if (data?.requestId) {
+          setRequestId(data.requestId);
+        }
       }
     } catch {
       setError("A network error occurred. Please check your connection and try again.");
@@ -122,7 +130,14 @@ function ManagerLoginContent() {
           {error && (
             <div className="mb-6 p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-400 flex items-start gap-2.5 animate-fadeIn">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-400" />
-              <span className="leading-relaxed">{error}</span>
+              <div className="flex-1 leading-relaxed">
+                <span>{error}</span>
+                {requestId && (
+                  <span className="block mt-1 font-mono text-[10px] text-red-400/70">
+                    Request ID: {requestId}
+                  </span>
+                )}
+              </div>
             </div>
           )}
 
@@ -132,7 +147,7 @@ function ManagerLoginContent() {
               <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-start gap-3">
                 <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-bold block text-sm">Invitation Code Verified ✓</span>
+                  <span className="font-bold block text-sm">Access Code Verified ✓</span>
                   <span className="text-[11px] text-emerald-300/80">
                     Code: <span className="font-mono tracking-wider font-semibold">{verifiedKeyPreview}</span>
                   </span>
@@ -142,7 +157,7 @@ function ManagerLoginContent() {
               <div className="bg-slate-900/60 rounded-xl p-4 border border-slate-800/80 text-xs text-slate-300 space-y-2">
                 <p className="font-medium text-white">Next Step: Link Your Discord Account</p>
                 <p className="text-[11px] text-slate-400 leading-relaxed">
-                  Click below to link your Discord account. Once linked, you can log in directly anytime without an invitation code.
+                  Click below to link your Discord account. Once linked, you can log in directly anytime without an access code.
                 </p>
               </div>
 
@@ -165,10 +180,11 @@ function ManagerLoginContent() {
                   setAccessKey("");
                   setTicketToken("");
                   setError("");
+                  setRequestId("");
                 }}
                 className="w-full text-center text-xs text-slate-500 hover:text-slate-400 py-1 transition-colors"
               >
-                Enter a different invitation code
+                Enter a different access code
               </button>
             </div>
           ) : (
@@ -204,14 +220,14 @@ function ManagerLoginContent() {
                 <div className="flex-grow border-t border-slate-800"></div>
               </div>
 
-              {/* OPTION 2: New Managers (Redeem Invitation Code) */}
+              {/* OPTION 2: New Managers (Redeem Access Code) */}
               <div className="rounded-xl bg-slate-900/60 border border-slate-800/90 p-5 space-y-3.5">
                 <div className="flex items-center gap-2">
                   <UserPlus className="w-4 h-4 text-brand-cyan" />
-                  <h3 className="text-sm font-bold text-white">New Manager: Enter Invitation Code</h3>
+                  <h3 className="text-sm font-bold text-white">New Manager: Enter Access Code</h3>
                 </div>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Have an invitation code from an Administrator? Enter it below to register and link your Discord account.
+                  Have a manager access code from an Administrator? Enter it below to register and link your Discord account.
                 </p>
 
                 <form onSubmit={handleValidateAccessKey} className="space-y-3 pt-1">
@@ -233,7 +249,7 @@ function ManagerLoginContent() {
                     className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold text-xs transition-all shadow-md flex items-center justify-center gap-2"
                   >
                     {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin text-white" /> : null}
-                    <span>Verify Invitation Code</span>
+                    <span>Continue / Verify Access Code</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 </form>

@@ -11,3 +11,6 @@ public/uploads/*
 .vercel
 .env*
 *.sql
+cloudflared.exe
+
+

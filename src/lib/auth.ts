@@ -144,8 +144,16 @@ export async function ensureRealAdmins(): Promise<void> {
 
 export async function getSessionUser(): Promise<User | null> {
   try {
-    const cookieStore = cookies();
-    const token = cookieStore.get(COOKIE_NAME)?.value;
+    let token: string | undefined;
+    try {
+      const cookieStore = cookies();
+      token = cookieStore.get(COOKIE_NAME)?.value;
+    } catch {
+      // In testing environments or standalone scripts outside Next request context
+      if ((globalThis as any).__mockCookieStore) {
+        token = (globalThis as any).__mockCookieStore[COOKIE_NAME];
+      }
+    }
 
     if (!token) return null;
 

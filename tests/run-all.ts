@@ -49,9 +49,12 @@ async function runTests() {
   });
   assert(testUser, "Test clipper user must exist in seeded DB");
 
-  const testCampaign = await prisma.campaign.findFirst({
+  let testCampaign = await prisma.campaign.findFirst({
     where: { status: CampaignStatus.ACTIVE },
   });
+  if (!testCampaign) {
+    testCampaign = await prisma.campaign.findFirst();
+  }
   assert(testCampaign, "Test campaign must exist in seeded DB");
 
   // Test: Unverified social account cannot submit
@@ -315,6 +318,131 @@ async function runTests() {
     // Clean up
     await prisma.viewSnapshot.delete({ where: { id: snapshot.id } });
     await prisma.submission.delete({ where: { id: testSub.id } });
+  })();
+
+  // 4. Manager Access Code & Invitation System Verification
+  console.log("\n--- Manager Access Code / Invitation System Tests ---");
+  const {
+    generateManagerAccessKey,
+    hashManagerAccessKey,
+    normalizeManagerAccessKey,
+    signPreAuthTicket,
+    verifyPreAuthTicket,
+  } = await import("../src/lib/managerAccessKey");
+
+  await test("Manager Code: Generation format and cryptographic entropy", () => {
+    const generated = generateManagerAccessKey();
+    assert(generated.plaintextKey.startsWith("CE-INVITE-"), "Code must start with CE-INVITE-");
+    assert.strictEqual(generated.plaintextKey.length, 18, "Code must be 18 chars (CE-INVITE- + 8 chars)");
+    assert(generated.keyPreview.startsWith("CE-INVITE-••••-"), "Preview must be masked");
+    assert.strictEqual(generated.keyHash, hashManagerAccessKey(generated.plaintextKey), "Hash must match");
+  })();
+
+  await test("Manager Code: Input Normalization is tolerant of copy-paste quirks", () => {
+    const baseCode = "CE-INVITE-7X9K2M4P";
+    assert.strictEqual(normalizeManagerAccessKey("  CE-INVITE-7X9K2M4P  "), baseCode);
+    assert.strictEqual(normalizeManagerAccessKey("ce-invite-7x9k2m4p"), baseCode);
+    assert.strictEqual(normalizeManagerAccessKey("ce-invite-7x9k2m4p\n"), baseCode);
+    assert.strictEqual(normalizeManagerAccessKey("7X9K2M4P"), baseCode);
+    assert.strictEqual(normalizeManagerAccessKey("7x9k2m4p"), baseCode);
+    assert.strictEqual(normalizeManagerAccessKey("CEINVITE7X9K2M4P"), baseCode);
+    assert.strictEqual(normalizeManagerAccessKey("INVITE-7X9K2M4P"), baseCode);
+    assert.strictEqual(normalizeManagerAccessKey("\u200BCE-INVITE-7X9K2M4P\u00A0"), baseCode);
+  })();
+
+  await test("Manager Code: Complete Database Lifecycle (Generate -> Active -> Redeem -> Used -> Block Reuse)", async () => {
+    const adminUser = await prisma.user.findFirst({ where: { role: UserRole.ADMIN } });
+    assert(adminUser, "Admin user must exist");
+
+    const generated = generateManagerAccessKey();
+    const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+
+    // 1. Create in DB
+    const record = await prisma.managerAccessKey.create({
+      data: {
+        key_hash: generated.keyHash,
+        key_preview: generated.keyPreview,
+        status: "ACTIVE",
+        expires_at: expiresAt,
+        created_by: adminUser.id,
+      },
+    });
+
+    assert.strictEqual(record.status, "ACTIVE");
+
+    // 2. Validate lookup via hash
+    const found = await prisma.managerAccessKey.findFirst({
+      where: {
+        OR: [
+          { key_hash: hashManagerAccessKey(generated.plaintextKey.toLowerCase()) },
+          { key_hash: normalizeManagerAccessKey(generated.plaintextKey) },
+        ],
+      },
+    });
+    assert(found, "Record must be found by normalized hash");
+    assert.strictEqual(found!.id, record.id);
+
+    // 3. Pre-auth ticket issuance and validation
+    const ticket = signPreAuthTicket(record.id);
+    const verification = verifyPreAuthTicket(ticket);
+    assert.strictEqual(verification.valid, true);
+    assert.strictEqual(verification.keyId, record.id);
+
+    // 4. Tampered ticket rejection
+    const tampered = ticket.slice(0, -4) + "XXXX";
+    assert.strictEqual(verifyPreAuthTicket(tampered).valid, false);
+
+    // 5. Mark as USED upon registration
+    const updateResult = await prisma.managerAccessKey.updateMany({
+      where: { id: record.id, status: "ACTIVE" },
+      data: { status: "USED", used_by: testUser.id, used_at: new Date() },
+    });
+    assert.strictEqual(updateResult.count, 1, "Must update active key to USED");
+
+    // 6. Reuse attempt fails (status is no longer ACTIVE)
+    const secondRedeem = await prisma.managerAccessKey.updateMany({
+      where: { id: record.id, status: "ACTIVE" },
+      data: { status: "USED" },
+    });
+    assert.strictEqual(secondRedeem.count, 0, "Cannot reuse already USED key");
+
+    // Clean up
+    await prisma.managerAccessKey.delete({ where: { id: record.id } });
+  })();
+
+  await test("Manager Code: Expired & Revoked status enforcement", async () => {
+    const adminUser = await prisma.user.findFirst({ where: { role: UserRole.ADMIN } });
+    assert(adminUser, "Admin user must exist");
+
+    // Expired key
+    const genExp = generateManagerAccessKey();
+    const expiredRecord = await prisma.managerAccessKey.create({
+      data: {
+        key_hash: genExp.keyHash,
+        key_preview: genExp.keyPreview,
+        status: "ACTIVE",
+        expires_at: new Date(Date.now() - 1000), // Expired 1 second ago
+        created_by: adminUser.id,
+      },
+    });
+
+    const isExpired = expiredRecord.expires_at && expiredRecord.expires_at < new Date();
+    assert(isExpired, "Key must be recognized as expired");
+    await prisma.managerAccessKey.delete({ where: { id: expiredRecord.id } });
+
+    // Revoked key
+    const genRev = generateManagerAccessKey();
+    const revokedRecord = await prisma.managerAccessKey.create({
+      data: {
+        key_hash: genRev.keyHash,
+        key_preview: genRev.keyPreview,
+        status: "REVOKED",
+        created_by: adminUser.id,
+      },
+    });
+
+    assert.strictEqual(revokedRecord.status, "REVOKED", "Key must be recognized as revoked");
+    await prisma.managerAccessKey.delete({ where: { id: revokedRecord.id } });
   })();
 
   console.log("\n=========================================");

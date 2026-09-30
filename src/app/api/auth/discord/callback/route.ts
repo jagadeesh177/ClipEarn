@@ -16,7 +16,15 @@ export async function GET(request: Request) {
 
   if (state) {
     try {
-      const decoded = JSON.parse(Buffer.from(state, "base64").toString("utf-8"));
+      const sanitized = state.replace(/ /g, "+");
+      let decodedStr = "";
+      try {
+        decodedStr = Buffer.from(sanitized, "base64url").toString("utf-8");
+        JSON.parse(decodedStr);
+      } catch {
+        decodedStr = Buffer.from(sanitized, "base64").toString("utf-8");
+      }
+      const decoded = JSON.parse(decodedStr);
       referralCode = decoded.ref || null;
       managerKeyId = decoded.managerKeyId || null;
       stateTicket = decoded.ticket || null;
@@ -50,9 +58,9 @@ export async function GET(request: Request) {
   if (isManagerInvite) {
     const cookieHeader = request.headers.get("cookie") || "";
     const ticketMatch = cookieHeader.match(new RegExp(`${PREAUTH_COOKIE_NAME}=([^;]+)`));
-    const cookieTicket = ticketMatch ? decodeURIComponent(ticketMatch[1]) : null;
+    const cookieTicket = ticketMatch ? decodeURIComponent(ticketMatch[1]).trim() : null;
 
-    const ticketToken = stateTicket || cookieTicket;
+    const ticketToken = stateTicket ? stateTicket.trim() : cookieTicket;
 
     if (!ticketToken || !managerKeyId) {
       return NextResponse.redirect(new URL("/manager/login?error=key_required", request.url));

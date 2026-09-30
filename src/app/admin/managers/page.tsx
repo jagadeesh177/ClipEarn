@@ -194,7 +194,7 @@ export default function AdminManagersPage() {
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-white font-bold text-xs transition shadow-lg shadow-purple-500/20 disabled:opacity-50"
         >
           {generatingKey ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-          Generate New Invite Key
+          Generate Manager Access Code
         </button>
       </div>
 
@@ -217,7 +217,7 @@ export default function AdminManagersPage() {
         <div className="p-5 rounded-2xl bg-purple-500/10 border border-purple-500/40 space-y-3 animate-fadeIn">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-purple-200">
-              🔑 New Manager Invite Key Generated (Save Now — Shown ONCE):
+              🔑 New Manager Access Code Generated (Save Now — Shown ONCE):
             </span>
             <button
               onClick={() => {
@@ -228,14 +228,14 @@ export default function AdminManagersPage() {
               className="px-3 py-1.5 rounded-lg bg-purple-500/30 hover:bg-purple-500/40 text-purple-200 text-xs font-bold transition flex items-center gap-1.5"
             >
               {copiedKey ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-              {copiedKey ? "Copied to Clipboard!" : "Copy Key"}
+              {copiedKey ? "Copied to Clipboard!" : "Copy Code"}
             </button>
           </div>
           <div className="p-3 rounded-xl bg-black/70 border border-purple-500/30 font-mono text-sm font-bold text-purple-300 select-all tracking-wider">
             {justGeneratedKey}
           </div>
           <p className="text-[11px] text-slate-400 leading-relaxed">
-            Provide this access key to a new manager. They can redeem it on the Manager Login page to activate their Campaign Manager account.
+            Provide this access code to a new manager. They can enter it on the Manager Sign In page (/manager/login) to activate their Campaign Manager account.
           </p>
         </div>
       )}
@@ -262,7 +262,7 @@ export default function AdminManagersPage() {
           }`}
         >
           <Key className="w-4 h-4" />
-          Single-Use Invite Keys ({accessKeysList.length})
+          Single-Use Access Codes ({accessKeysList.length})
         </button>
       </div>
 
@@ -359,7 +359,7 @@ export default function AdminManagersPage() {
               <table className="w-full text-left text-xs">
                 <thead className="bg-[#080C14] border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                   <tr>
-                    <th className="py-3.5 px-4">Key Preview</th>
+                    <th className="py-3.5 px-4">Code Preview</th>
                     <th className="py-3.5 px-4 text-center">Status</th>
                     <th className="py-3.5 px-4">Redeemed By</th>
                     <th className="py-3.5 px-4">Created Date</th>

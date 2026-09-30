@@ -26,7 +26,7 @@ export async function GET(request: Request) {
   if (requestedPortal === "manager") {
     const cookieHeader = request.headers.get("cookie") || "";
     const ticketMatch = cookieHeader.match(new RegExp(`${PREAUTH_COOKIE_NAME}=([^;]+)`));
-    const ticketToken = ticketParam ? decodeURIComponent(ticketParam) : ticketMatch ? decodeURIComponent(ticketMatch[1]) : null;
+    const ticketToken = ticketParam ? ticketParam.trim() : ticketMatch ? decodeURIComponent(ticketMatch[1]).trim() : null;
 
     if (ticketToken) {
       const verification = verifyPreAuthTicket(ticketToken);
@@ -59,7 +59,11 @@ export async function GET(request: Request) {
 
   const clientId = process.env.DISCORD_CLIENT_ID;
   const urlObj = new URL(request.url);
-  const redirectUri = process.env.DISCORD_REDIRECT_URI || `${urlObj.origin}/api/auth/discord/callback`;
+  const configuredRedirect = process.env.DISCORD_REDIRECT_URI;
+  const redirectUri =
+    configuredRedirect && !configuredRedirect.includes("localhost")
+      ? configuredRedirect
+      : `${urlObj.origin}/api/auth/discord/callback`;
 
   const stateObj = {
     ref: ref || null,
@@ -69,7 +73,7 @@ export async function GET(request: Request) {
     ticket: validatedTicket,
     nonce: crypto.randomBytes(8).toString("hex"),
   };
-  const encodedState = Buffer.from(JSON.stringify(stateObj)).toString("base64");
+  const encodedState = Buffer.from(JSON.stringify(stateObj)).toString("base64url");
 
   if (!clientId || clientId === "your_discord_client_id") {
     // Development / mock fallback redirect for testing and local environments
@@ -81,7 +85,7 @@ export async function GET(request: Request) {
 
   const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(
     redirectUri
-  )}&response_type=code&scope=identify%20email&state=${encodedState}`;
+  )}&response_type=code&scope=identify%20email&state=${encodeURIComponent(encodedState)}`;
 
   return NextResponse.redirect(discordAuthUrl);
 }

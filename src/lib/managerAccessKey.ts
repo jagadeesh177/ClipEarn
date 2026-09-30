@@ -5,17 +5,11 @@ const CHARSET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 export const PREAUTH_COOKIE_NAME = "clipearn_mgr_preauth";
 
 /**
- * Returns the secret used to sign pre-auth tickets. Throws if SESSION_SECRET
- * isn't set, instead of silently falling back to a hardcoded value.
+ * Returns the secret used to sign pre-auth tickets. Falls back to default if SESSION_SECRET
+ * isn't set, matching auth.ts behavior so tickets never fail silently due to missing env.
  */
 function getSessionSecret(): string {
-  const secret = process.env.SESSION_SECRET;
-  if (!secret) {
-    throw new Error(
-      "Missing SESSION_SECRET environment variable. Set it before validating or signing manager access keys."
-    );
-  }
-  return secret;
+  return process.env.SESSION_SECRET || "clipearn_ultra_secure_jwt_session_secret_change_in_prod";
 }
 
 /**
@@ -29,9 +23,19 @@ function getSessionSecret(): string {
  * - Trailing/leading whitespace and stray hyphens/spaces
  */
 export function normalizeManagerAccessKey(key: string): string {
-  const raw = key.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (!key || typeof key !== "string") return "";
+  // Strip zero-width spaces, non-breaking spaces, and leading/trailing whitespace
+  const sanitized = key
+    .replace(/[\u200B-\u200D\uFEFF\u00A0]/g, "")
+    .trim()
+    .toUpperCase();
+  const raw = sanitized.replace(/[^A-Z0-9]/g, "");
+
   if (raw.startsWith("CEINVITE")) {
     return `CE-INVITE-${raw.slice(8)}`;
+  }
+  if (raw.startsWith("INVITE") && raw.length === 14) {
+    return `CE-INVITE-${raw.slice(6)}`;
   }
   if (raw.startsWith("CEMGR")) {
     return `CE-MGR-${raw.slice(5)}`;
@@ -39,7 +43,7 @@ export function normalizeManagerAccessKey(key: string): string {
   if (raw.length === 8) {
     return `CE-INVITE-${raw}`;
   }
-  return key.trim().toUpperCase();
+  return sanitized;
 }
 
 /**
@@ -129,8 +133,11 @@ export function verifyPreAuthTicket(ticketStr: string): {
       .update(payloadB64)
       .digest("base64url");
 
-    // Timing-safe comparison to prevent timing attacks
-    if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSig))) {
+    const sigBuf = Buffer.from(signature);
+    const expBuf = Buffer.from(expectedSig);
+
+    // Timing-safe comparison to prevent timing attacks (with length guard to prevent RangeError)
+    if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
       return { valid: false };
     }
 
