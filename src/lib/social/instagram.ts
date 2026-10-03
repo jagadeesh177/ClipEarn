@@ -9,6 +9,7 @@ import {
   OwnershipVerificationResult,
 } from "./types";
 import { isAuthorMatch } from "./author-match";
+import { fetchJson, isPlaceholder, toCount } from "./http";
 
 /**
  * Normalizes bio text and matches the exact verification code.
@@ -108,7 +109,8 @@ export class InstagramProvider implements SocialProvider {
       client_id: appId,
       redirect_uri: redirectUri,
       response_type: "code",
-      scope: "instagram_business_basic",
+      // insights permission is required to read Reel view counts
+      scope: "instagram_business_basic,instagram_business_manage_insights",
       state: state,
     });
 
@@ -388,7 +390,7 @@ export class InstagramProvider implements SocialProvider {
     const shortcode = this.parsePostId(videoIdOrUrl) || videoIdOrUrl;
 
     // 1. If OAuth access token exists, query user's official media list from Meta Graph
-    if (account.access_token && !account.access_token.startsWith("mock_")) {
+    if (account.access_token && !isPlaceholder(account.access_token)) {
       try {
         const endpoints = [
           `https://graph.instagram.com/v21.0/me/media?fields=id,shortcode,permalink&limit=100&access_token=${encodeURIComponent(
@@ -475,118 +477,140 @@ export class InstagramProvider implements SocialProvider {
     account?: { platform_user_id?: string; username?: string; access_token?: string | null } | null
   ): Promise<NormalizedMetrics> {
     const shortcode = this.parsePostId(videoIdOrUrl) || videoIdOrUrl;
+    const base = {
+      fetchedAt: new Date(),
+      platform: Platform.INSTAGRAM,
+      platformVideoId: shortcode,
+      platformUrl: `https://www.instagram.com/reel/${shortcode}/`,
+    };
+    const token = account?.access_token && !isPlaceholder(account.access_token) ? account.access_token : null;
+
+    if (!token) {
+      return {
+        ...base,
+        views: null,
+        likes: null,
+        comments: null,
+        shares: null,
+        saves: null,
+        isAvailable: true,
+        isPrivate: false,
+        authorUsername: this.extractHandle(videoIdOrUrl) || account?.username,
+        errorCode: "INSTAGRAM_OAUTH_REQUIRED",
+        errorMessage:
+          "Instagram views are only available through the official Graph API. The clipper must connect their Instagram Professional account with “Connect Instagram” (OAuth).",
+      };
+    }
+
+    // 1. Locate the media item by shortcode in the authorized account's media list (paginated)
+    let media: { id: string; media_type?: string; media_product_type?: string; like_count?: number; comments_count?: number } | null = null;
+    let apiError: string | undefined;
+    try {
+      let next: string | null =
+        `https://graph.instagram.com/v21.0/me/media?fields=id,shortcode,permalink,media_type,media_product_type,like_count,comments_count&limit=100&access_token=${encodeURIComponent(token)}`;
+      for (let page = 0; next && page < 10 && !media; page++) {
+        const res: { ok: boolean; data: any } = await fetchJson(next, { timeoutMs: 8000 });
+        if (!res.ok || !Array.isArray(res.data?.data)) {
+          apiError = res.data?.error?.message
+            ? `Instagram API error: ${res.data.error.message}`
+            : "Instagram API request failed";
+          break;
+        }
+        media =
+          res.data.data.find(
+            (m: any) =>
+              m.shortcode === shortcode ||
+              (typeof m.permalink === "string" && m.permalink.includes(`/${shortcode}`))
+          ) || null;
+        next = res.data.paging?.next || null;
+      }
+    } catch (err: any) {
+      apiError = `Instagram API error: ${err?.message || "request failed"}`;
+    }
+
+    if (!media) {
+      return {
+        ...base,
+        views: null,
+        likes: null,
+        comments: null,
+        shares: null,
+        saves: null,
+        isAvailable: true,
+        isPrivate: false,
+        authorUsername: this.extractHandle(videoIdOrUrl) || account?.username,
+        errorCode: apiError ? "INSTAGRAM_API_ERROR" : "INSTAGRAM_MEDIA_NOT_FOUND",
+        errorMessage:
+          apiError ||
+          "Reel not found under the authorized Instagram account. It may have been deleted or posted from a different account.",
+      };
+    }
+
+    const likes = toCount(media.like_count);
+    const comments = toCount(media.comments_count);
     let views: number | null = null;
-    let likes: number | null = null;
-    let comments: number | null = null;
     let shares: number | null = null;
     let saves: number | null = null;
 
-    // 1. Official Instagram Graph API via authorized account access token
-    if (account?.access_token && !account.access_token.startsWith("mock_")) {
+    // 2. Insights. If one metric is unsupported for the media type the whole call fails,
+    //    so retry with progressively smaller metric sets.
+    const metricSets = [["views", "shares", "saved"], ["views"], ["plays"]];
+    for (const metrics of metricSets) {
       try {
-        // Find media item ID by shortcode
-        const listRes = await fetch(
-          `https://graph.instagram.com/v21.0/me/media?fields=id,shortcode,permalink,media_type&limit=100&access_token=${encodeURIComponent(
-            account.access_token
-          )}`,
-          { signal: AbortSignal.timeout(6000) }
+        const res = await fetchJson(
+          `https://graph.instagram.com/v21.0/${media.id}/insights?metric=${metrics.join(",")}&access_token=${encodeURIComponent(token)}`,
+          { timeoutMs: 8000 }
         );
-        const listData = await listRes.json();
-        const media = listData?.data?.find(
-          (m: any) =>
-            m.shortcode === shortcode ||
-            (m.permalink && m.permalink.includes(shortcode))
-        );
-
-        if (media && media.id) {
-          // Fetch basic metrics
-          const mediaRes = await fetch(
-            `https://graph.instagram.com/v21.0/${media.id}?fields=id,like_count,comments_count,media_type&access_token=${encodeURIComponent(
-              account.access_token
-            )}`,
-            { signal: AbortSignal.timeout(5000) }
-          );
-          const mediaData = await mediaRes.json();
-          if (mediaRes.ok) {
-            likes = mediaData.like_count ?? null;
-            comments = mediaData.comments_count ?? null;
+        if (res.ok && Array.isArray(res.data?.data)) {
+          for (const item of res.data.data) {
+            const val = toCount(item.values?.[0]?.value ?? item.total_value?.value);
+            if (val == null) continue;
+            if (item.name === "views" || item.name === "plays") views = val;
+            if (item.name === "shares") shares = val;
+            if (item.name === "saved") saves = val;
           }
-
-          // Fetch insights (views, reach, saved, shares)
-          const insightsMetrics =
-            media.media_type === "VIDEO" || media.media_type === "REELS"
-              ? "views,reach,saved,shares"
-              : "reach,saved,shares";
-
-          const insRes = await fetch(
-            `https://graph.instagram.com/v21.0/${media.id}/insights?metric=${insightsMetrics}&access_token=${encodeURIComponent(
-              account.access_token
-            )}`,
-            { signal: AbortSignal.timeout(5000) }
-          );
-          const insData = await insRes.json();
-
-          if (insRes.ok && insData?.data && Array.isArray(insData.data)) {
-            for (const item of insData.data) {
-              const val = item.values?.[0]?.value ?? item.total_value?.value;
-              if (val != null) {
-                if (item.name === "views" || item.name === "plays") views = Number(val);
-                if (item.name === "shares") shares = Number(val);
-                if (item.name === "saved") saves = Number(val);
-              }
-            }
-          }
-
-          return {
-            views,
-            likes,
-            comments,
-            shares,
-            saves,
-            fetchedAt: new Date(),
-            platform: Platform.INSTAGRAM,
-            platformVideoId: shortcode,
-            isAvailable: true,
-            isPrivate: false,
-            authorUsername: account.username,
-          };
+          if (views != null) break;
         }
       } catch {}
     }
 
-    // When no access token or media not found
-    let authorUsername: string | undefined = undefined;
-    try {
-      const parsed = new URL(videoIdOrUrl.trim());
-      const parts = parsed.pathname.split("/").filter(Boolean);
-      const reserved = new Set(["p", "reel", "reels", "stories", "tv", "explore", "direct", "accounts", "api"]);
-      if (parts.length >= 2 && !reserved.has(parts[0].toLowerCase())) {
-        authorUsername = parts[0].replace(/^@/, "");
-      }
-    } catch {}
-
     return {
-      views: null,
-      likes: null,
-      comments: null,
-      shares: null,
-      saves: null,
-      fetchedAt: new Date(),
-      platform: Platform.INSTAGRAM,
-      platformVideoId: shortcode,
-      isAvailable: false,
+      ...base,
+      views,
+      likes,
+      comments,
+      shares,
+      saves,
+      isAvailable: true,
       isPrivate: false,
-      authorUsername: authorUsername || account?.username,
-      errorCode: !account?.access_token ? "INSTAGRAM_OAUTH_REQUIRED" : "INSTAGRAM_MEDIA_NOT_FOUND",
-      errorMessage: !account?.access_token
-        ? "Instagram Professional account must be connected with OAuth to query media insights via the official Graph API."
-        : "Reel not found under authorized Instagram account.",
+      authorUsername: account?.username,
+      ...(views == null
+        ? {
+            errorCode: "INSTAGRAM_INSIGHTS_UNAVAILABLE",
+            errorMessage:
+              "Instagram did not return view insights for this media. Make sure the account granted the instagram_business_manage_insights permission.",
+          }
+        : { rawDetails: { source: "instagram_graph_api" } }),
     };
   }
 
-  async getVideo(postUrl: string): Promise<VideoMetadata> {
+  private extractHandle(videoIdOrUrl: string): string | undefined {
+    try {
+      const parts = new URL(videoIdOrUrl.trim()).pathname.split("/").filter(Boolean);
+      const reserved = new Set(["p", "reel", "reels", "stories", "tv", "explore", "direct", "accounts", "api"]);
+      if (parts.length >= 2 && !reserved.has(parts[0].toLowerCase())) {
+        return parts[0].replace(/^@/, "");
+      }
+    } catch {}
+    return undefined;
+  }
+
+  async getVideo(
+    postUrl: string,
+    account?: { platform_user_id?: string; username?: string; access_token?: string | null } | null
+  ): Promise<VideoMetadata> {
     const shortcode = this.parsePostId(postUrl) || postUrl;
-    const norm = await this.getNormalizedMetrics(postUrl);
+    const norm = await this.getNormalizedMetrics(postUrl, account);
 
     return {
       platform: Platform.INSTAGRAM,
@@ -611,10 +635,17 @@ export class InstagramProvider implements SocialProvider {
     throw new Error(metrics.errorMessage || "Unable to fetch Instagram Reel views via official Graph API.");
   }
 
-  async getVideoMetrics(platformPostId: string): Promise<VideoMetrics> {
-    const norm = await this.getNormalizedMetrics(platformPostId);
+  async getVideoMetrics(
+    platformPostId: string,
+    postUrl?: string,
+    account?: { platform_user_id?: string; username?: string; access_token?: string | null } | null
+  ): Promise<VideoMetrics> {
+    const norm = await this.getNormalizedMetrics(postUrl || platformPostId, account);
+    if (norm.views == null) {
+      throw new Error(norm.errorMessage || "Unable to fetch Instagram Reel views via official Graph API.");
+    }
     return {
-      views: norm.views ?? 0,
+      views: norm.views,
       likes: norm.likes,
       comments: norm.comments,
       shares: norm.shares,
@@ -622,4 +653,3 @@ export class InstagramProvider implements SocialProvider {
     };
   }
 }
-

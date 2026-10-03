@@ -1,5 +1,6 @@
 import { Platform } from "@prisma/client";
 import { VerificationResult } from "./types";
+import { getEnv } from "./http";
 
 function decodeHtmlEntities(str: string): string {
   return str
@@ -162,7 +163,7 @@ async function checkYouTubeBio(username: string, verificationCode: string): Prom
   const targetCode = verificationCode.trim().toLowerCase();
 
   // Try checking with Google API Key if available
-  const apiKey = process.env.GOOGLE_API_KEY;
+  const apiKey = getEnv("YOUTUBE_API_KEY", "GOOGLE_API_KEY");
   if (apiKey) {
     try {
       const apiRes = await fetch(

@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
@@ -35,11 +36,18 @@ export async function POST(request: Request) {
     const user = await requireAuth();
     const { platform, username } = await request.json();
 
-    if (!platform || !username) {
+    if (!platform || typeof username !== "string" || !username.trim()) {
       return NextResponse.json({ error: "Platform and username are required" }, { status: 400 });
     }
 
+    if (!Object.values(Platform).includes(platform)) {
+      return NextResponse.json({ error: "Unsupported platform" }, { status: 400 });
+    }
+
     const cleanUsername = username.trim().replace(/^@/, "");
+    if (!/^[A-Za-z0-9._-]{1,64}$/.test(cleanUsername)) {
+      return NextResponse.json({ error: "Please enter a valid username (letters, numbers, . _ -)." }, { status: 400 });
+    }
     const platformEnum = platform as Platform;
 
     // Platform user ID generation (authoritative identity)
@@ -77,7 +85,7 @@ export async function POST(request: Request) {
     }
 
     // Generate unique verification code
-    const randomHex = Math.random().toString(36).substring(2, 8);
+    const randomHex = crypto.randomBytes(4).toString("hex").slice(0, 6);
     const verificationCode = `clipearn-${randomHex}`;
 
     let profileUrl = `https://www.instagram.com/${cleanUsername}`;

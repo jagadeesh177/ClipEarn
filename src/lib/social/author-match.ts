@@ -34,11 +34,16 @@ export function levenshteinDistance(a: string, b: string): number {
   return dp[m][n];
 }
 
-function checkSingleMatch(author: string, verifiedHandle: string): boolean {
+/**
+ * `loose` enables substring / brand matching. It is only safe for display names
+ * (e.g. channel title "USA Legacy Clips" vs handle "usalegacy"); for handle-vs-handle
+ * comparisons it would let @music claim videos from @musicvideos_official.
+ */
+function checkSingleMatch(author: string, verifiedHandle: string, loose = false): boolean {
   const rawA = author.toLowerCase().replace(/^@/, "").trim();
   const rawB = verifiedHandle.toLowerCase().replace(/^@/, "").trim();
 
-  if (!rawA || !rawB) return true;
+  if (!rawA || !rawB) return false;
 
   // 1. Direct match
   if (rawA === rawB) return true;
@@ -61,18 +66,16 @@ function checkSingleMatch(author: string, verifiedHandle: string): boolean {
     if (diff.split("").every((c) => c === lastChar)) {
       return true;
     }
-    // Very short suffix (1-2 chars) on meaningful handle (>= 5 chars)
-    if (shorter.length >= 5 && diff.length <= 2) {
-      return true;
-    }
   }
 
-  // 4. Substring / Brand name match (e.g. display name contains handle or handle contains brand)
-  if (shorter.length >= 5 && (longer.includes(shorter) || shorter.includes(longer))) {
+  if (!loose) return false;
+
+  // 4. Substring / Brand name match (display name contains handle or vice versa)
+  if (shorter.length >= 5 && longer.includes(shorter)) {
     return true;
   }
 
-  // 5. Levenshtein edit distance for minor typos / variations
+  // 5. Levenshtein edit distance for minor display-name variations
   const maxLen = Math.max(cleanA.length, cleanB.length);
   const dist = levenshteinDistance(cleanA, cleanB);
 
@@ -98,7 +101,7 @@ export function isAuthorMatch(
     return true;
   }
 
-  if (displayName && checkSingleMatch(displayName, verifiedHandle)) {
+  if (displayName && checkSingleMatch(displayName, verifiedHandle, true)) {
     return true;
   }
 

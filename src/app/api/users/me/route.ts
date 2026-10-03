@@ -36,7 +36,8 @@ export async function GET() {
     const totalClips = submissions.length;
     const approvedClips = approvedSubs.length;
     const totalViews = submissions.reduce((sum, s) => sum + s.current_views, 0);
-    const eligibleViews = approvedSubs.reduce((sum, s) => sum + s.current_views, 0);
+    // eligible views are capped per clip (maximum_views_per_clip); current_views is not
+    const eligibleViews = approvedSubs.reduce((sum, s) => sum + s.eligible_views, 0);
     const totalEarnings = Number(ledgerSum._sum.amount || 0);
 
     return NextResponse.json({

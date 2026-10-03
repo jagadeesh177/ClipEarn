@@ -108,11 +108,18 @@ export async function requestPayout(
   method: string,
   accountDetails?: any
 ) {
-  if (amount <= 0) {
+  if (!Number.isFinite(amount) || amount <= 0) {
     throw new Error("Payout amount must be greater than zero");
+  }
+  amount = Math.floor(amount * 100) / 100;
+  if (amount <= 0) {
+    throw new Error("Payout amount must be at least $0.01");
   }
 
   return await prisma.$transaction(async (tx) => {
+    // Lock the user row so two simultaneous payout requests can't both pass the balance check
+    await tx.$queryRaw`SELECT id FROM "users" WHERE id = ${userId} FOR UPDATE`;
+
     // Calculate current available balance within the transaction
     const ledgerAgg = await tx.earningsLedger.aggregate({
       where: { user_id: userId },

@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
       userId: user.id,
       accountId: account.id,
       username: account.username,
-      nonce: Math.random().toString(36).substring(2, 10),
+      nonce: crypto.randomBytes(8).toString("hex"),
       timestamp: Date.now(),
     };
     const state = jwt.sign(statePayload, JWT_SECRET, { expiresIn: "1h" });

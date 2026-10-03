@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
@@ -40,7 +41,8 @@ export async function POST(
       verificationCode.startsWith("verified-") ||
       verificationCode.length < 6
     ) {
-      const randomHex = Math.random().toString(36).substring(2, 8);
+      // Math.random().toString(36) can yield fewer than 6 chars; use a CSPRNG with fixed length
+      const randomHex = crypto.randomBytes(4).toString("hex").slice(0, 6);
       verificationCode = `clipearn-${randomHex}`;
       await prisma.socialAccount.update({
         where: { id: account.id },
@@ -54,37 +56,22 @@ export async function POST(
     if (account.platform === Platform.INSTAGRAM) {
       const instagramProvider = new InstagramProvider();
 
-      // Retrieve token if available, otherwise verify directly by public bio
-      let token = process.env.INSTAGRAM_TEST_ACCESS_TOKEN || process.env.META_ACCESS_TOKEN;
-      if (!token && account.access_token_encrypted) {
-        token = decryptToken(account.access_token_encrypted) || undefined;
+      // Prefer the clipper's own OAuth token; a global env token belongs to a single
+      // Instagram account and would fail the "authorized account matches" check for everyone else.
+      let token: string | undefined =
+        (account.access_token_encrypted ? decryptToken(account.access_token_encrypted) : null) || undefined;
+      if (!token) {
+        token = process.env.INSTAGRAM_TEST_ACCESS_TOKEN || process.env.META_ACCESS_TOKEN || undefined;
       }
 
-      // Verify bio directly (via public bio crawling or official token if available)
-      let result = await instagramProvider.verifyAccount(
+      // Only the code issued to THIS account record is accepted. (Accepting any
+      // "clipearn-xxxxxx" found in the bio let a user claim someone else's account
+      // whenever the real owner's own code was still in their bio.)
+      const result = await instagramProvider.verifyAccount(
         account.username,
         verificationCode,
         token
       );
-
-      // If current code not found, check if bio contains any other valid clipearn code from previous attempts
-      if (!result.is_verified && result.bio_text) {
-        const foundCodes = result.bio_text.match(/clipearn-[a-z0-9]{6}/gi);
-        if (foundCodes && foundCodes.length > 0) {
-          for (const fc of foundCodes) {
-            const check = await instagramProvider.verifyAccount(
-              account.username,
-              fc,
-              token
-            );
-            if (check.is_verified) {
-              result = check;
-              verificationCode = fc;
-              break;
-            }
-          }
-        }
-      }
 
       isVerified = result.is_verified;
       failureError =

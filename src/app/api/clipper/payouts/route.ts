@@ -79,7 +79,7 @@ export async function GET() {
 
       existing.totalViews += sub.current_views;
       if (sub.status === SubmissionStatus.APPROVED) {
-        existing.approvedViews += sub.current_views;
+        existing.approvedViews += sub.eligible_views;
         existing.earnings += Number(sub.current_earnings);
       }
       campaignStatsMap.set(camp.id, existing);

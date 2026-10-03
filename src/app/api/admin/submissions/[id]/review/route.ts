@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
 import { UserRole, SubmissionStatus, ReferralStatus } from "@prisma/client";
 import { logAuditEvent } from "@/lib/audit";
-import { processApprovalInTx } from "@/lib/earnings/engine";
+import { processApprovalInTx, syncSubmissionViews } from "@/lib/earnings/engine";
 
 export async function POST(
   request: Request,
@@ -67,6 +67,13 @@ export async function POST(
         newValue: { status: SubmissionStatus.APPROVED },
       });
 
+      // Refresh views right away so approved earnings reflect the latest platform count
+      try {
+        await syncSubmissionViews(updated.id);
+      } catch (e) {
+        console.warn("Initial sync after approval error:", e);
+      }
+
       return NextResponse.json({
         success: true,
         data: updated,
@@ -75,6 +82,30 @@ export async function POST(
     } else {
       // REJECT ACTION
       const updated = await prisma.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT id FROM "submissions" WHERE id = ${params.id} FOR UPDATE`;
+        const locked = await tx.submission.findUniqueOrThrow({ where: { id: params.id } });
+        const earningsToRefund = Number(locked.current_earnings) || 0;
+
+        // Reverse accumulated earnings in the ledger (balances/payouts are computed from it)
+        // and give the budget back to the campaign.
+        if (earningsToRefund > 0) {
+          await tx.earningsLedger.create({
+            data: {
+              user_id: submission.user_id,
+              campaign_id: submission.campaign_id,
+              submission_id: submission.id,
+              event_type: "SUBMISSION_REVOKED",
+              views: -locked.eligible_views,
+              rate_per_1000: submission.campaign.cpm,
+              amount: -earningsToRefund,
+            },
+          });
+          await tx.campaign.update({
+            where: { id: submission.campaign_id },
+            data: { used_budget: { decrement: earningsToRefund } },
+          });
+        }
+
         const sub = await tx.submission.update({
           where: { id: params.id },
           data: {
@@ -86,18 +117,6 @@ export async function POST(
             current_earnings: 0,
           },
         });
-
-        if (wasApproved) {
-          const totalRemainingEarnings = await tx.submission.aggregate({
-            where: { campaign_id: submission.campaign_id, status: SubmissionStatus.APPROVED },
-            _sum: { current_earnings: true },
-          });
-
-          await tx.campaign.update({
-            where: { id: submission.campaign_id },
-            data: { used_budget: totalRemainingEarnings._sum.current_earnings || 0 },
-          });
-        }
 
         return sub;
       });

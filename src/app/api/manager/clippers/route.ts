@@ -105,6 +105,23 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Please provide a reason for suspending this clipper." }, { status: 400 });
     }
 
+    const allowedStatuses: string[] =
+      manager.role === UserRole.ADMIN
+        ? [UserStatus.ACTIVE, UserStatus.SUSPENDED, UserStatus.BANNED]
+        : [UserStatus.ACTIVE, UserStatus.SUSPENDED];
+    if (!allowedStatuses.includes(status)) {
+      return NextResponse.json({ error: "Invalid status." }, { status: 400 });
+    }
+
+    const target = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+    if (!target) {
+      return NextResponse.json({ error: "User not found." }, { status: 404 });
+    }
+    // Managers may only moderate clippers; nobody can change an admin's status here
+    if (target.role === UserRole.ADMIN || (manager.role !== UserRole.ADMIN && target.role !== UserRole.CLIPPER)) {
+      return NextResponse.json({ error: "You are not allowed to change this user's status." }, { status: 403 });
+    }
+
     const isSuspending = status === "SUSPENDED";
     const cleanedReason = isSuspending ? reason.trim() : null;
 

@@ -110,17 +110,33 @@ export async function POST(
       return NextResponse.json({ success: true, submission: updated });
     } else {
       // REJECT (can reject PENDING, APPEALED, or already APPROVED clips)
-      const earningsToRefund = Number(submission.current_earnings) || 0;
-
       const updated = await prisma.$transaction(async (tx) => {
-        // If it was previously approved and accumulated earnings, refund campaign used budget
-        if (wasApproved && earningsToRefund > 0) {
+        // Re-read under lock so a concurrent view sync can't add earnings we then fail to reverse
+        await tx.$queryRaw`SELECT id FROM "submissions" WHERE id = ${params.id} FOR UPDATE`;
+        const locked = await tx.submission.findUniqueOrThrow({ where: { id: params.id } });
+        const earningsToRefund = Number(locked.current_earnings) || 0;
+
+        // If it accumulated earnings, refund campaign used budget AND reverse them in the
+        // earnings ledger (balances/payouts are computed from the ledger).
+        if (earningsToRefund > 0) {
           await tx.campaign.update({
             where: { id: submission.campaign_id },
             data: {
               used_budget: {
                 decrement: earningsToRefund,
               },
+            },
+          });
+
+          await tx.earningsLedger.create({
+            data: {
+              user_id: submission.user_id,
+              campaign_id: submission.campaign_id,
+              submission_id: submission.id,
+              event_type: "SUBMISSION_REVOKED",
+              views: -locked.eligible_views,
+              rate_per_1000: submission.campaign.cpm,
+              amount: -earningsToRefund,
             },
           });
         }

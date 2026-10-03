@@ -96,4 +96,6 @@ export interface SocialProvider {
   ): Promise<OwnershipVerificationResult>;
   refreshToken?(refreshToken: string): Promise<{ access_token: string; expires_at: Date }>;
   parsePostId(postUrl: string): string | null;
+  /** Expands short/share links (e.g. vm.tiktok.com) to the canonical post URL. */
+  resolveUrl?(postUrl: string): Promise<string>;
 }

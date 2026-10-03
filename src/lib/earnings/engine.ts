@@ -74,10 +74,13 @@ export async function syncSubmissionViews(submissionId: string): Promise<SyncRes
   let latestShares = submission.current_shares;
   let latestSaves = submission.current_saves;
 
+  // Prefer the full post URL: providers need it to resolve author handles / short links
+  const videoRef = submission.post_url || submission.platform_post_id;
+
   try {
     if (provider.getNormalizedMetrics) {
       const norm = await provider.getNormalizedMetrics(
-        submission.platform_post_id,
+        videoRef,
         submission.social_account
           ? {
               platform_user_id: submission.social_account.platform_user_id,
@@ -86,6 +89,12 @@ export async function syncSubmissionViews(submissionId: string): Promise<SyncRes
             }
           : null
       );
+
+      // A fetch/config problem (missing OAuth, API error, region block) is a retryable
+      // failure — it must not be reported as the clip being removed.
+      if (norm.views == null && norm.errorCode) {
+        throw new Error(norm.errorMessage || norm.error || norm.errorCode);
+      }
 
       // Handle unavailable or private clips cleanly without resetting views or earnings
       if (!norm.isAvailable || norm.isPrivate) {
@@ -111,13 +120,15 @@ export async function syncSubmissionViews(submissionId: string): Promise<SyncRes
         };
       }
 
-      if (norm.views != null && !isNaN(norm.views)) {
-        latestViews = norm.views;
+      if (norm.views == null || isNaN(norm.views)) {
+        throw new Error(norm.errorMessage || norm.error || "Platform did not return a view count");
       }
-      if (norm.likes !== undefined) latestLikes = norm.likes;
-      if (norm.comments !== undefined) latestComments = norm.comments;
-      if (norm.shares !== undefined) latestShares = norm.shares;
-      if (norm.saves !== undefined) latestSaves = norm.saves;
+      latestViews = norm.views;
+      // Keep the previous value when the platform doesn't expose a metric this time
+      latestLikes = norm.likes ?? latestLikes;
+      latestComments = norm.comments ?? latestComments;
+      latestShares = norm.shares ?? latestShares;
+      latestSaves = norm.saves ?? latestSaves;
     } else if (provider.getVideoMetrics) {
       const metrics = await provider.getVideoMetrics(
         submission.platform_post_id,
@@ -136,7 +147,7 @@ export async function syncSubmissionViews(submissionId: string): Promise<SyncRes
       latestShares = metrics.shares ?? latestShares;
       latestSaves = metrics.saves ?? latestSaves;
     } else {
-      latestViews = await provider.getVideoViews(submission.platform_post_id);
+      latestViews = await provider.getVideoViews(videoRef);
     }
 
     if (isNaN(latestViews) || latestViews < 0) {
@@ -194,6 +205,28 @@ export async function syncSubmissionViews(submissionId: string): Promise<SyncRes
   const hoursSinceLastSnapshot = (Date.now() - lastCapturedMs) / (1000 * 60 * 60);
 
   return await prisma.$transaction(async (tx) => {
+    // Lock the submission + campaign rows and re-read them: the platform fetch above can take
+    // seconds, and a concurrent sync / approval / rejection must not double-credit earnings
+    // or overwrite the campaign budget with a stale value.
+    await tx.$queryRaw`SELECT id FROM "submissions" WHERE id = ${submission.id} FOR UPDATE`;
+    await tx.$queryRaw`SELECT id FROM "campaigns" WHERE id = ${submission.campaign_id} FOR UPDATE`;
+    const fresh = await tx.submission.findUnique({
+      where: { id: submission.id },
+      include: { campaign: true },
+    });
+    if (!fresh || fresh.status === SubmissionStatus.REJECTED) {
+      return {
+        submissionId,
+        previousViews: submission.current_views,
+        newViews: submission.current_views,
+        eligibleViewsDelta: 0,
+        earningsDelta: 0,
+        status: "SKIPPED" as const,
+      };
+    }
+    const isApproved = fresh.status === SubmissionStatus.APPROVED;
+    const campaign = fresh.campaign;
+
     // 1. Create historical view snapshot if metrics changed or if > 24 hours have passed
     if (metricsChanged || hoursSinceLastSnapshot >= 24 || !lastSnapshot) {
       await tx.viewSnapshot.create({
@@ -245,7 +278,7 @@ export async function syncSubmissionViews(submissionId: string): Promise<SyncRes
       totalPotentialEligible = campaign.maximum_views_per_clip;
     }
 
-    const previousEligible = submission.eligible_views;
+    const previousEligible = fresh.eligible_views;
     const deltaEligibleViews = Math.max(0, totalPotentialEligible - previousEligible);
 
     if (deltaEligibleViews === 0) {
@@ -320,7 +353,7 @@ export async function syncSubmissionViews(submissionId: string): Promise<SyncRes
     // 5. Update submission metrics & earnings
     // current_views always reflects real platform views (even past the cap)
     // eligible_views is capped at maximum_views_per_clip
-    const newCurrentEarnings = Number(submission.current_earnings) + finalEarningsDelta;
+    const newCurrentEarnings = Number(fresh.current_earnings) + finalEarningsDelta;
     const newEligibleViews = previousEligible + actualEligibleDelta;
 
     await tx.submission.update({
@@ -354,6 +387,8 @@ export async function syncSubmissionViews(submissionId: string): Promise<SyncRes
 export async function syncAllApprovedSubmissions(options?: {
   force?: boolean;
   intervalHours?: number;
+  /** Restrict the sync to these campaigns (e.g. the campaigns a manager can access). */
+  campaignIds?: string[];
 }): Promise<SyncResult[]> {
   const force = options?.force ?? false;
   const intervalHours = options?.intervalHours ?? 8;
@@ -362,6 +397,7 @@ export async function syncAllApprovedSubmissions(options?: {
   const trackableSubmissions = await prisma.submission.findMany({
     where: {
       status: { in: [SubmissionStatus.APPROVED, SubmissionStatus.PENDING, SubmissionStatus.APPEALED] },
+      ...(options?.campaignIds ? { campaign_id: { in: options.campaignIds } } : {}),
       campaign: {
         status: CampaignStatus.ACTIVE,
       },
@@ -418,6 +454,10 @@ export async function processApprovalInTx(
   submissionId: string,
   managerId: string
 ): Promise<ApprovalResult> {
+  // Serialize with concurrent view syncs / approvals touching the same rows
+  await tx.$queryRaw`SELECT id FROM "submissions" WHERE id = ${submissionId} FOR UPDATE`;
+  await tx.$queryRaw`SELECT c.id FROM "campaigns" c JOIN "submissions" s ON s.campaign_id = c.id WHERE s.id = ${submissionId} FOR UPDATE OF c`;
+
   const submission = await tx.submission.findUnique({
     where: { id: submissionId },
     include: { campaign: true },

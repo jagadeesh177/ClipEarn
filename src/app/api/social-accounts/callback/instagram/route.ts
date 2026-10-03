@@ -107,13 +107,18 @@ export async function GET(request: NextRequest) {
       ? new Date(Date.now() + tokenData.expires_in * 1000)
       : undefined;
 
-    if (isCodeInBio) {
+    // An already-verified account connecting OAuth (to enable view tracking) has proven
+    // ownership via the matching authorized username; don't downgrade it to PENDING just
+    // because the verification code was removed from the bio afterwards.
+    const alreadyVerified = account.verification_status === VerificationStatus.VERIFIED;
+
+    if (isCodeInBio || alreadyVerified) {
       // Status = VERIFIED
       await prisma.socialAccount.update({
         where: { id: account.id },
         data: {
           verification_status: VerificationStatus.VERIFIED,
-          verified_at: new Date(),
+          verified_at: account.verified_at || new Date(),
           platform_user_id: profile.id || profile.user_id || account.platform_user_id,
           access_token_encrypted: encryptedToken,
           token_expires_at: tokenExpiresAt,

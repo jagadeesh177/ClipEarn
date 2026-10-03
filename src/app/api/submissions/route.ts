@@ -93,6 +93,7 @@ export async function GET(request: Request) {
       reviewed_at: s.reviewed_at,
       last_view_update: s.last_view_update,
       last_sync_status: s.last_sync_status,
+      last_sync_error: s.last_sync_error,
       recent_snapshots: s.view_snapshots.map((snap) => ({
         views: snap.views,
         likes: snap.likes,
@@ -114,7 +115,7 @@ export async function POST(request: Request) {
     const user = await requireAuth();
     const { campaign_id, social_account_id, post_url } = await request.json();
 
-    if (!campaign_id || !post_url || !post_url.trim()) {
+    if (!campaign_id || typeof post_url !== "string" || !post_url.trim()) {
       return NextResponse.json({ error: "Campaign and video URL are required." }, { status: 400 });
     }
 
@@ -127,6 +128,11 @@ export async function POST(request: Request) {
         error: "Invalid video URL. Please provide a valid TikTok, Instagram Reel, or YouTube Shorts link."
       }, { status: 400 });
     }
+
+    // Expand short/share links (vm.tiktok.com/…, tiktok.com/t/…) so the stored video ID,
+    // duplicate check and author check all use the canonical post URL.
+    const provider = getSocialProvider(detectedPlatform);
+    const canonicalUrl = provider.resolveUrl ? await provider.resolveUrl(trimmedUrl) : trimmedUrl;
 
     // 2. Check Campaign
     const campaign = await prisma.campaign.findUnique({
@@ -243,7 +249,7 @@ export async function POST(request: Request) {
     const verifiedHandle = account.username.toLowerCase().replace(/^@/, "").trim();
 
     // 5. Author Matching Check: Prevent submitting clips belonging to other accounts
-    const urlAuthor = extractAccountFromUrl(trimmedUrl, detectedPlatform);
+    const urlAuthor = extractAccountFromUrl(canonicalUrl, detectedPlatform);
     if (urlAuthor && !isAuthorMatch(urlAuthor, account.username)) {
       // Check if user owns another verified account that matches this handle
       const allVerifiedAccounts = await prisma.socialAccount.findMany({
@@ -275,8 +281,7 @@ export async function POST(request: Request) {
     }
 
     // 6. Parse Platform Post ID
-    const provider = getSocialProvider(detectedPlatform);
-    const platformPostId = provider.parsePostId(trimmedUrl);
+    const platformPostId = provider.parsePostId(canonicalUrl);
 
     if (!platformPostId) {
       return NextResponse.json({ error: "Could not extract video identifier from the provided URL." }, { status: 400 });
@@ -312,7 +317,7 @@ export async function POST(request: Request) {
       : null;
 
     if (provider.verifyOwnership) {
-      const ownership = await provider.verifyOwnership(trimmedUrl, {
+      const ownership = await provider.verifyOwnership(canonicalUrl, {
         platform_user_id: account.platform_user_id,
         username: account.username,
         access_token: decryptedToken,
@@ -383,7 +388,7 @@ export async function POST(request: Request) {
 
     try {
       if (provider.getNormalizedMetrics) {
-        const norm = await provider.getNormalizedMetrics(trimmedUrl, {
+        const norm = await provider.getNormalizedMetrics(canonicalUrl, {
           platform_user_id: account.platform_user_id,
           username: account.username,
           access_token: decryptedToken,
@@ -405,7 +410,7 @@ export async function POST(request: Request) {
           initialSyncError = norm.errorMessage || norm.error || "Unable to fetch official metrics from platform";
         }
       } else {
-        const videoMeta = await provider.getVideo(trimmedUrl, {
+        const videoMeta = await provider.getVideo(canonicalUrl, {
           platform_user_id: account.platform_user_id,
           username: account.username,
           access_token: decryptedToken,
@@ -434,7 +439,7 @@ export async function POST(request: Request) {
           user_id: user.id,
           social_account_id: account.id,
           platform: detectedPlatform,
-          post_url: trimmedUrl,
+          post_url: canonicalUrl,
           platform_post_id: platformPostId,
           status: SubmissionStatus.PENDING,
           current_views: initialViews,
@@ -505,6 +510,13 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (err: any) {
+    // Two concurrent submissions of the same video both pass the duplicate pre-check
+    if (err?.code === "P2002") {
+      return NextResponse.json({ error: "This video has already been submitted to this campaign." }, { status: 409 });
+    }
+    if (err?.message === "UNAUTHORIZED") {
+      return NextResponse.json({ error: "Please log in to submit clips." }, { status: 401 });
+    }
     return NextResponse.json({ error: err?.message || "Failed to submit clip" }, { status: 500 });
   }
 }

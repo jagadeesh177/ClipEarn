@@ -10,8 +10,9 @@ export async function GET(request: Request) {
     const search = searchParams.get("search") || "";
     const platform = searchParams.get("platform") as Platform | null;
     const status = searchParams.get("status") as CampaignStatus | null;
-    const page = parseInt(searchParams.get("page") || "1", 10);
-    const limit = parseInt(searchParams.get("limit") || "10", 10);
+    // NaN / negative / huge values previously reached Prisma and caused 500s or full-table reads
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "10", 10) || 10));
     const skip = (page - 1) * limit;
 
     const user = await getSessionUser();

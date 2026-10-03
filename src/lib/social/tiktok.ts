@@ -10,15 +10,22 @@ import {
 } from "./types";
 import { verifySocialBio } from "./bio-verifier";
 import { isAuthorMatch } from "./author-match";
+import { BROWSER_HEADERS, fetchJson, fetchText, isPlaceholder, toCount } from "./http";
 
 export class TikTokProvider implements SocialProvider {
   public platform = Platform.TIKTOK;
 
   parsePostId(postUrl: string): string | null {
+    const raw = postUrl.trim();
+    if (/^\d{8,}$/.test(raw)) return raw;
     try {
-      const url = new URL(postUrl.trim());
-      const match = url.pathname.match(/video\/(\d+)/);
-      return match ? match[1] : url.pathname.split("/").pop() || null;
+      const url = new URL(raw);
+      const m = url.pathname.match(/\/(?:video|photo|v)\/(\d+)/);
+      if (m) return m[1];
+      const itemId = url.searchParams.get("item_id") || url.searchParams.get("share_item_id");
+      if (itemId && /^\d+$/.test(itemId)) return itemId;
+      // Short links (vm.tiktok.com/XXXX, tiktok.com/t/XXXX) must be resolved first via resolveUrl()
+      return null;
     } catch {
       return null;
     }
@@ -104,31 +111,29 @@ export class TikTokProvider implements SocialProvider {
     };
   }
 
+  /** Public alias used by the submission flow to expand short links before parsing the video ID. */
+  async resolveUrl(postUrl: string): Promise<string> {
+    return this.resolveCanonicalUrl(postUrl);
+  }
+
   private async resolveCanonicalUrl(postUrl: string): Promise<string> {
+    const raw = postUrl.trim();
+    if (!/^https?:\/\//i.test(raw)) return raw;
+    // Already canonical: tiktok.com/@user/video/123
+    if (/tiktok\.com\/@[^/]+\/(?:video|photo)\/\d+/.test(raw)) return raw;
     try {
-      if (
-        postUrl.includes("vm.tiktok.com") ||
-        postUrl.includes("vt.tiktok.com") ||
-        postUrl.includes("/t/") ||
-        postUrl.includes("/v/") ||
-        !postUrl.includes("@")
-      ) {
-        const res = await fetch(postUrl, {
-          method: "GET",
-          redirect: "follow",
-          headers: {
-            "User-Agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-          },
-          signal: AbortSignal.timeout(6000),
-        });
-        if (res.url && res.url !== postUrl) {
-          return res.url;
-        }
+      const res = await fetch(raw, {
+        method: "GET",
+        redirect: "follow",
+        headers: BROWSER_HEADERS,
+        signal: AbortSignal.timeout(8000),
+      });
+      // Region-blocked servers get redirected to /xx/about; keep the original URL in that case
+      if (res.url && res.url !== raw && !/tiktok\.com\/[a-z]{2}\/about/i.test(res.url)) {
+        return res.url;
       }
     } catch {}
-    return postUrl;
+    return raw;
   }
 
   async verifyOwnership(
@@ -139,7 +144,7 @@ export class TikTokProvider implements SocialProvider {
     const postId = this.parsePostId(resolvedUrl) || this.parsePostId(videoIdOrUrl) || videoIdOrUrl;
 
     // 1. If OAuth token exists, verify via TikTok Video Query API v2
-    if (account.access_token && !account.access_token.startsWith("mock_")) {
+    if (account.access_token && !isPlaceholder(account.access_token)) {
       try {
         const res = await fetch(
           "https://open.tiktokapis.com/v2/video/query/?fields=id,title",
@@ -230,75 +235,120 @@ export class TikTokProvider implements SocialProvider {
   ): Promise<NormalizedMetrics> {
     const resolvedUrl = await this.resolveCanonicalUrl(videoIdOrUrl);
     const postId = this.parsePostId(resolvedUrl) || this.parsePostId(videoIdOrUrl) || videoIdOrUrl;
+    const base = {
+      saves: null as number | null,
+      fetchedAt: new Date(),
+      platform: Platform.TIKTOK,
+      platformVideoId: postId,
+    };
+    let apiError: string | undefined;
 
-    let views: number | null = null;
-    let likes: number | null = null;
-    let comments: number | null = null;
-    let shares: number | null = null;
-
-    // 1. If access token available, query official TikTok Video Query API
-    if (account?.access_token && !account.access_token.startsWith("mock_")) {
+    // 1. Official TikTok Video Query API (requires the clipper's OAuth token with video.list scope)
+    if (account?.access_token && !isPlaceholder(account.access_token) && /^\d+$/.test(postId)) {
       try {
-        const res = await fetch(
+        const { ok, data } = await fetchJson(
           "https://open.tiktokapis.com/v2/video/query/?fields=id,title,view_count,like_count,comment_count,share_count",
           {
             method: "POST",
             headers: {
-              "Authorization": `Bearer ${account.access_token}`,
+              Authorization: `Bearer ${account.access_token}`,
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-              filters: {
-                video_ids: [postId],
-              },
-            }),
-            signal: AbortSignal.timeout(6000),
+            body: JSON.stringify({ filters: { video_ids: [postId] } }),
+            timeoutMs: 8000,
           }
         );
-        const data = await res.json();
+        const errCode = data?.error?.code;
         const video = data?.data?.videos?.[0];
-        if (video) {
+        if (ok && (!errCode || errCode === "ok") && video) {
           return {
-            views: video.view_count ?? null,
-            likes: video.like_count ?? null,
-            comments: video.comment_count ?? null,
-            shares: video.share_count ?? null,
-            saves: null, // TikTok API v2 does not expose saves/bookmarks count
-            fetchedAt: new Date(),
-            platform: Platform.TIKTOK,
-            platformVideoId: postId,
+            ...base,
+            views: toCount(video.view_count),
+            likes: toCount(video.like_count),
+            comments: toCount(video.comment_count),
+            shares: toCount(video.share_count),
             isAvailable: true,
             isPrivate: false,
             authorUsername: account.username,
+            rawDetails: { source: "tiktok_video_query_api" },
           };
         }
-      } catch {}
+        apiError = errCode && errCode !== "ok" ? `TikTok API error: ${data?.error?.message || errCode}` : undefined;
+      } catch (err: any) {
+        apiError = `TikTok API error: ${err?.message || "request failed"}`;
+      }
     }
 
-    // When no access token or video query failed
+    // 2. Public video page (embedded __UNIVERSAL_DATA_FOR_REHYDRATION__ JSON)
+    const scraped = await this.fetchPublicVideoStats(resolvedUrl, postId);
+    if (scraped.notFound) {
+      return {
+        ...base,
+        views: null,
+        likes: null,
+        comments: null,
+        shares: null,
+        isAvailable: false,
+        isPrivate: false,
+        error: "Video not found or removed from TikTok",
+      };
+    }
+    if (scraped.isPrivate) {
+      return {
+        ...base,
+        views: null,
+        likes: null,
+        comments: null,
+        shares: null,
+        isAvailable: true,
+        isPrivate: true,
+        authorUsername: scraped.authorUsername,
+      };
+    }
+    if (scraped.views != null) {
+      return {
+        ...base,
+        views: scraped.views,
+        likes: scraped.likes,
+        comments: scraped.comments,
+        shares: scraped.shares,
+        saves: scraped.saves,
+        isAvailable: true,
+        isPrivate: false,
+        authorUsername: scraped.authorUsername,
+        authorDisplayName: scraped.authorDisplayName,
+        authorPlatformUserId: scraped.authorId,
+        rawDetails: { source: "tiktok_public_page" },
+      };
+    }
+
+    // 3. Nothing worked — report a retryable failure (do NOT mark the clip as removed)
     const oembedData = await this.fetchOembedMetadata(resolvedUrl || videoIdOrUrl);
     return {
+      ...base,
       views: null,
       likes: null,
       comments: null,
       shares: null,
-      saves: null, // Unsupported on TikTok
-      fetchedAt: new Date(),
-      platform: Platform.TIKTOK,
-      platformVideoId: postId,
-      isAvailable: false,
+      isAvailable: true,
       isPrivate: false,
       authorUsername: oembedData.authorUsername,
       authorDisplayName: oembedData.authorDisplayName,
-      errorCode: "TIKTOK_OAUTH_REQUIRED",
-      errorMessage: "TikTok account must be connected with OAuth to query video metrics through the official Video Query API.",
+      errorCode: "TIKTOK_FETCH_FAILED",
+      errorMessage:
+        apiError ||
+        scraped.error ||
+        "Unable to read TikTok view count. Connect the TikTok account via OAuth for official metrics.",
     };
   }
 
-  async getVideo(postUrl: string): Promise<VideoMetadata> {
+  async getVideo(
+    postUrl: string,
+    account?: { platform_user_id?: string; username?: string; access_token?: string | null } | null
+  ): Promise<VideoMetadata> {
     const resolvedUrl = await this.resolveCanonicalUrl(postUrl);
     const postId = this.parsePostId(resolvedUrl) || this.parsePostId(postUrl) || postUrl;
-    const norm = await this.getNormalizedMetrics(resolvedUrl || postUrl);
+    const norm = await this.getNormalizedMetrics(resolvedUrl || postUrl, account);
 
     return {
       platform: Platform.TIKTOK,
@@ -310,7 +360,7 @@ export class TikTokProvider implements SocialProvider {
       likes: norm.likes,
       comments: norm.comments,
       shares: norm.shares,
-      saves: null,
+      saves: norm.saves,
       is_available: norm.isAvailable,
       is_private: norm.isPrivate,
     };
@@ -321,18 +371,112 @@ export class TikTokProvider implements SocialProvider {
     if (metrics.views != null) {
       return metrics.views;
     }
-    throw new Error(metrics.errorMessage || "Unable to fetch TikTok video views via official Video Query API.");
+    throw new Error(metrics.errorMessage || metrics.error || "Unable to fetch TikTok video views.");
   }
 
-  async getVideoMetrics(platformPostId: string): Promise<VideoMetrics> {
-    const norm = await this.getNormalizedMetrics(platformPostId);
+  async getVideoMetrics(
+    platformPostId: string,
+    postUrl?: string,
+    account?: { platform_user_id?: string; username?: string; access_token?: string | null } | null
+  ): Promise<VideoMetrics> {
+    const norm = await this.getNormalizedMetrics(postUrl || platformPostId, account);
+    if (norm.views == null) {
+      throw new Error(norm.errorMessage || norm.error || "Unable to fetch TikTok video views.");
+    }
     return {
-      views: norm.views ?? 0,
+      views: norm.views,
       likes: norm.likes,
       comments: norm.comments,
       shares: norm.shares,
-      saves: null,
+      saves: norm.saves,
     };
+  }
+
+  /**
+   * Reads public stats from the TikTok video web page. TikTok embeds the item
+   * in a JSON script tag (__UNIVERSAL_DATA_FOR_REHYDRATION__, older pages: SIGI_STATE).
+   */
+  private async fetchPublicVideoStats(
+    resolvedUrl: string,
+    postId: string
+  ): Promise<{
+    views: number | null;
+    likes: number | null;
+    comments: number | null;
+    shares: number | null;
+    saves: number | null;
+    notFound?: boolean;
+    isPrivate?: boolean;
+    authorUsername?: string;
+    authorDisplayName?: string;
+    authorId?: string;
+    error?: string;
+  }> {
+    const empty = { views: null, likes: null, comments: null, shares: null, saves: null };
+    if (!/^\d+$/.test(postId)) {
+      return { ...empty, error: "Could not resolve a numeric TikTok video ID from the URL." };
+    }
+
+    // The username segment is not validated by TikTok, so a bare ID still resolves.
+    const pageUrl = /tiktok\.com\/@[^/]+\/(?:video|photo)\/\d+/.test(resolvedUrl)
+      ? resolvedUrl.split("?")[0]
+      : `https://www.tiktok.com/@_/video/${postId}`;
+
+    try {
+      const page = await fetchText(pageUrl, { timeoutMs: 12000 });
+      if (/tiktok\.com\/[a-z]{2}\/about/i.test(page.url)) {
+        return { ...empty, error: "TikTok is not available in this server's region (redirected to /about)." };
+      }
+      if (!page.ok) {
+        return { ...empty, error: `TikTok page returned HTTP ${page.status}` };
+      }
+      const html = page.text;
+
+      const universal = html.match(
+        /<script[^>]+id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>([\s\S]*?)<\/script>/
+      )?.[1];
+      if (universal) {
+        try {
+          const json = JSON.parse(universal);
+          const detail = json?.__DEFAULT_SCOPE__?.["webapp.video-detail"];
+          const statusCode = detail?.statusCode;
+          // 10204 = item not found / removed, 10216/10222 = private
+          if (statusCode === 10204) return { ...empty, notFound: true };
+          if (statusCode === 10216 || statusCode === 10222) return { ...empty, isPrivate: true };
+          const item = detail?.itemInfo?.itemStruct;
+          if (item) {
+            const stats = item.statsV2 || item.stats || {};
+            const fallback = item.stats || {};
+            return {
+              views: toCount(stats.playCount ?? fallback.playCount),
+              likes: toCount(stats.diggCount ?? fallback.diggCount),
+              comments: toCount(stats.commentCount ?? fallback.commentCount),
+              shares: toCount(stats.shareCount ?? fallback.shareCount),
+              saves: toCount(stats.collectCount ?? fallback.collectCount),
+              authorUsername: item.author?.uniqueId,
+              authorDisplayName: item.author?.nickname,
+              authorId: item.author?.id,
+            };
+          }
+        } catch {}
+      }
+
+      // Regex fallback (SIGI_STATE or changed page layout)
+      const playCount = html.match(/"playCount":"?(\d+)"?/)?.[1];
+      if (playCount) {
+        return {
+          views: toCount(playCount),
+          likes: toCount(html.match(/"diggCount":"?(\d+)"?/)?.[1]),
+          comments: toCount(html.match(/"commentCount":"?(\d+)"?/)?.[1]),
+          shares: toCount(html.match(/"shareCount":"?(\d+)"?/)?.[1]),
+          saves: toCount(html.match(/"collectCount":"?(\d+)"?/)?.[1]),
+          authorUsername: html.match(/"uniqueId":"([^"]+)"/)?.[1],
+        };
+      }
+      return { ...empty, error: "TikTok page did not contain video stats (possibly bot-challenged)." };
+    } catch (err: any) {
+      return { ...empty, error: `TikTok page fetch failed: ${err?.message || "network error"}` };
+    }
   }
 
   private async fetchOembedMetadata(

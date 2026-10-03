@@ -270,6 +270,18 @@ export default function MySubmissionsPage() {
                         Platform clip unavailable or private
                       </span>
                     )}
+                    {sub.last_sync_status &&
+                      sub.last_sync_status !== "SUCCESS" &&
+                      sub.last_sync_status !== "UNAVAILABLE" &&
+                      sub.last_sync_error && (
+                        <span
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-400"
+                          title={sub.last_sync_error}
+                        >
+                          <AlertCircle className="w-3 h-3 shrink-0" />
+                          Views not updated: {sub.last_sync_error}
+                        </span>
+                      )}
                   </div>
 
                   {/* Real Social Media Metrics Strip */}

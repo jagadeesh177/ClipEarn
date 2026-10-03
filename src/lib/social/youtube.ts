@@ -10,20 +10,25 @@ import {
 } from "./types";
 import { verifySocialBio } from "./bio-verifier";
 import { isAuthorMatch } from "./author-match";
+import { BROWSER_USER_AGENT, fetchJson, fetchText, getEnv, isPlaceholder, toCount } from "./http";
 
 export class YouTubeProvider implements SocialProvider {
   public platform = Platform.YOUTUBE;
 
   parsePostId(postUrl: string): string | null {
+    const raw = postUrl.trim();
+    // Already a bare 11-character video ID
+    if (/^[A-Za-z0-9_-]{11}$/.test(raw)) return raw;
     try {
-      const url = new URL(postUrl.trim());
-      if (url.pathname.includes("/shorts/")) {
-        return url.pathname.split("/shorts/")[1].split("/")[0].split("?")[0];
+      const url = new URL(raw);
+      if (url.hostname.toLowerCase().includes("youtu.be")) {
+        return url.pathname.split("/").filter(Boolean)[0] || null;
       }
-      if (url.hostname.includes("youtu.be")) {
-        return url.pathname.replace(/^\//, "").split("/")[0].split("?")[0];
-      }
-      return url.searchParams.get("v") || url.pathname.split("/").filter(Boolean).pop() || null;
+      const v = url.searchParams.get("v");
+      if (v) return v;
+      // /shorts/ID, /live/ID, /embed/ID, /v/ID
+      const m = url.pathname.match(/\/(?:shorts|live|embed|v)\/([A-Za-z0-9_-]{6,})/);
+      return m ? m[1] : null;
     } catch {
       return null;
     }
@@ -104,58 +109,12 @@ export class YouTubeProvider implements SocialProvider {
     account: { platform_user_id: string; username: string; access_token?: string | null }
   ): Promise<OwnershipVerificationResult> {
     const videoId = this.parsePostId(videoIdOrUrl) || videoIdOrUrl;
-    const apiKey = process.env.GOOGLE_API_KEY;
-    const token = account.access_token;
+    const info = await this.fetchVideoInfo(videoId, account.access_token);
 
-    let channelId: string | undefined = undefined;
-    let channelTitle: string | undefined = undefined;
-    let customHandle: string | undefined = undefined;
+    const channelId = info.channelId;
+    const channelTitle = info.channelTitle;
+    const customHandle = info.handle;
 
-    // 1. Try YouTube Data API v3 if apiKey or access_token is available
-    if (apiKey || token) {
-      try {
-        const headers: Record<string, string> = {};
-        if (token) {
-          headers["Authorization"] = `Bearer ${token}`;
-        }
-        const url = apiKey
-          ? `https://www.googleapis.com/youtube/v3/videos?part=snippet,status&id=${videoId}&key=${apiKey}`
-          : `https://www.googleapis.com/youtube/v3/videos?part=snippet,status&id=${videoId}`;
-
-        const res = await fetch(url, { headers, signal: AbortSignal.timeout(6000) });
-        const data = await res.json();
-        const item = data.items?.[0];
-        if (item) {
-          channelId = item.snippet?.channelId;
-          channelTitle = item.snippet?.channelTitle;
-
-          // Fetch channel snippet to get customUrl / handle
-          if (channelId && apiKey) {
-            try {
-              const chRes = await fetch(
-                `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${channelId}&key=${apiKey}`,
-                { signal: AbortSignal.timeout(4000) }
-              );
-              const chData = await chRes.json();
-              const cUrl = chData.items?.[0]?.snippet?.customUrl;
-              if (cUrl) {
-                customHandle = cUrl.replace(/^@/, "");
-              }
-            } catch {}
-          }
-        }
-      } catch {}
-    }
-
-    // 2. Fallback to oEmbed if handle or channelTitle was not retrieved
-    if (!customHandle) {
-      const oembedHandle = await this.fetchAuthorHandleFromOembed(videoId);
-      if (oembedHandle) {
-        customHandle = oembedHandle;
-      }
-    }
-
-    // 3. Match against account
     // Direct Channel ID match
     if (channelId && account.platform_user_id && channelId === account.platform_user_id) {
       return {
@@ -186,7 +145,7 @@ export class YouTubeProvider implements SocialProvider {
       };
     }
 
-    // If channel info could not be determined at all (e.g. quota limits)
+    // If channel info could not be determined at all (e.g. quota limits / network)
     return {
       isOwned: true,
       ownerPlatformUserId: channelId,
@@ -199,120 +158,67 @@ export class YouTubeProvider implements SocialProvider {
     account?: { platform_user_id?: string; username?: string; access_token?: string | null } | null
   ): Promise<NormalizedMetrics> {
     const videoId = this.parsePostId(videoIdOrUrl) || videoIdOrUrl;
-    const apiKey = process.env.GOOGLE_API_KEY;
-    const token = account?.access_token;
-
-    let views: number | null = null;
-    let likes: number | null = null;
-    let comments: number | null = null;
-    let isPrivate = false;
-    let authorDisplayName: string | undefined = undefined;
-    let authorPlatformUserId: string | undefined = undefined;
-
-    if (apiKey || token) {
-      try {
-        const headers: Record<string, string> = {};
-        if (token) {
-          headers["Authorization"] = `Bearer ${token}`;
-        }
-        const url = apiKey
-          ? `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,status&id=${videoId}&key=${apiKey}`
-          : `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,status&id=${videoId}`;
-
-        const res = await fetch(url, { headers, signal: AbortSignal.timeout(6000) });
-        const data = await res.json();
-
-        if (data.items && data.items.length === 0) {
-          return {
-            views: null,
-            likes: null,
-            comments: null,
-            shares: null,
-            saves: null,
-            fetchedAt: new Date(),
-            platform: Platform.YOUTUBE,
-            platformVideoId: videoId,
-            isAvailable: false,
-            isPrivate: false,
-            error: "Video not found or removed from YouTube",
-          };
-        }
-
-        const item = data.items?.[0];
-        if (item) {
-          authorPlatformUserId = item.snippet?.channelId;
-          authorDisplayName = item.snippet?.channelTitle;
-          isPrivate = item.status?.privacyStatus === "private";
-
-          if (item.statistics?.viewCount != null) {
-            views = parseInt(item.statistics.viewCount, 10);
-          }
-          if (item.statistics?.likeCount != null) {
-            likes = parseInt(item.statistics.likeCount, 10);
-          }
-          if (item.statistics?.commentCount != null) {
-            comments = parseInt(item.statistics.commentCount, 10);
-          }
-
-          // YouTube Data API v3 does not expose shares or saves
-          const oembedHandle = await this.fetchAuthorHandleFromOembed(videoId);
-
-          return {
-            views,
-            likes,
-            comments,
-            shares: null,
-            saves: null,
-            fetchedAt: new Date(),
-            platform: Platform.YOUTUBE,
-            platformVideoId: videoId,
-            isAvailable: true,
-            isPrivate,
-            authorPlatformUserId,
-            authorDisplayName,
-            authorUsername: oembedHandle || undefined,
-          };
-        }
-      } catch (err: any) {
-        return {
-          views: null,
-          likes: null,
-          comments: null,
-          shares: null,
-          saves: null,
-          fetchedAt: new Date(),
-          platform: Platform.YOUTUBE,
-          platformVideoId: videoId,
-          isAvailable: false,
-          isPrivate: false,
-          errorCode: "YOUTUBE_API_ERROR",
-          errorMessage: err?.message || "Error calling YouTube Data API",
-        };
-      }
-    }
-
-    // When API key or OAuth token is not configured
-    const oembedHandle = await this.fetchAuthorHandleFromOembed(videoId);
-    return {
-      views: null,
-      likes: null,
-      comments: null,
+    const base = {
       shares: null,
       saves: null,
       fetchedAt: new Date(),
       platform: Platform.YOUTUBE,
       platformVideoId: videoId,
-      isAvailable: false,
-      isPrivate: false,
-      authorUsername: oembedHandle || undefined,
-      errorCode: "YOUTUBE_API_KEY_REQUIRED",
-      errorMessage: "YouTube Data API v3 key (GOOGLE_API_KEY or YOUTUBE_API_KEY) is required to fetch official metrics.",
+      platformUrl: `https://www.youtube.com/watch?v=${videoId}`,
+    };
+
+    const info = await this.fetchVideoInfo(videoId, account?.access_token);
+
+    if (info.notFound) {
+      return {
+        ...base,
+        views: null,
+        likes: null,
+        comments: null,
+        isAvailable: false,
+        isPrivate: false,
+        error: "Video not found or removed from YouTube",
+      };
+    }
+
+    if (info.views == null) {
+      return {
+        ...base,
+        views: null,
+        likes: info.likes,
+        comments: info.comments,
+        isAvailable: true,
+        isPrivate: info.isPrivate,
+        authorUsername: info.handle,
+        authorDisplayName: info.channelTitle,
+        authorPlatformUserId: info.channelId,
+        errorCode: info.isPrivate ? undefined : "YOUTUBE_FETCH_FAILED",
+        errorMessage: info.isPrivate
+          ? undefined
+          : info.error || "Unable to read view count from YouTube. Configure YOUTUBE_API_KEY for reliable metrics.",
+      };
+    }
+
+    return {
+      ...base,
+      views: info.views,
+      likes: info.likes,
+      comments: info.comments,
+      isAvailable: true,
+      isPrivate: info.isPrivate,
+      authorUsername: info.handle,
+      authorDisplayName: info.channelTitle,
+      authorPlatformUserId: info.channelId,
+      rawDetails: { source: info.source },
     };
   }
 
-  async getVideo(postUrl: string): Promise<VideoMetadata> {
+  async getVideo(
+    postUrl: string,
+    account?: { platform_user_id?: string; username?: string; access_token?: string | null } | null
+  ): Promise<VideoMetadata> {
     const videoId = this.parsePostId(postUrl) || postUrl;
-    const norm = await this.getNormalizedMetrics(videoId);
+    const norm = await this.getNormalizedMetrics(videoId, account);
 
     return {
       platform: Platform.YOUTUBE,
@@ -336,13 +242,20 @@ export class YouTubeProvider implements SocialProvider {
     if (metrics.views != null) {
       return metrics.views;
     }
-    throw new Error(metrics.errorMessage || "Unable to fetch YouTube video views via official Data API v3.");
+    throw new Error(metrics.errorMessage || metrics.error || "Unable to fetch YouTube video views.");
   }
 
-  async getVideoMetrics(platformPostId: string): Promise<VideoMetrics> {
-    const norm = await this.getNormalizedMetrics(platformPostId);
+  async getVideoMetrics(
+    platformPostId: string,
+    _postUrl?: string,
+    account?: { platform_user_id?: string; username?: string; access_token?: string | null } | null
+  ): Promise<VideoMetrics> {
+    const norm = await this.getNormalizedMetrics(platformPostId, account);
+    if (norm.views == null) {
+      throw new Error(norm.errorMessage || norm.error || "Unable to fetch YouTube video views.");
+    }
     return {
-      views: norm.views ?? 0,
+      views: norm.views,
       likes: norm.likes,
       comments: norm.comments,
       shares: null,
@@ -350,22 +263,187 @@ export class YouTubeProvider implements SocialProvider {
     };
   }
 
+  /**
+   * Resolves video statistics + channel info.
+   * 1. YouTube Data API v3 (API key preferred, else the clipper's OAuth token)
+   * 2. Public watch page (ytInitialPlayerResponse.videoDetails) when the API is
+   *    not configured, over quota, or errors out.
+   * 3. oEmbed for the channel handle.
+   */
+  private async fetchVideoInfo(videoId: string, accessToken?: string | null): Promise<YouTubeVideoInfo> {
+    const info: YouTubeVideoInfo = {
+      views: null,
+      likes: null,
+      comments: null,
+      isPrivate: false,
+      notFound: false,
+    };
+
+    const apiKey = getEnv("YOUTUBE_API_KEY", "GOOGLE_API_KEY");
+    const token = isPlaceholder(accessToken) ? undefined : accessToken!;
+
+    if (apiKey || token) {
+      try {
+        const url =
+          `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,status&id=${encodeURIComponent(videoId)}` +
+          (apiKey ? `&key=${encodeURIComponent(apiKey)}` : "");
+        const { ok, data } = await fetchJson(url, {
+          headers: !apiKey && token ? { Authorization: `Bearer ${token}` } : {},
+          timeoutMs: 8000,
+        });
+
+        if (ok && data && Array.isArray(data.items)) {
+          const item = data.items[0];
+          if (!item) {
+            info.notFound = true;
+            return info;
+          }
+          info.source = "youtube_data_api";
+          info.channelId = item.snippet?.channelId;
+          info.channelTitle = item.snippet?.channelTitle;
+          info.isPrivate = item.status?.privacyStatus === "private";
+          info.views = toCount(item.statistics?.viewCount);
+          info.likes = toCount(item.statistics?.likeCount);
+          info.comments = toCount(item.statistics?.commentCount);
+
+          if (info.channelId && apiKey) {
+            try {
+              const ch = await fetchJson(
+                `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${encodeURIComponent(info.channelId)}&key=${encodeURIComponent(apiKey)}`,
+                { timeoutMs: 5000 }
+              );
+              const cUrl = ch.data?.items?.[0]?.snippet?.customUrl;
+              if (cUrl) info.handle = String(cUrl).replace(/^@/, "");
+            } catch {}
+          }
+        } else {
+          info.error = data?.error?.message
+            ? `YouTube Data API error: ${data.error.message}`
+            : "YouTube Data API request failed";
+        }
+      } catch (err: any) {
+        info.error = `YouTube Data API error: ${err?.message || "request failed"}`;
+      }
+    }
+
+    // Public InnerTube player endpoint (keyless; used by youtube.com itself)
+    if (info.views == null && !info.isPrivate) {
+      try {
+        const { ok, data } = await fetchJson("https://www.youtube.com/youtubei/v1/player?prettyPrint=false", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "User-Agent": BROWSER_USER_AGENT },
+          body: JSON.stringify({
+            context: { client: { clientName: "WEB", clientVersion: "2.20240910.00.00", hl: "en", gl: "US" } },
+            videoId,
+          }),
+          timeoutMs: 10000,
+        });
+        if (ok && data) {
+          const details = data.videoDetails;
+          const status = data.playabilityStatus?.status;
+          if (details && details.videoId === videoId) {
+            info.source = info.source || "youtube_innertube";
+            info.views = toCount(details.viewCount);
+            info.channelId = info.channelId || details.channelId;
+            info.channelTitle = info.channelTitle || details.author;
+            if (details.isPrivate === true) info.isPrivate = true;
+            const ownerUrl: string | undefined = data.microformat?.playerMicroformatRenderer?.ownerProfileUrl;
+            const handle = ownerUrl?.match(/\/@([^/?#]+)/)?.[1];
+            if (handle && !info.handle) info.handle = decodeURIComponent(handle);
+          } else if (status === "ERROR") {
+            info.notFound = true;
+            return info;
+          } else if (status === "LOGIN_REQUIRED" && /private/i.test(data.playabilityStatus?.reason || "")) {
+            info.isPrivate = true;
+          }
+        }
+      } catch (err: any) {
+        info.error = info.error || `YouTube InnerTube fetch failed: ${err?.message || "network error"}`;
+      }
+    }
+
+    // Public watch page fallback (no API key / quota exceeded / API error)
+    if (info.views == null && !info.isPrivate) {
+      try {
+        const page = await fetchText(
+          `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}&hl=en&gl=US`,
+          { headers: { Cookie: "CONSENT=YES+cb; SOCS=CAI" }, timeoutMs: 10000 }
+        );
+        if (page.ok) {
+          const html = page.text;
+          const playability = html.match(/"playabilityStatus":\{"status":"([A-Z_]+)"/)?.[1];
+          const details = html.match(/"videoDetails":\{"videoId":"([^"]+)"([\s\S]*?)"isLiveContent"/);
+          const detailsStr = details && details[1] === videoId ? details[2] : "";
+
+          if (detailsStr) {
+            info.source = info.source || "youtube_watch_page";
+            info.views = toCount(detailsStr.match(/"viewCount":"(\d+)"/)?.[1]);
+            info.channelId = info.channelId || detailsStr.match(/"channelId":"([^"]+)"/)?.[1];
+            info.channelTitle =
+              info.channelTitle || decodeJsonString(detailsStr.match(/"author":"((?:[^"\\]|\\.)*)"/)?.[1]);
+            if (/"isPrivate":true/.test(detailsStr)) info.isPrivate = true;
+          } else if (playability === "ERROR") {
+            info.notFound = true;
+            return info;
+          } else if (playability === "LOGIN_REQUIRED" && /This video is private/i.test(html)) {
+            info.isPrivate = true;
+          }
+
+          if (!info.handle) {
+            const owner = html.match(/"ownerProfileUrl":"https?:\/\/www\.youtube\.com\/@([^"/?]+)"/)?.[1];
+            if (owner) info.handle = decodeURIComponent(owner);
+          }
+        } else {
+          info.error = info.error || `YouTube page returned HTTP ${page.status}`;
+        }
+      } catch (err: any) {
+        info.error = info.error || `YouTube page fetch failed: ${err?.message || "network error"}`;
+      }
+    }
+
+    if (!info.handle) {
+      const oembedHandle = await this.fetchAuthorHandleFromOembed(videoId);
+      if (oembedHandle) info.handle = oembedHandle;
+    }
+
+    return info;
+  }
+
   private async fetchAuthorHandleFromOembed(videoId: string): Promise<string> {
     try {
-      const oRes = await fetch(
-        `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`,
-        { signal: AbortSignal.timeout(5000) }
-      );
-      if (oRes.ok) {
-        const oData = await oRes.json();
-        if (oData.author_url) {
-          const hMatch = oData.author_url.match(/@([^/?#&]+)/);
-          if (hMatch) return hMatch[1].replace(/^@/, "").trim();
-          const cMatch = oData.author_url.match(/\/(?:c|user)\/([^/?#&]+)/);
-          if (cMatch) return cMatch[1].trim();
-        }
+      const target = encodeURIComponent(`https://www.youtube.com/watch?v=${videoId}`);
+      const { ok, data } = await fetchJson(`https://www.youtube.com/oembed?url=${target}&format=json`, {
+        timeoutMs: 5000,
+      });
+      if (ok && data?.author_url) {
+        const hMatch = String(data.author_url).match(/@([^/?#&]+)/);
+        if (hMatch) return decodeURIComponent(hMatch[1]).replace(/^@/, "").trim();
+        const cMatch = String(data.author_url).match(/\/(?:c|user)\/([^/?#&]+)/);
+        if (cMatch) return cMatch[1].trim();
       }
     } catch {}
     return "";
+  }
+}
+
+interface YouTubeVideoInfo {
+  views: number | null;
+  likes: number | null;
+  comments: number | null;
+  isPrivate: boolean;
+  notFound: boolean;
+  channelId?: string;
+  channelTitle?: string;
+  handle?: string;
+  source?: string;
+  error?: string;
+}
+
+function decodeJsonString(raw?: string): string | undefined {
+  if (!raw) return undefined;
+  try {
+    return JSON.parse(`"${raw}"`);
+  } catch {
+    return raw;
   }
 }

@@ -33,6 +33,17 @@ export async function DELETE(
       );
     }
 
+    // Managers may only delete submissions in campaigns they manage
+    if (!isOwner && user.role === UserRole.MANAGER) {
+      const { hasManagerCampaignAccess } = await import("@/lib/campaignAccess");
+      if (!(await hasManagerCampaignAccess(user.id, submission.campaign_id, user.role))) {
+        return NextResponse.json(
+          { error: "Unauthorized. You are not assigned to manage this campaign." },
+          { status: 403 }
+        );
+      }
+    }
+
     // Clippers cannot delete approved/appealed videos; they can only delete pending or rejected submissions
     if (!isStaff) {
       if (submission.status === SubmissionStatus.APPROVED) {
