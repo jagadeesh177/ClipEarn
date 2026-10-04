@@ -25,7 +25,7 @@ export function DashboardHeader({
   const badgeClasses =
     badgeVariant === "admin"
       ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
-      : "bg-purple-500/20 text-purple-400 border-purple-500/30";
+      : "bg-cyan-500/20 text-cyan-400 border-cyan-500/30";
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-800/80">
@@ -37,7 +37,7 @@ export function DashboardHeader({
           >
             <span
               className={`w-1.5 h-1.5 rounded-full ${
-                badgeVariant === "admin" ? "bg-amber-400" : "bg-purple-400"
+                badgeVariant === "admin" ? "bg-amber-400" : "bg-cyan-400"
               }`}
             />
             {scopeBadge}
@@ -57,7 +57,7 @@ export function DashboardHeader({
           <RefreshCw
             className={`w-3.5 h-3.5 ${
               isRefreshing
-                ? "animate-spin " + (badgeVariant === "admin" ? "text-amber-400" : "text-purple-400")
+                ? "animate-spin " + (badgeVariant === "admin" ? "text-amber-400" : "text-cyan-400")
                 : ""
             }`}
           />

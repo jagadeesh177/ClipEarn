@@ -275,7 +275,7 @@ export async function POST(request: Request) {
         data: {
           user_id: userId,
           type: "PAYOUT_PROCESSING",
-          title: "Payout Initiated 💸",
+          title: "Payout initiated",
           message: `Your payout of $${calculatedEarnings.toFixed(2)} for campaign "${campaign.name}" is now processing via ${userAccount.provider}.`,
         },
       });
@@ -351,7 +351,7 @@ export async function PATCH(request: Request) {
           data: {
             user_id: existing.user_id,
             type: "PAYOUT_COMPLETED",
-            title: "Payout Received! 💰",
+            title: "Payout sent",
             message: `Your payout of $${Number(existing.amount).toFixed(2)} for "${existing.campaign?.name || 'ClipEarn'}" has been paid! (Ref: ${p.transaction_id})`,
           },
         });
@@ -396,7 +396,7 @@ export async function PATCH(request: Request) {
           data: {
             user_id: existing.user_id,
             type: "PAYOUT_FAILED",
-            title: "Payout Issue ⚠️",
+            title: "There was a problem with your payout",
             message: `Your payout of $${Number(existing.amount).toFixed(2)} could not be processed. Reason: ${failureReason.trim()}. Please update your payment details.`,
           },
         });

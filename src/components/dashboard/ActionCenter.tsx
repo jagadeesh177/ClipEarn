@@ -59,7 +59,7 @@ export function ActionCenter({
         desc: "Issue access keys & manage accounts",
         href: "/admin/managers",
         icon: Users,
-        color: "text-purple-400 bg-purple-500/10 border-purple-500/20 hover:border-purple-500/40",
+        color: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20 hover:border-cyan-500/40",
       },
       {
         title: "System Audit Logs",
@@ -87,7 +87,7 @@ export function ActionCenter({
               <Link
                 key={action.href}
                 href={action.href}
-                className={`p-4 rounded-2xl border transition-all flex items-start justify-between group bg-[#0D131D] ${action.color}`}
+                className={`p-4 rounded-2xl border transition flex items-start justify-between group bg-[#0D131D] ${action.color}`}
               >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
@@ -102,7 +102,7 @@ export function ActionCenter({
                   </div>
                   <p className="text-xs text-slate-400">{action.desc}</p>
                 </div>
-                <Icon className="w-5 h-5 shrink-0 opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-transform" />
+                <Icon className="w-5 h-5 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity" />
               </Link>
             );
           })}
@@ -119,7 +119,7 @@ export function ActionCenter({
       href: "/manager/submissions",
       icon: FileCheck,
       badge: pendingSubmissionsCount > 0 ? `${pendingSubmissionsCount} Pending` : undefined,
-      color: "text-purple-400 bg-purple-500/10 border-purple-500/20 hover:border-purple-500/40",
+      color: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20 hover:border-cyan-500/40",
     },
     {
       title: "My Assigned Campaigns",
@@ -148,7 +148,7 @@ export function ActionCenter({
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h2 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-2">
-          <FileCheck className="w-3.5 h-3.5 text-purple-400" />
+          <FileCheck className="w-3.5 h-3.5 text-cyan-400" />
           <span>Campaign Manager Action Center</span>
         </h2>
         <span className="text-[11px] text-slate-500">Operational Actions</span>
@@ -161,22 +161,22 @@ export function ActionCenter({
             <Link
               key={action.href}
               href={action.href}
-              className={`p-4 rounded-2xl border transition-all flex items-start justify-between group bg-[#0D131D] ${action.color}`}
+              className={`p-4 rounded-2xl border transition flex items-start justify-between group bg-[#0D131D] ${action.color}`}
             >
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-white text-sm group-hover:text-purple-400 transition-colors">
+                  <span className="font-bold text-white text-sm group-hover:text-cyan-400 transition-colors">
                     {action.title}
                   </span>
                   {action.badge && (
-                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
                       {action.badge}
                     </span>
                   )}
                 </div>
                 <p className="text-xs text-slate-400">{action.desc}</p>
               </div>
-              <Icon className="w-5 h-5 shrink-0 opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-transform" />
+              <Icon className="w-5 h-5 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity" />
             </Link>
           );
         })}

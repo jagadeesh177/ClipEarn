@@ -157,7 +157,7 @@ export default function ClipperPaymentDetailsPage() {
               <button
                 type="button"
                 onClick={() => setProvider("PAYPAL")}
-                className={`p-4 rounded-xl border text-left flex items-start gap-3 transition-all ${
+                className={`p-4 rounded-xl border text-left flex items-start gap-3 transition ${
                   provider === "PAYPAL"
                     ? "bg-brand-cyan/10 border-brand-cyan/50 text-white shadow-lg shadow-brand-cyan/5"
                     : "bg-[#0D131D] border-slate-800/80 text-slate-400 hover:border-slate-700"
@@ -176,7 +176,7 @@ export default function ClipperPaymentDetailsPage() {
               <button
                 type="button"
                 onClick={() => setProvider("BANK_TRANSFER")}
-                className={`p-4 rounded-xl border text-left flex items-start gap-3 transition-all ${
+                className={`p-4 rounded-xl border text-left flex items-start gap-3 transition ${
                   provider === "BANK_TRANSFER"
                     ? "bg-brand-cyan/10 border-brand-cyan/50 text-white shadow-lg shadow-brand-cyan/5"
                     : "bg-[#0D131D] border-slate-800/80 text-slate-400 hover:border-slate-700"
@@ -195,7 +195,7 @@ export default function ClipperPaymentDetailsPage() {
               <button
                 type="button"
                 onClick={() => setProvider("CRYPTO")}
-                className={`p-4 rounded-xl border text-left flex items-start gap-3 transition-all ${
+                className={`p-4 rounded-xl border text-left flex items-start gap-3 transition ${
                   provider === "CRYPTO"
                     ? "bg-brand-cyan/10 border-brand-cyan/50 text-white shadow-lg shadow-brand-cyan/5"
                     : "bg-[#0D131D] border-slate-800/80 text-slate-400 hover:border-slate-700"
@@ -342,7 +342,7 @@ export default function ClipperPaymentDetailsPage() {
             <button
               type="submit"
               disabled={saving}
-              className="px-5 py-2.5 rounded-xl font-bold text-xs bg-brand-cyan text-slate-950 hover:bg-brand-cyan/90 transition shadow-lg shadow-brand-cyan/10 disabled:opacity-50 flex items-center gap-2"
+              className="px-5 py-2.5 rounded-xl font-bold text-xs bg-brand-cyan text-slate-950 hover:bg-[#8afcfe] transition shadow-lg shadow-brand-cyan/10 disabled:opacity-50 flex items-center gap-2"
             >
               {saving ? (
                 <>

@@ -7,29 +7,39 @@ interface ClipEarnLogoProps {
   className?: string;
 }
 
+/**
+ * Wordmark set in the expanded cut of Archivo. No italics, glow or hover
+ * scaling: the mark carries the brand through weight, width and the one
+ * signal colour.
+ */
 export const ClipEarnLogo: React.FC<ClipEarnLogoProps> = ({
   size = "md",
   href,
   className = "",
 }) => {
   const sizeClasses = {
-    sm: "text-lg tracking-wider",
-    md: "text-2xl tracking-wider",
-    lg: "text-3xl tracking-widest",
-    xl: "text-4xl tracking-widest font-black",
+    sm: "text-base",
+    md: "text-xl",
+    lg: "text-2xl",
+    xl: "text-4xl",
   };
 
   const content = (
-    <div className={`inline-flex items-center select-none font-black italic uppercase transition-transform hover:scale-[1.02] ${className}`}>
-      <span className={`${sizeClasses[size]} text-white`}>CLIP</span>
-      <span className={`${sizeClasses[size]} text-[#1cf7fd] drop-shadow-[0_0_12px_rgba(28,247,253,0.6)]`}>
-        EARN
-      </span>
-    </div>
+    <span
+      className={`font-display inline-flex items-baseline select-none font-extrabold uppercase leading-none ${sizeClasses[size]} ${className}`}
+      aria-label="ClipEarn"
+    >
+      <span className="text-white">Clip</span>
+      <span className="text-[var(--signal)]">Earn</span>
+    </span>
   );
 
   if (href) {
-    return <Link href={href}>{content}</Link>;
+    return (
+      <Link href={href} className="inline-flex rounded-sm">
+        {content}
+      </Link>
+    );
   }
 
   return content;

@@ -102,7 +102,7 @@ export async function POST(
         data: {
           user_id: user.id,
           type: "SOCIAL_VERIFIED",
-          title: "Account Verified! ✅",
+          title: "Account verified",
           message: `Your ${account.platform} account @${account.username} was verified successfully. You can now submit clips from this account!`,
         },
       });

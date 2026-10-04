@@ -51,7 +51,7 @@ export function PayoutOverview({
           </div>
 
           <div>
-            <div className="text-3xl font-black text-white font-mono">
+            <div className="text-3xl font-black text-white tabular">
               ${Number(totalBudget || 0).toLocaleString()}
             </div>
             <div className="text-xs text-slate-400 mt-1 flex justify-between">
@@ -62,14 +62,14 @@ export function PayoutOverview({
 
           <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
             <div
-              className="h-full bg-amber-400 rounded-full transition-all duration-500"
+              className="h-full bg-amber-400 rounded-full transition-[width] duration-500"
               style={{ width: `${budgetPercent}%` }}
             />
           </div>
 
           <div className="flex justify-between items-center text-xs pt-1 border-t border-slate-800/80 text-slate-400">
             <span>Remaining Budget:</span>
-            <span className="font-bold text-emerald-400 font-mono">
+            <span className="font-bold text-emerald-400 tabular">
               ${Number(remainingBudget || 0).toFixed(2)}
             </span>
           </div>
@@ -87,7 +87,7 @@ export function PayoutOverview({
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
               <span className="text-[11px] text-slate-400 font-medium">Pending Payouts</span>
-              <div className="text-xl font-black text-amber-400 font-mono">
+              <div className="text-xl font-black text-amber-400 tabular">
                 ${Number(pendingPayoutAmount || 0).toFixed(2)}
               </div>
               <span className="text-[10px] text-slate-500 font-semibold">
@@ -97,7 +97,7 @@ export function PayoutOverview({
 
             <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
               <span className="text-[11px] text-slate-400 font-medium">Completed Payouts</span>
-              <div className="text-xl font-black text-emerald-400 font-mono">
+              <div className="text-xl font-black text-emerald-400 tabular">
                 ${Number(paidOutAmount || 0).toFixed(2)}
               </div>
               <span className="text-[10px] text-slate-500 font-semibold">
@@ -123,7 +123,7 @@ export function PayoutOverview({
     <div className="p-6 rounded-2xl bg-[#0D131D] border border-slate-800/80 space-y-4">
       <div className="flex items-center justify-between pb-3 border-b border-slate-800/60">
         <div className="flex items-center gap-2">
-          <CreditCard className="w-5 h-5 text-purple-400" />
+          <CreditCard className="w-5 h-5 text-cyan-400" />
           <div>
             <h3 className="text-base font-bold text-white">Payout Qualification Overview</h3>
             <p className="text-xs text-slate-400">
@@ -134,7 +134,7 @@ export function PayoutOverview({
 
         <Link
           href="/manager/payouts"
-          className="text-xs font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1.5 transition"
+          className="text-xs font-bold text-cyan-400 hover:text-cyan-300 flex items-center gap-1.5 transition"
         >
           <span>View Detailed Eligibility</span>
           <ArrowRight className="w-3.5 h-3.5" />
@@ -149,13 +149,13 @@ export function PayoutOverview({
           <div className="text-2xl font-black text-white font-mono">
             {qualifiedClippersCount}
           </div>
-          <p className="text-[11px] text-purple-300 font-medium">
+          <p className="text-[11px] text-cyan-300 font-medium">
             Eligible for administrative disbursement
           </p>
         </div>
 
         <div className="p-4 rounded-xl bg-slate-900/70 border border-slate-800 flex items-start gap-3 text-xs text-slate-400">
-          <Info className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+          <Info className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
           <p className="leading-relaxed">
             Financial execution and bank transfers are processed centrally by Platform Administrators. Campaign Managers can monitor qualification statuses and progress milestones.
           </p>

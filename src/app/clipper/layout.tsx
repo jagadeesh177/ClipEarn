@@ -194,7 +194,7 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
       {mobileMenuOpen && (
         <div
           onClick={() => setMobileMenuOpen(false)}
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-20 md:hidden"
+          className="fixed inset-0 bg-black/70 z-20 md:hidden"
         />
       )}
 
@@ -226,7 +226,7 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
                     prefetch={true}
                     aria-current={isActive ? "page" : undefined}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                    className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition ${
                       isActive
                         ? "bg-brand-cyan/10 text-brand-cyan border border-brand-cyan/30 font-bold"
                         : "text-slate-400 hover:text-white hover:bg-slate-900/80 border border-transparent"
@@ -257,7 +257,7 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
                 href="/clipper/guidelines"
                 prefetch={true}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition ${
                   pathname === "/clipper/guidelines"
                     ? "bg-brand-cyan/10 text-brand-cyan border border-brand-cyan/30 font-bold"
                     : "text-slate-400 hover:text-white hover:bg-slate-900/80 border border-transparent"
@@ -270,7 +270,7 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
                 href="https://discord.gg/fWDVEt9GVB"
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-900/80 border border-transparent transition-all"
+                className="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-900/80 border border-transparent transition"
               >
                 <div className="flex items-center gap-3">
                   <MessageSquare className="w-4 h-4 text-slate-400" />
@@ -331,7 +331,7 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
       {/* Main Content Area with padding at bottom for floating elements */}
       <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 pb-28 max-w-7xl mx-auto w-full">
         {user?.status === "SUSPENDED" && (
-          <div className="mb-6 p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-red-500/20 via-red-950/40 to-slate-900 border border-red-500/40 text-slate-100 shadow-2xl relative overflow-hidden animate-fadeIn">
+          <div className="mb-6 p-5 sm:p-6 rounded-2xl bg-[#1a0d10] border border-red-500/40 text-slate-100 shadow-raised relative overflow-hidden">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
               <div className="flex items-start gap-4">
                 <div className="p-3 rounded-2xl bg-red-500/20 text-red-400 shrink-0 border border-red-500/30">
@@ -367,7 +367,7 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
                   href="https://discord.gg/fWDVEt9GVB"
                   target="_blank"
                   rel="noreferrer"
-                  className="flex-1 md:flex-initial px-4 py-2.5 rounded-xl bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-bold transition-all text-center flex items-center justify-center gap-2 shadow-lg shadow-[#5865F2]/25"
+                  className="flex-1 md:flex-initial px-4 py-2.5 rounded-xl bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-bold transition text-center flex items-center justify-center gap-2 shadow-lg shadow-[#5865F2]/25"
                 >
                   <span>Appeal on Discord</span>
                   <ExternalLink className="w-3.5 h-3.5" />
@@ -384,7 +384,7 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
         <button
           onClick={() => setHelpOpen(true)}
           aria-label="Open help and support dialog"
-          className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-bold text-xs sm:text-sm shadow-xl shadow-cyan-500/25 transition-all hover:scale-105 active:scale-95"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-brand-cyan hover:bg-[#8afcfe] text-slate-950 font-bold text-xs sm:text-sm shadow-xl shadow-cyan-500/25 transition hover:scale-105 active:scale-95"
         >
           <MessageCircle className="w-4 h-4 fill-slate-950" />
           <span>Need help?</span>
@@ -393,7 +393,7 @@ export default function ClipperLayout({ children }: { children: React.ReactNode 
 
       {/* Help Modal */}
       {helpOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
           <div className="bg-[#0D131D] border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
               <div className="flex items-center gap-2.5">

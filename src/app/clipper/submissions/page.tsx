@@ -153,7 +153,7 @@ export default function MySubmissionsPage() {
   };
 
   return (
-    <div className="space-y-8 pb-16 animate-fadeIn">
+    <div className="space-y-8 pb-16">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
         <div>
@@ -168,7 +168,7 @@ export default function MySubmissionsPage() {
 
         <Link
           href="/clipper/campaigns"
-          className="px-4 py-2.5 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-bold text-xs transition-all flex items-center gap-2 shadow-[0_0_20px_-3px_rgba(28,247,253,0.3)] self-start sm:self-auto"
+          className="px-4 py-2.5 rounded-xl bg-brand-cyan hover:bg-[#8afcfe] text-slate-950 font-bold text-xs transition flex items-center gap-2 self-start sm:self-auto"
         >
           <span>Browse Campaigns &rarr;</span>
         </Link>
@@ -236,7 +236,7 @@ export default function MySubmissionsPage() {
                     <span className="text-xs text-slate-400 font-medium">@{sub.account_username}</span>
                     <span className="text-slate-600">&bull;</span>
                     <span className="text-xs font-bold text-brand-cyan">{sub.campaign_name}</span>
-                    <span className="text-xs text-slate-500 font-mono">(${sub.cpm.toFixed(2)} CPM)</span>
+                    <span className="text-xs text-slate-500 tabular">(${sub.cpm.toFixed(2)} CPM)</span>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -286,28 +286,28 @@ export default function MySubmissionsPage() {
 
                   {/* Real Social Media Metrics Strip */}
                   <div className="flex flex-wrap items-center gap-3 pt-1 text-xs">
-                    <span className="inline-flex items-center gap-1 font-mono text-slate-300" title="Views">
+                    <span className="inline-flex items-center gap-1 tabular text-slate-300" title="Views">
                       <Eye className="w-3.5 h-3.5 text-brand-cyan" />
                       {(sub.current_views || 0).toLocaleString()}
                     </span>
                     <span className="text-slate-700">•</span>
-                    <span className="inline-flex items-center gap-1 font-mono text-slate-300" title="Likes">
+                    <span className="inline-flex items-center gap-1 tabular text-slate-300" title="Likes">
                       <Heart className="w-3.5 h-3.5 text-red-400" />
                       {sub.current_likes != null ? sub.current_likes.toLocaleString() : "N/A"}
                     </span>
                     <span className="text-slate-700">•</span>
-                    <span className="inline-flex items-center gap-1 font-mono text-slate-300" title="Comments">
+                    <span className="inline-flex items-center gap-1 tabular text-slate-300" title="Comments">
                       <MessageSquare className="w-3.5 h-3.5 text-blue-400" />
                       {sub.current_comments != null ? sub.current_comments.toLocaleString() : "N/A"}
                     </span>
                     <span className="text-slate-700">•</span>
-                    <span className="inline-flex items-center gap-1 font-mono text-slate-300" title="Shares">
+                    <span className="inline-flex items-center gap-1 tabular text-slate-300" title="Shares">
                       <Share2 className="w-3.5 h-3.5 text-emerald-400" />
                       {sub.current_shares != null ? sub.current_shares.toLocaleString() : "N/A"}
                     </span>
                     <span className="text-slate-700">•</span>
-                    <span className="inline-flex items-center gap-1 font-mono text-slate-300" title="Saves">
-                      <Bookmark className="w-3.5 h-3.5 text-purple-400" />
+                    <span className="inline-flex items-center gap-1 tabular text-slate-300" title="Saves">
+                      <Bookmark className="w-3.5 h-3.5 text-cyan-400" />
                       {sub.current_saves != null ? sub.current_saves.toLocaleString() : "N/A"}
                     </span>
                   </div>
@@ -350,14 +350,14 @@ export default function MySubmissionsPage() {
 
                     {isAppealed && (
                       <div className="flex flex-col items-end gap-1.5">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider bg-purple-500/10 text-purple-300 border border-purple-500/30 pointer-events-none select-none">
-                          <Clock className="w-3.5 h-3.5 text-purple-400" />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 pointer-events-none select-none">
+                          <Clock className="w-3.5 h-3.5 text-cyan-400" />
                           Appealed
                         </span>
                         <button
                           type="button"
                           onClick={() => setSelectedAppeal(sub)}
-                          className="h-8 px-3 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-xs font-semibold transition-colors flex items-center gap-1"
+                          className="h-8 px-3 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-xs font-semibold transition-colors flex items-center gap-1"
                         >
                           View Appeal
                         </button>
@@ -418,7 +418,7 @@ export default function MySubmissionsPage() {
 
       {/* Rejection Reason Modal */}
       {selectedReason && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
           <div className="bg-[#0F141F] border border-slate-800 rounded-2xl max-w-md w-full p-6 relative">
             <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
               <XCircle className="w-5 h-5 text-red-400" />
@@ -445,11 +445,11 @@ export default function MySubmissionsPage() {
 
       {/* Appeal Submission Modal */}
       {appealingSubmission && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
           <div className="bg-[#0F141F] border border-slate-800 rounded-2xl max-w-lg w-full p-6 relative shadow-2xl">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <MessageSquare className="w-5 h-5 text-purple-400" />
+                <MessageSquare className="w-5 h-5 text-cyan-400" />
                 Appeal Clip Rejection
               </h3>
               <button
@@ -516,7 +516,7 @@ export default function MySubmissionsPage() {
                 <button
                   type="submit"
                   disabled={submittingAppeal || !appealExplanation.trim()}
-                  className="h-9 px-5 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-bold text-xs transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 flex items-center gap-2 shadow-md shadow-cyan-500/20"
+                  className="h-9 px-5 rounded-xl bg-brand-cyan hover:bg-[#8afcfe] text-slate-950 font-bold text-xs transition hover:scale-[1.02] active:scale-95 disabled:opacity-50 flex items-center gap-2 shadow-md shadow-cyan-500/20"
                 >
                   {submittingAppeal ? <Loader2 className="w-4 h-4 animate-spin text-slate-950" /> : <Send className="w-4 h-4 text-slate-950" />}
                   <span>{submittingAppeal ? "Submitting Appeal..." : "Submit Appeal to Managers"}</span>
@@ -529,11 +529,11 @@ export default function MySubmissionsPage() {
 
       {/* View Appeal Details Modal */}
       {selectedAppeal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
           <div className="bg-[#0F141F] border border-slate-800 rounded-2xl max-w-md w-full p-6 relative shadow-2xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Clock className="w-5 h-5 text-purple-400" />
+                <Clock className="w-5 h-5 text-cyan-400" />
                 Appeal Under Review
               </h3>
               <button
@@ -553,8 +553,8 @@ export default function MySubmissionsPage() {
                 <p className="text-slate-300">{selectedAppeal.rejection_reason || "None recorded"}</p>
               </div>
 
-              <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
-                <span className="text-xs font-bold text-purple-400 uppercase tracking-wider block mb-1">
+              <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
+                <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider block mb-1">
                   Your Submitted Appeal Justification
                 </span>
                 <p className="text-slate-200">{selectedAppeal.appeal_reason || "Pending justification"}</p>

@@ -35,7 +35,7 @@ export default function ReferralsPage() {
   const referrals = data?.referrals || [];
 
   return (
-    <div className="space-y-8 animate-fadeIn max-w-5xl">
+    <div className="space-y-8 max-w-5xl">
       {/* Header */}
       <div className="pb-4 border-b border-slate-800/80">
         <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-2.5">
@@ -48,7 +48,7 @@ export default function ReferralsPage() {
       </div>
 
       {/* Referral Link Card */}
-      <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-[#0F141F] to-[#0A0F1D] border border-slate-800 relative overflow-hidden">
+      <div className="p-6 sm:p-8 rounded-2xl bg-[#0F141F] border border-slate-800 relative overflow-hidden">
         <div className="max-w-2xl relative z-10">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-cyan/15 text-brand-cyan text-xs font-bold mb-4">
             <Gift className="w-3.5 h-3.5" />
@@ -69,7 +69,7 @@ export default function ReferralsPage() {
 
             <button
               onClick={copyLink}
-              className="px-6 py-3.5 rounded-xl bg-brand-cyan text-black font-bold text-xs flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shrink-0"
+              className="px-6 py-3.5 rounded-xl press bg-brand-cyan text-black font-bold text-xs flex items-center justify-center gap-2 hover:bg-[#8afcfe] shrink-0"
             >
               {copied ? <Check className="w-4 h-4 text-black" /> : <Copy className="w-4 h-4 text-black" />}
               <span>{copied ? "Copied Link!" : "Copy Referral Link"}</span>

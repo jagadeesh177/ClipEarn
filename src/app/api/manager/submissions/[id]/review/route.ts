@@ -70,7 +70,7 @@ export async function POST(
             data: {
               user_id: pendingReferral.referrer_id,
               type: "REFERRAL_QUALIFIED",
-              title: "Qualified Referral! 🎉",
+              title: "Your referral qualified",
               message: `Your referral @${submission.user.username} just had their first clip approved!`,
             },
           });
@@ -81,7 +81,7 @@ export async function POST(
           data: {
             user_id: submission.user_id,
             type: isAppeal ? "APPEAL_ACCEPTED" : "SUBMISSION_APPROVED",
-            title: isAppeal ? "Appeal Accepted! Clip Approved 🎉" : "Clip Approved! 🎉",
+            title: isAppeal ? "Appeal accepted: clip approved" : "Clip approved",
             message: isAppeal
               ? `Your appeal for "${submission.campaign.name}" was accepted by staff! Your clip is now actively tracking views and earnings.`
               : `Your submission for "${submission.campaign.name}" was approved by a manager and is now actively tracking views and earnings!`,

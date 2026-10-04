@@ -66,7 +66,7 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
     return (
       <div className="min-h-screen bg-[#070A0F] text-slate-100 flex items-center justify-center p-6">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
+          <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
           <p className="text-xs font-semibold text-slate-400">Verifying Manager Access...</p>
         </div>
       </div>
@@ -125,7 +125,7 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
       {mobileMenuOpen && (
         <div
           onClick={() => setMobileMenuOpen(false)}
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-20 md:hidden"
+          className="fixed inset-0 bg-black/70 z-20 md:hidden"
         />
       )}
 
@@ -138,7 +138,7 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
         <div className="p-5 overflow-y-auto">
           <div className="pb-6 border-b border-slate-800/80 flex items-center justify-between gap-5">
             <ClipEarnLogo size="sm" href="/manager/dashboard" />
-            <span className="px-2.5 py-0.5 rounded bg-purple-500/20 text-purple-400 font-bold text-[9px] uppercase border border-purple-500/30 shrink-0 ml-5">
+            <span className="px-2.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400 font-bold text-[9px] uppercase border border-cyan-500/30 shrink-0 ml-5">
               CAMPAIGN MANAGER
             </span>
           </div>
@@ -156,13 +156,13 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
                     key={item.href}
                     href={item.href}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition ${
                       isActive
-                        ? "bg-purple-500/20 text-purple-300 border border-purple-500/40"
+                        ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
                         : "text-slate-400 hover:text-white hover:bg-slate-900/80"
                     }`}
                   >
-                    <Icon className={`w-4 h-4 ${isActive ? "text-purple-400" : "text-slate-400"}`} />
+                    <Icon className={`w-4 h-4 ${isActive ? "text-cyan-400" : "text-slate-400"}`} />
                     <span>{item.label}</span>
                   </Link>
                 );
@@ -182,7 +182,7 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
               type="button"
               onClick={handleTriggerSync}
               disabled={syncingViews}
-              className="w-full py-2.5 px-3 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 text-xs font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-50 group shadow-sm active:scale-[0.98]"
+              className="w-full py-2.5 px-3 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 text-xs font-semibold flex items-center justify-center gap-2 transition disabled:opacity-50 group shadow-sm active:scale-[0.98]"
               title="Trigger 8-Hour View Sync Worker Manually"
             >
               <RefreshCw className={`w-3.5 h-3.5 text-slate-400 group-hover:text-brand-cyan transition-colors ${syncingViews ? "animate-spin text-brand-cyan" : ""}`} />
@@ -192,14 +192,14 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
 
           <div className="flex items-center justify-between pt-2 border-t border-slate-800/60">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-xs border border-purple-500/30">
+              <div className="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-xs border border-cyan-500/30">
                 <Shield className="w-4 h-4" />
               </div>
               <div className="overflow-hidden">
                 <div className="text-xs font-bold text-white truncate max-w-[100px]">
                   {user?.username || "Manager"}
                 </div>
-                <div className="text-[10px] text-purple-400 font-semibold">{user?.role}</div>
+                <div className="text-[10px] text-cyan-400 font-semibold">{user?.role}</div>
               </div>
             </div>
 

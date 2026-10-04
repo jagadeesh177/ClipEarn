@@ -65,7 +65,7 @@ export default function ClipperDashboardPage() {
   };
 
   return (
-    <div className="space-y-8 animate-fadeIn">
+    <div className="space-y-8">
       {/* Header Greeting */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
         <div>
@@ -80,7 +80,7 @@ export default function ClipperDashboardPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/clipper/campaigns"
-            className="px-4 py-2.5 rounded-xl bg-brand-cyan hover:bg-brand-cyan/90 text-black font-bold text-xs transition-colors flex items-center gap-2 shadow-[0_0_20px_-3px_rgba(28,247,253,0.3)]"
+            className="px-4 py-2.5 rounded-xl bg-brand-cyan hover:bg-[#8afcfe] text-black font-bold text-xs transition-colors flex items-center gap-2"
           >
             <Compass className="w-4 h-4" />
             <span>Browse Campaigns</span>
@@ -128,10 +128,10 @@ export default function ClipperDashboardPage() {
         <div className="p-5 rounded-2xl bg-[#0F141F] border border-slate-800 flex items-center justify-between hover:border-slate-700 transition-colors">
           <div>
             <div className="text-xs font-semibold text-slate-400">Active Campaigns</div>
-            <div className="text-3xl font-black text-purple-400 mt-1">{stats.campaignsJoined}</div>
+            <div className="text-3xl font-black text-cyan-400 mt-1">{stats.campaignsJoined}</div>
             <div className="text-[11px] text-slate-500 mt-1">Joined & eligible</div>
           </div>
-          <div className="text-purple-400/80 p-2" aria-hidden="true">
+          <div className="text-cyan-400/80 p-2" aria-hidden="true">
             <Compass className="w-7 h-7 stroke-[1.75]" />
           </div>
         </div>

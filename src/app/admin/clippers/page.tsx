@@ -117,7 +117,7 @@ export default function AdminClippersPage() {
   });
 
   return (
-    <div className="space-y-6 animate-fadeIn max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+    <div className="space-y-6 max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
         <div>
@@ -229,11 +229,11 @@ export default function AdminClippersPage() {
                         <Video className="w-3.5 h-3.5 text-blue-400" />
                         <span>{c.total_clips} clips ({c.approved_clips} approved)</span>
                       </div>
-                      <div className="flex items-center gap-1 font-mono text-amber-400">
+                      <div className="flex items-center gap-1 tabular text-amber-400">
                         <Eye className="w-3.5 h-3.5" />
                         <span>{c.approved_views.toLocaleString()} approved views</span>
                       </div>
-                      <div className="flex items-center gap-1 font-mono text-emerald-400 font-bold">
+                      <div className="flex items-center gap-1 tabular text-emerald-400 font-bold">
                         <DollarSign className="w-3.5 h-3.5" />
                         <span>${c.total_earnings.toFixed(2)} earned</span>
                       </div>
@@ -278,7 +278,7 @@ export default function AdminClippersPage() {
 
       {/* Suspend Confirmation Modal */}
       {suspendingClipper && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
           <div className="bg-[#0F141F] border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 relative">
             <h3 className="text-base font-bold text-white flex items-center gap-2">
               <ShieldAlert className="w-5 h-5 text-rose-400" />

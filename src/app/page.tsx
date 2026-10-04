@@ -7,13 +7,13 @@ import { CampaignStatus, SubmissionStatus } from "@prisma/client";
 import LandingView, { HomepageCampaign } from "@/components/landing/LandingView";
 
 export const metadata: Metadata = {
-  title: "ClipEarn — Performance-Based Short-Form Content Distribution",
+  title: "ClipEarn: get paid for the views your clips earn",
   description:
-    "ClipEarn helps brands scale their reach through performance-based short-form content distribution across TikTok, Instagram, and YouTube, while clippers earn from verified campaign performance.",
+    "Brands pay per 1,000 verified views. Clippers post short-form clips on their own TikTok, Instagram and YouTube accounts and get paid for what those clips earn.",
   openGraph: {
-    title: "ClipEarn — Performance-Based Short-Form Content Distribution",
+    title: "ClipEarn: get paid for the views your clips earn",
     description:
-      "ClipEarn helps brands scale their reach through performance-based short-form content distribution across TikTok, Instagram, and YouTube, while clippers earn from verified campaign performance.",
+      "Brands pay per 1,000 verified views. Clippers post short-form clips on their own TikTok, Instagram and YouTube accounts and get paid for what those clips earn.",
     url: "https://clipearn.vercel.app/",
     siteName: "ClipEarn",
     locale: "en_US",
@@ -21,9 +21,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "ClipEarn — Performance-Based Short-Form Content Distribution",
+    title: "ClipEarn: get paid for the views your clips earn",
     description:
-      "ClipEarn helps brands scale their reach through performance-based short-form content distribution across TikTok, Instagram, and YouTube, while clippers earn from verified campaign performance.",
+      "Brands pay per 1,000 verified views. Clippers post short-form clips on their own TikTok, Instagram and YouTube accounts and get paid for what those clips earn.",
   },
   alternates: {
     canonical: "https://clipearn.vercel.app/",

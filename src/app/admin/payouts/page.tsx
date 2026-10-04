@@ -218,7 +218,7 @@ export default function AdminPayoutsPage() {
             onClick={() => setFilter("HISTORY")}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
               filter === "HISTORY"
-                ? "bg-purple-500/20 text-purple-300 border border-purple-500/40"
+                ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
                 : "bg-[#0D131D] border border-slate-800 text-slate-400 hover:text-white"
             }`}
           >
@@ -274,10 +274,10 @@ export default function AdminPayoutsPage() {
                       <td className="py-4 px-4 font-semibold text-slate-200">
                         {p.username}
                       </td>
-                      <td className="py-4 px-4 text-right font-black text-emerald-400 font-mono">
+                      <td className="py-4 px-4 text-right font-black text-emerald-400 tabular">
                         ${p.amount.toFixed(2)}
                       </td>
-                      <td className="py-4 px-4 text-slate-300 font-mono text-[11px]">
+                      <td className="py-4 px-4 text-slate-300 tabular text-[11px]">
                         {p.method}: {p.accountReference}
                       </td>
                       <td className="py-4 px-4 text-center">
@@ -348,17 +348,17 @@ export default function AdminPayoutsPage() {
                         <div className="text-[10px] text-slate-500">{item.email}</div>
                       </td>
 
-                      <td className="py-4 px-4 text-right font-mono font-bold text-slate-200">
+                      <td className="py-4 px-4 text-right tabular font-bold text-slate-200">
                         {item.approvedViews.toLocaleString()}
                       </td>
 
-                      <td className="py-4 px-4 text-right font-mono font-black text-emerald-400">
+                      <td className="py-4 px-4 text-right tabular font-black text-emerald-400">
                         ${item.earnings.toFixed(2)}
                       </td>
 
                       <td className="py-4 px-4">
                         {item.hasPaymentProfile && item.paymentAccount ? (
-                          <div className="font-mono text-[11px] text-slate-300">
+                          <div className="tabular text-[11px] text-slate-300">
                             <span className="font-bold text-white">{item.paymentAccount.provider}:</span>{" "}
                             {item.paymentAccount.accountReference}
                           </div>
@@ -428,7 +428,7 @@ export default function AdminPayoutsPage() {
 
       {/* STEP 1 MODAL: ADMIN INITIATES PAYMENT */}
       {selectedPayItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
           <div className="bg-[#0F141F] border border-slate-800 rounded-2xl max-w-md w-full p-6 relative shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
@@ -454,17 +454,17 @@ export default function AdminPayoutsPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">Approved Views:</span>
-                <span className="font-mono text-white">{selectedPayItem.approvedViews.toLocaleString()}</span>
+                <span className="tabular text-white">{selectedPayItem.approvedViews.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">Payout Method:</span>
-                <span className="font-mono text-emerald-400 font-bold">
+                <span className="tabular text-emerald-400 font-bold">
                   {selectedPayItem.paymentAccount?.provider} ({selectedPayItem.paymentAccount?.accountReference})
                 </span>
               </div>
               <div className="flex justify-between pt-2 border-t border-slate-800 text-sm">
                 <span className="font-bold text-slate-300">Amount to Transfer:</span>
-                <span className="font-black text-emerald-400 font-mono">
+                <span className="font-black text-emerald-400 tabular">
                   ${selectedPayItem.earnings.toFixed(2)} USD
                 </span>
               </div>
@@ -496,7 +496,7 @@ export default function AdminPayoutsPage() {
 
       {/* STEP 2 MODAL: ADMIN CONFIRMS SUCCESSFUL PAYMENT */}
       {confirmModalPayout && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
           <div className="bg-[#0F141F] border border-slate-800 rounded-2xl max-w-md w-full p-6 relative shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-white flex items-center gap-2">

@@ -50,7 +50,7 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 md:p-8 space-y-8 max-w-7xl mx-auto animate-fadeIn">
+    <div className="p-4 sm:p-6 md:p-8 space-y-8 max-w-7xl mx-auto">
       {/* 1. Header with Global Platform Scope Badge */}
       <DashboardHeader
         title="Admin Platform Dashboard"

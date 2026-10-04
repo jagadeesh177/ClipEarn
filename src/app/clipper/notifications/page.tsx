@@ -70,14 +70,14 @@ export default function NotificationsPage() {
       case "PAYOUT_PROCESSED":
         return <DollarSign className="w-5 h-5 text-brand-cyan" />;
       case "CAMPAIGN_JOINED":
-        return <CheckCircle2 className="w-5 h-5 text-purple-400" />;
+        return <CheckCircle2 className="w-5 h-5 text-cyan-400" />;
       default:
         return <Bell className="w-5 h-5 text-brand-cyan" />;
     }
   };
 
   return (
-    <div className="space-y-8 animate-fadeIn max-w-4xl">
+    <div className="space-y-8 max-w-4xl">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
         <div>
@@ -125,9 +125,9 @@ export default function NotificationsPage() {
               <div
                 key={n.id}
                 onClick={() => isUnread && handleMarkRead(n.id)}
-                className={`p-4 sm:p-5 rounded-2xl border transition-all flex items-start gap-4 cursor-pointer ${
+                className={`p-4 sm:p-5 rounded-2xl border transition flex items-start gap-4 cursor-pointer ${
                   isUnread
-                    ? "bg-[#111827] border-brand-cyan/40 shadow-[0_0_15px_-5px_rgba(28,247,253,0.15)]"
+                    ? "bg-[#111827] border-brand-cyan/40"
                     : "bg-[#0F141F] border-slate-800/80 hover:border-slate-700"
                 }`}
               >

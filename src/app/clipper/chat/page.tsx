@@ -44,7 +44,7 @@ export default function ClipEarnChatPage() {
   const channelMessages = messages.filter((m) => m.channel === activeChannel);
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex flex-col md:flex-row rounded-2xl bg-[#0F141F] border border-slate-800 overflow-hidden animate-fadeIn">
+    <div className="h-[calc(100vh-8rem)] flex flex-col md:flex-row rounded-2xl bg-[#0F141F] border border-slate-800 overflow-hidden">
       {/* Channels Sidebar */}
       <div className="w-full md:w-64 bg-[#0A0F1D] border-b md:border-b-0 md:border-r border-slate-800 p-4 shrink-0 flex flex-col justify-between">
         <div>
@@ -112,7 +112,7 @@ export default function ClipEarnChatPage() {
                     <span
                       className={`px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider ${
                         msg.badge === "Staff"
-                          ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
+                          ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
                           : msg.badge.includes("Top")
                           ? "bg-yellow-400/20 text-yellow-400 border border-yellow-400/30"
                           : "bg-slate-800 text-slate-400"
@@ -141,7 +141,7 @@ export default function ClipEarnChatPage() {
           <button
             type="submit"
             disabled={!inputMessage.trim()}
-            className="p-2.5 rounded-xl bg-brand-cyan text-black hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed transition-opacity shrink-0"
+            className="p-2.5 rounded-xl press bg-brand-cyan text-black hover:bg-[#8afcfe] disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
           >
             <Send className="w-4 h-4" />
           </button>

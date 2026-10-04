@@ -91,7 +91,7 @@ export default function ClipperEarningsPage() {
     chartData.length > 0 && chartData.some((d) => d.earnings > 0 || d.views > 0);
 
   return (
-    <div className="space-y-8 animate-fadeIn">
+    <div className="space-y-8">
       {/* 1. Header: Earnings & Payout Navigation */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
         <div>
@@ -123,7 +123,7 @@ export default function ClipperEarningsPage() {
         <div className="flex items-center gap-3 flex-wrap">
           <Link
             href="/clipper/payment-details"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 text-xs font-bold transition-all shadow-md shadow-cyan-500/20 hover:scale-[1.02] active:scale-95"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-cyan hover:bg-[#8afcfe] text-slate-950 text-xs font-bold transition shadow-md shadow-cyan-500/20 hover:scale-[1.02] active:scale-95"
           >
             <CreditCard className="w-4 h-4 text-slate-950" />
             <span>Manage Payment Details</span>
@@ -239,16 +239,16 @@ export default function ClipperEarningsPage() {
                         <div className="font-bold text-white">{camp.campaignName}</div>
                         <div className="text-[11px] text-slate-400">{camp.brandName}</div>
                       </td>
-                      <td className="py-3.5 px-3 text-right font-mono font-bold text-brand-cyan">
+                      <td className="py-3.5 px-3 text-right tabular font-bold text-brand-cyan">
                         {camp.approvedViews.toLocaleString()}
                       </td>
-                      <td className="py-3.5 px-3 text-right font-mono text-slate-300">
+                      <td className="py-3.5 px-3 text-right tabular text-slate-300">
                         {camp.minimumViews > 0 ? camp.minimumViews.toLocaleString() : "None"}
                       </td>
-                      <td className="py-3.5 px-3 text-right font-mono text-slate-300">
+                      <td className="py-3.5 px-3 text-right tabular text-slate-300">
                         ${camp.cpm.toFixed(2)}
                       </td>
-                      <td className="py-3.5 px-3 text-right font-mono font-black text-white text-sm">
+                      <td className="py-3.5 px-3 text-right tabular font-black text-white text-sm">
                         ${camp.earnings.toFixed(2)}
                       </td>
                       <td className="py-3.5 px-3 text-center">
@@ -317,7 +317,7 @@ export default function ClipperEarningsPage() {
                 paymentHistory.map((p: any) => (
                   <tr key={p.id} className="hover:bg-slate-900/40 transition-colors">
                     <td className="py-3 px-3 text-white font-bold">{p.campaignName}</td>
-                    <td className="py-3 px-3 font-mono font-black text-emerald-400 text-sm">
+                    <td className="py-3 px-3 tabular font-black text-emerald-400 text-sm">
                       ${p.amount.toFixed(2)}
                     </td>
                     <td className="py-3 px-3">
@@ -439,7 +439,7 @@ export default function ClipperEarningsPage() {
           </div>
 
           <div className="p-4 rounded-xl bg-slate-900/70 border border-slate-800">
-            <div className="text-2xl sm:text-3xl font-black text-brand-cyan font-mono">
+            <div className="text-2xl sm:text-3xl font-black text-brand-cyan tabular">
               {approvalRate}%
             </div>
             <div className="text-xs font-semibold text-slate-400 mt-1">
@@ -457,7 +457,7 @@ export default function ClipperEarningsPage() {
           </div>
 
           <div className="p-4 rounded-xl bg-slate-900/70 border border-slate-800">
-            <div className="text-2xl sm:text-3xl font-black text-brand-cyan font-mono">
+            <div className="text-2xl sm:text-3xl font-black text-brand-cyan tabular">
               ${totalApprovedEarnings.toFixed(2)}
             </div>
             <div className="text-xs font-semibold text-slate-400 mt-1">

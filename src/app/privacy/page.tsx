@@ -32,7 +32,7 @@ export default function PrivacyPolicyPage() {
   return (
     <div className="min-h-screen bg-[#070A0F] text-slate-100 flex flex-col selection:bg-brand-cyan/20 selection:text-brand-cyan">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#070A0F]/90 border-b border-slate-800/80 w-full">
+      <header className="sticky top-0 z-50 bg-[#070A0F] border-b border-slate-800/80 w-full">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-4">
           <div className="flex items-center gap-6">
             <ClipEarnLogo size="md" href="/" />
@@ -59,7 +59,7 @@ export default function PrivacyPolicyPage() {
             </Link>
             <Link
               href="/login"
-              className="px-4 py-2 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-black font-bold text-xs sm:text-sm transition-all shadow-[0_0_20px_-5px_rgba(28,247,253,0.3)]"
+              className="px-4 py-2 rounded-xl bg-brand-cyan hover:bg-[#8afcfe] text-black font-bold text-xs sm:text-sm transition"
             >
               Clipper Sign In
             </Link>

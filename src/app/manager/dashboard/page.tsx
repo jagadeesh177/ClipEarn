@@ -87,7 +87,7 @@ export default function ManagerDashboardPage() {
   if (loading) {
     return (
       <div className="p-8 sm:p-16 flex flex-col items-center justify-center min-h-[60vh] gap-3">
-        <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
+        <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
         <p className="text-xs font-semibold text-slate-400">
           Loading assigned campaign operations...
         </p>
@@ -99,7 +99,7 @@ export default function ManagerDashboardPage() {
     data?.hasAssignedCampaigns !== false && (data?.assignedCampaignsCount || 0) > 0;
 
   return (
-    <div className="p-4 sm:p-6 md:p-8 space-y-8 max-w-7xl mx-auto animate-fadeIn">
+    <div className="p-4 sm:p-6 md:p-8 space-y-8 max-w-7xl mx-auto">
       {/* 1. Header with Assigned Campaigns Scope Badge */}
       <DashboardHeader
         title="Campaign Manager Hub"
@@ -111,9 +111,9 @@ export default function ManagerDashboardPage() {
         actions={
           <Link
             href="/manager/redeem"
-            className="px-4 py-2.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 text-xs font-bold transition flex items-center gap-2 active:scale-95"
+            className="px-4 py-2.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 text-xs font-bold transition flex items-center gap-2 active:scale-95"
           >
-            <Key className="w-4 h-4 text-purple-400" />
+            <Key className="w-4 h-4 text-cyan-400" />
             <span>Redeem Access Code</span>
           </Link>
         }
@@ -122,7 +122,7 @@ export default function ManagerDashboardPage() {
       {/* If No Assigned Campaigns Yet */}
       {!hasAssigned ? (
         <div className="p-8 sm:p-12 rounded-2xl bg-[#0D131D] border border-slate-800 text-center max-w-xl mx-auto space-y-6">
-          <div className="w-14 h-14 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mx-auto">
+          <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center mx-auto">
             <Key className="w-7 h-7" />
           </div>
 
@@ -144,7 +144,7 @@ export default function ManagerDashboardPage() {
                 value={redeemCode}
                 onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
                 placeholder="CE-MGR-XXXX-XXXX-XXXX"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono text-xs placeholder:text-slate-500 focus:outline-none focus:border-purple-400 tracking-wider uppercase"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono text-xs placeholder:text-slate-500 focus:outline-none focus:border-cyan-400 tracking-wider uppercase"
               />
             </div>
 
@@ -168,7 +168,7 @@ export default function ManagerDashboardPage() {
             <button
               type="submit"
               disabled={redeeming || !redeemCode.trim()}
-              className="w-full py-2.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-white font-bold text-xs transition shadow-lg shadow-purple-500/20 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-white font-bold text-xs transition shadow-lg shadow-cyan-500/20 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
             >
               {redeeming ? <Loader2 className="w-4 h-4 animate-spin" /> : <Key className="w-4 h-4" />}
               <span>Redeem Access Code</span>

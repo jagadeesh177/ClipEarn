@@ -298,7 +298,7 @@ export default function AdminCreateCampaignPage() {
                 value={maximumViewsPerClip}
                 onChange={(e) => setMaximumViewsPerClip(e.target.value)}
                 placeholder="Unlimited"
-                className="w-full px-3 py-2.5 rounded-xl bg-slate-900/90 border border-slate-800 text-white text-xs font-mono focus:outline-none focus:border-amber-400 transition"
+                className="w-full px-3 py-2.5 rounded-xl bg-slate-900/90 border border-slate-800 text-white text-xs tabular focus:outline-none focus:border-amber-400 transition"
               />
               <p className="text-[10px] text-slate-500">Earnings cap (views continue tracking)</p>
             </div>

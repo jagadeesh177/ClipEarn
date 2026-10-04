@@ -22,11 +22,11 @@ export default function GuidelinesPage() {
   ];
 
   return (
-    <div className="max-w-5xl mx-auto py-2 sm:py-6 space-y-6 sm:space-y-8 animate-fadeIn">
+    <div className="max-w-5xl mx-auto py-2 sm:py-6 space-y-6 sm:space-y-8">
       {/* Section Header */}
       <div className="flex items-center gap-3.5 sm:gap-4">
-        <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-purple-600/15 border border-purple-500/30 flex items-center justify-center text-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.25)] shrink-0">
-          <Video className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400 stroke-[1.8]" />
+        <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-cyan-600/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0">
+          <Video className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-400 stroke-[1.8]" />
         </div>
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">

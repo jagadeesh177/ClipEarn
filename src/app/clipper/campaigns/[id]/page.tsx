@@ -381,7 +381,7 @@ export default function CampaignDetailsPage() {
   const reviewDays = ((campaign.name.length % 9) * 0.1 + 1.1).toFixed(1);
 
   return (
-    <div className="space-y-6 animate-fadeIn pb-12">
+    <div className="space-y-6 pb-12">
       {/* Top Header Section */}
       <div className="space-y-3">
         {/* Breadcrumb Navigation - establishes clear hierarchy */}
@@ -468,7 +468,7 @@ export default function CampaignDetailsPage() {
             )}
 
             {submitSuccess && (
-              <div className="p-3.5 rounded-xl bg-brand-cyan/10 border border-brand-cyan/30 text-xs text-brand-cyan flex items-center gap-2 animate-fadeIn">
+              <div className="p-3.5 rounded-xl bg-brand-cyan/10 border border-brand-cyan/30 text-xs text-brand-cyan flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
                 <span>Clip submitted successfully! Moved to pending review queue.</span>
               </div>
@@ -479,7 +479,7 @@ export default function CampaignDetailsPage() {
               {detectedPlatform && (
                 <div className="space-y-2">
                   {isAuthorMismatch && (
-                    <div className="p-3.5 rounded-xl bg-red-500/15 border border-red-500/40 text-xs text-red-300 flex items-start gap-2 animate-fadeIn">
+                    <div className="p-3.5 rounded-xl bg-red-500/15 border border-red-500/40 text-xs text-red-300 flex items-start gap-2">
                       <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
                       <div>
                         <strong className="block text-red-400 font-bold">Account Mismatch Detected</strong>
@@ -491,7 +491,7 @@ export default function CampaignDetailsPage() {
                   )}
 
                   {hasUnverifiedAccount && activeAccount && (
-                    <div className="p-3.5 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-xs space-y-2 animate-fadeIn">
+                    <div className="p-3.5 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-xs space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-yellow-400 font-bold">
                           <AlertCircle className="w-4 h-4 shrink-0" />
@@ -515,7 +515,7 @@ export default function CampaignDetailsPage() {
                   )}
 
                   {hasNoAccount && (
-                    <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-xs space-y-2 animate-fadeIn">
+                    <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-xs space-y-2">
                       <div className="flex items-center gap-2 text-red-400 font-bold">
                         <AlertCircle className="w-4 h-4 shrink-0" />
                         <span>No {detectedPlatform} Account Connected</span>
@@ -525,7 +525,7 @@ export default function CampaignDetailsPage() {
                       </p>
                       <Link
                         href="/clipper/profile"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-bold text-xs transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-cyan hover:bg-[#8afcfe] text-slate-950 font-bold text-xs transition-colors"
                       >
                         <span>Connect &amp; Verify {detectedPlatform}</span>
                         <ArrowRight className="w-3.5 h-3.5" />
@@ -552,7 +552,7 @@ export default function CampaignDetailsPage() {
                 <button
                   type="submit"
                   disabled={submitting || !postUrl.trim() || !hasVerifiedAccount || isAuthorMismatch}
-                  className="px-6 py-3 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-bold text-xs sm:text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md shadow-cyan-500/20 shrink-0"
+                  className="px-6 py-3 rounded-xl bg-brand-cyan hover:bg-[#8afcfe] text-slate-950 font-bold text-xs sm:text-sm transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md shadow-cyan-500/20 shrink-0"
                 >
                   {submitting ? (
                     <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
@@ -579,7 +579,7 @@ export default function CampaignDetailsPage() {
                 aria-controls="panel-submissions"
                 aria-selected={activeTab === "submissions"}
                 onClick={() => setActiveTab("submissions")}
-                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition ${
                   activeTab === "submissions"
                     ? "bg-brand-cyan/15 text-brand-cyan border border-brand-cyan/30 shadow-sm"
                     : "text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent"
@@ -595,7 +595,7 @@ export default function CampaignDetailsPage() {
                 aria-controls="panel-stats"
                 aria-selected={activeTab === "stats"}
                 onClick={() => setActiveTab("stats")}
-                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition ${
                   activeTab === "stats"
                     ? "bg-brand-cyan/15 text-brand-cyan border border-brand-cyan/30 shadow-sm"
                     : "text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent"
@@ -611,7 +611,7 @@ export default function CampaignDetailsPage() {
                 aria-controls="panel-leaderboard"
                 aria-selected={activeTab === "leaderboard"}
                 onClick={() => setActiveTab("leaderboard")}
-                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition ${
                   activeTab === "leaderboard"
                     ? "bg-brand-cyan/15 text-brand-cyan border border-brand-cyan/30 shadow-sm"
                     : "text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent"
@@ -691,28 +691,28 @@ export default function CampaignDetailsPage() {
 
                             {/* Real Social Media Metrics Strip */}
                             <div className="flex flex-wrap items-center gap-2 pt-1.5 text-xs">
-                              <span className="inline-flex items-center gap-1 font-mono text-slate-300" title="Views">
+                              <span className="inline-flex items-center gap-1 tabular text-slate-300" title="Views">
                                 <Eye className="w-3.5 h-3.5 text-brand-cyan" />
                                 {(sub.current_views || 0).toLocaleString()}
                               </span>
                               <span className="text-slate-700">•</span>
-                              <span className="inline-flex items-center gap-1 font-mono text-slate-300" title="Likes">
+                              <span className="inline-flex items-center gap-1 tabular text-slate-300" title="Likes">
                                 <Heart className="w-3.5 h-3.5 text-red-400" />
                                 {sub.current_likes != null ? sub.current_likes.toLocaleString() : "N/A"}
                               </span>
                               <span className="text-slate-700">•</span>
-                              <span className="inline-flex items-center gap-1 font-mono text-slate-300" title="Comments">
+                              <span className="inline-flex items-center gap-1 tabular text-slate-300" title="Comments">
                                 <MessageSquare className="w-3.5 h-3.5 text-blue-400" />
                                 {sub.current_comments != null ? sub.current_comments.toLocaleString() : "N/A"}
                               </span>
                               <span className="text-slate-700">•</span>
-                              <span className="inline-flex items-center gap-1 font-mono text-slate-300" title="Shares">
+                              <span className="inline-flex items-center gap-1 tabular text-slate-300" title="Shares">
                                 <Share2 className="w-3.5 h-3.5 text-emerald-400" />
                                 {sub.current_shares != null ? sub.current_shares.toLocaleString() : "N/A"}
                               </span>
                               <span className="text-slate-700">•</span>
-                              <span className="inline-flex items-center gap-1 font-mono text-slate-300" title="Saves">
-                                <Bookmark className="w-3.5 h-3.5 text-purple-400" />
+                              <span className="inline-flex items-center gap-1 tabular text-slate-300" title="Saves">
+                                <Bookmark className="w-3.5 h-3.5 text-cyan-400" />
                                 {sub.current_saves != null ? sub.current_saves.toLocaleString() : "N/A"}
                               </span>
                             </div>
@@ -735,7 +735,7 @@ export default function CampaignDetailsPage() {
                           )}
 
                           {sub.status === "APPEALED" && (
-                            <span className="px-2.5 py-1 rounded-full bg-purple-500/15 text-purple-400 border border-purple-500/30 text-xs font-semibold">
+                            <span className="px-2.5 py-1 rounded-full bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 text-xs font-semibold">
                               Appealed
                             </span>
                           )}
@@ -820,7 +820,7 @@ export default function CampaignDetailsPage() {
                 {/* Payout Eligibility Status Card */}
                 {myStats && myStats.minimumViewsForPayout > 0 && (
                   (myStats.qualifiesForPayout || (myStats.viewsRemainingForPayout !== undefined && myStats.viewsRemainingForPayout <= 0) || (myStats.progressPercent !== undefined && myStats.progressPercent >= 100)) ? (
-                    <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between gap-3 text-left animate-fadeIn">
+                    <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between gap-3 text-left">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
                           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
@@ -848,7 +848,7 @@ export default function CampaignDetailsPage() {
                       </div>
                       <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-brand-cyan rounded-full transition-all duration-500"
+                          className="h-full bg-brand-cyan rounded-full transition-[width] duration-500"
                           style={{ width: `${myStats.progressPercent || 0}%` }}
                         />
                       </div>
@@ -890,7 +890,7 @@ export default function CampaignDetailsPage() {
                         {leaderboard.map((item) => (
                           <tr key={item.userId} className="hover:bg-slate-900/40 transition-colors">
                             <td className="py-4 px-4 text-sm font-bold text-slate-300">
-                              {item.rank === 1 ? "🔥" : item.rank === 2 ? "🥈" : item.rank === 3 ? "🥉" : `${item.rank}`}
+                              {item.rank}
                             </td>
                             <td className="py-4 px-4">
                               <span className="text-sm font-bold text-white">{item.username}</span>
@@ -954,7 +954,7 @@ export default function CampaignDetailsPage() {
                 </div>
                 <div className="w-full h-1.5 bg-slate-800/90 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-brand-cyan rounded-full transition-all duration-500"
+                    className="h-full bg-brand-cyan rounded-full transition-[width] duration-500"
                     style={{ width: `${budgetPercent}%` }}
                   />
                 </div>
@@ -970,7 +970,7 @@ export default function CampaignDetailsPage() {
                 </div>
                 <div className="w-full h-1.5 bg-slate-800/90 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                    className="h-full bg-blue-500 rounded-full transition-[width] duration-500"
                     style={{ width: `${viewsPercent}%` }}
                   />
                 </div>
@@ -1051,11 +1051,11 @@ export default function CampaignDetailsPage() {
 
       {/* Appeal Clip Modal */}
       {appealModalOpen && selectedSubForAppeal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
           <div className="bg-[#0D131D] border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
               <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
                   <ShieldCheck className="w-5 h-5" />
                 </div>
                 <div>
@@ -1111,7 +1111,7 @@ export default function CampaignDetailsPage() {
                 <button
                   type="submit"
                   disabled={submittingAppeal}
-                  className="px-5 py-2.5 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-bold text-xs transition-all disabled:opacity-50 shadow-md shadow-cyan-500/20 flex items-center gap-2"
+                  className="px-5 py-2.5 rounded-xl bg-brand-cyan hover:bg-[#8afcfe] text-slate-950 font-bold text-xs transition disabled:opacity-50 shadow-md shadow-cyan-500/20 flex items-center gap-2"
                 >
                   {submittingAppeal ? <Loader2 className="w-4 h-4 animate-spin text-slate-950" /> : <Send className="w-4 h-4 text-slate-950" />}
                   <span>{submittingAppeal ? "Submitting..." : "Submit Appeal"}</span>

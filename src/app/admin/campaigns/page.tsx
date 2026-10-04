@@ -226,12 +226,12 @@ export default function AdminCampaignsPage() {
                         </span>
                       </td>
 
-                      <td className="py-4 px-4 text-right font-bold text-white font-mono">
+                      <td className="py-4 px-4 text-right font-bold text-white tabular">
                         ${camp.cpm.toFixed(2)}
                       </td>
 
                       <td className="py-4 px-4 text-right">
-                        <div className="font-bold text-white font-mono">
+                        <div className="font-bold text-white tabular">
                           ${camp.used_budget.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
                         <div className="text-[10px] text-slate-500">
@@ -240,7 +240,7 @@ export default function AdminCampaignsPage() {
                       </td>
 
                       <td className="py-4 px-4 text-right">
-                        <div className="font-bold text-amber-400 font-mono">
+                        <div className="font-bold text-amber-400 tabular">
                           {(camp.total_views || camp.eligible_views || 0).toLocaleString()}
                         </div>
                         <div className="text-[10px] text-slate-500">approved views</div>

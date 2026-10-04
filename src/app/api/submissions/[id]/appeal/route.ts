@@ -77,7 +77,7 @@ export async function POST(
           data: {
             user_id: mgr.id,
             type: "APPEAL_SUBMITTED",
-            title: "New Clipper Appeal Submitted ⚠️",
+            title: "New appeal from a clipper",
             message: `@${user.username} appealed a rejected clip for "${submission.campaign.name}". Reason: ${appeal_reason.trim().substring(0, 100)}`,
           },
         });

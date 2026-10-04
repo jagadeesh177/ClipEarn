@@ -62,7 +62,7 @@ export function CampaignOverview({
       {/* Header Row */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800/60">
         <div className="flex items-center gap-2.5">
-          <Compass className={`w-5 h-5 ${portalType === "admin" ? "text-amber-400" : "text-purple-400"}`} />
+          <Compass className={`w-5 h-5 ${portalType === "admin" ? "text-amber-400" : "text-cyan-400"}`} />
           <div>
             <h2 className="text-base font-bold text-white">{title}</h2>
             <p className="text-xs text-slate-400">
@@ -119,7 +119,7 @@ export function CampaignOverview({
           {portalType === "manager" && campaigns.length === 0 && (
             <Link
               href="/manager/redeem"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-500 hover:bg-purple-600 text-white font-bold text-xs"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-600 text-white font-bold text-xs"
             >
               <Key className="w-4 h-4" />
               <span>Redeem Campaign Access Code</span>
@@ -135,7 +135,7 @@ export function CampaignOverview({
             return (
               <div
                 key={camp.id}
-                className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700/80 transition-all flex flex-col justify-between space-y-4 group"
+                className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700/80 transition flex flex-col justify-between space-y-4 group"
               >
                 <div>
                   <div className="flex items-start justify-between gap-3">
@@ -182,7 +182,7 @@ export function CampaignOverview({
                       <div className="text-[10px] text-slate-500 font-semibold uppercase">
                         Approved Views
                       </div>
-                      <div className="text-sm font-bold text-brand-cyan font-mono mt-0.5">
+                      <div className="text-sm font-bold text-brand-cyan tabular mt-0.5">
                         {approvedViews.toLocaleString()}
                       </div>
                     </div>
@@ -190,7 +190,7 @@ export function CampaignOverview({
                       <div className="text-[10px] text-slate-500 font-semibold uppercase">
                         CPM Rate
                       </div>
-                      <div className="text-sm font-bold text-white font-mono mt-0.5">
+                      <div className="text-sm font-bold text-white tabular mt-0.5">
                         ${Number(camp.cpm).toFixed(2)}
                       </div>
                     </div>

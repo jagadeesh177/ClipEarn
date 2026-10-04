@@ -56,12 +56,12 @@ export default function ManagerPayoutsPage() {
   });
 
   return (
-    <div className="space-y-6 animate-fadeIn max-w-6xl">
+    <div className="space-y-6 max-w-6xl">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-2.5">
-            <CreditCard className="w-7 h-7 text-purple-400" />
+            <CreditCard className="w-7 h-7 text-cyan-400" />
             Payout Eligibility Overview
           </h1>
           <p className="text-sm text-slate-400 mt-1">
@@ -71,8 +71,8 @@ export default function ManagerPayoutsPage() {
       </div>
 
       {/* Info notice */}
-      <div className="p-4 rounded-xl bg-purple-500/10 border border-purple-500/30 text-xs text-purple-200 flex items-start gap-3">
-        <Info className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+      <div className="p-4 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-xs text-cyan-200 flex items-start gap-3">
+        <Info className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
         <div className="leading-relaxed">
           <span className="font-bold text-white">Disbursement Policy Notice:</span> Financial payout execution is handled strictly by Platform Administrators to ensure audit compliance. Campaign Managers have visibility into clipper qualification, view progress, and settlement statuses.
         </div>
@@ -87,7 +87,7 @@ export default function ManagerPayoutsPage() {
             placeholder="Search by clipper or campaign..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-10 bg-[#0F141F] border border-slate-800 rounded-xl pl-10 pr-4 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-purple-400"
+            className="w-full h-10 bg-[#0F141F] border border-slate-800 rounded-xl pl-10 pr-4 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400"
           />
         </div>
 
@@ -104,7 +104,7 @@ export default function ManagerPayoutsPage() {
               onClick={() => setStatusFilter(tab.id)}
               className={`px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap text-xs ${
                 statusFilter === tab.id
-                  ? "bg-purple-500 text-white font-bold"
+                  ? "bg-cyan-500 text-white font-bold"
                   : "text-slate-400 hover:text-white"
               }`}
             >
@@ -118,7 +118,7 @@ export default function ManagerPayoutsPage() {
       <div className="p-6 rounded-2xl bg-[#0F141F] border border-slate-800">
         {loading ? (
           <div className="py-12 text-center text-slate-500">
-            <Loader2 className="w-6 h-6 animate-spin mx-auto text-purple-400 mb-2" />
+            <Loader2 className="w-6 h-6 animate-spin mx-auto text-cyan-400 mb-2" />
             <p className="text-xs">Loading payout eligibility data...</p>
           </div>
         ) : filteredItems.length === 0 ? (
@@ -144,7 +144,7 @@ export default function ManagerPayoutsPage() {
                   <tr key={`${item.campaignId}-${item.clipperId}-${idx}`} className="hover:bg-slate-900/40 transition-colors">
                     <td className="py-3.5 px-3">
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-xs uppercase border border-purple-500/30">
+                        <div className="w-7 h-7 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-xs uppercase border border-cyan-500/30">
                           {item.username.charAt(0)}
                         </div>
                         <span className="font-bold text-white">@{item.username}</span>
@@ -156,15 +156,15 @@ export default function ManagerPayoutsPage() {
                       <div className="text-[11px] text-slate-500">{item.brandName}</div>
                     </td>
 
-                    <td className="py-3.5 px-3 text-right font-mono font-bold text-brand-cyan">
+                    <td className="py-3.5 px-3 text-right tabular font-bold text-brand-cyan">
                       {item.approvedViews.toLocaleString()}
                     </td>
 
-                    <td className="py-3.5 px-3 text-right font-mono text-slate-300">
+                    <td className="py-3.5 px-3 text-right tabular text-slate-300">
                       {item.thresholdViews > 0 ? `${item.thresholdViews.toLocaleString()} views` : "None"}
                     </td>
 
-                    <td className="py-3.5 px-3 text-right font-mono font-bold text-emerald-400">
+                    <td className="py-3.5 px-3 text-right tabular font-bold text-emerald-400">
                       ${item.earnings.toFixed(2)}
                     </td>
 

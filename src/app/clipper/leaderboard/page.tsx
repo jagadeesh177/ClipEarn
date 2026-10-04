@@ -20,7 +20,7 @@ export default function LeaderboardPage() {
   }, [period]);
 
   return (
-    <div className="space-y-8 animate-fadeIn max-w-5xl">
+    <div className="space-y-8 max-w-5xl">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
         <div>
@@ -72,7 +72,7 @@ export default function LeaderboardPage() {
           </div>
 
           {/* #1 Gold */}
-          <div className="p-6 rounded-2xl bg-gradient-to-b from-[#162032] to-[#0F141F] border-2 border-yellow-400/50 shadow-[0_0_30px_-5px_rgba(250,204,21,0.2)] flex flex-col items-center text-center relative order-1 md:order-2 transform md:-translate-y-2">
+          <div className="p-6 rounded-2xl bg-[#141B27] border border-yellow-400/50 shadow-raised flex flex-col items-center text-center relative order-1 md:order-2 transform md:-translate-y-2">
             <div className="w-12 h-12 rounded-full bg-yellow-400 text-black flex items-center justify-center font-black text-base mb-3 shadow-lg shadow-yellow-400/30">
               #1
             </div>

@@ -56,7 +56,7 @@ function CampaignAvatar({ imageUrl, name }: { imageUrl?: string | null; name: st
   if (!imageUrl || imageError) {
     return (
       <div
-        className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-950 via-[#130E20] to-slate-900 border border-purple-500/40 shrink-0 flex items-center justify-center font-black text-purple-400 text-base shadow-sm select-none"
+        className="w-12 h-12 rounded-xl bg-[#0E1B2A] border border-cyan-500/40 shrink-0 flex items-center justify-center font-black text-cyan-400 text-base shadow-sm select-none"
         aria-label={`${name} avatar`}
       >
         <span>{initial}</span>
@@ -124,12 +124,12 @@ export default function ManagerCampaignsPage() {
   });
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="space-y-6">
       {/* Header Row */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-2.5">
-            <Compass className="w-7 h-7 text-purple-400" />
+            <Compass className="w-7 h-7 text-cyan-400" />
             Assigned Campaigns
           </h1>
           <p className="text-sm text-slate-400 mt-1">
@@ -140,9 +140,9 @@ export default function ManagerCampaignsPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/manager/redeem"
-            className="px-4 py-2.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 font-bold text-xs transition-colors flex items-center gap-2 shadow-sm"
+            className="px-4 py-2.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 font-bold text-xs transition-colors flex items-center gap-2 shadow-sm"
           >
-            <Key className="w-4 h-4 text-purple-400" />
+            <Key className="w-4 h-4 text-cyan-400" />
             <span>Redeem Access Code</span>
           </Link>
         </div>
@@ -160,7 +160,7 @@ export default function ManagerCampaignsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && loadCampaigns()}
-            className="w-full h-10 bg-[#0F141F] border border-slate-800 hover:border-slate-700 rounded-xl pl-10 pr-4 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/20 transition-colors"
+            className="w-full h-10 bg-[#0F141F] border border-slate-800 hover:border-slate-700 rounded-xl pl-10 pr-4 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/20 transition-colors"
           />
         </div>
 
@@ -175,7 +175,7 @@ export default function ManagerCampaignsPage() {
                 onClick={() => setSelectedPlatform(plat)}
                 className={`h-8 px-3 rounded-lg transition-colors whitespace-nowrap text-xs font-bold flex items-center justify-center ${
                   selectedPlatform === plat
-                    ? "bg-purple-500 text-white shadow-sm"
+                    ? "bg-cyan-500 text-white shadow-sm"
                     : "text-slate-400 hover:text-white hover:bg-slate-800/60"
                 }`}
               >
@@ -216,7 +216,7 @@ export default function ManagerCampaignsPage() {
         </div>
       ) : filteredCampaigns.length === 0 ? (
         <div className="py-20 text-center rounded-2xl bg-[#0D131D] border border-slate-800 p-8 space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mx-auto">
+          <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center mx-auto">
             <Compass className="w-8 h-8" />
           </div>
           <div>
@@ -230,7 +230,7 @@ export default function ManagerCampaignsPage() {
           <div className="pt-2">
             <Link
               href="/manager/redeem"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-purple-500 hover:bg-purple-600 text-white font-bold text-xs transition-colors shadow-lg shadow-purple-500/20"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-600 text-white font-bold text-xs transition-colors shadow-lg shadow-cyan-500/20"
             >
               <Key className="w-4 h-4" />
               <span>Redeem Campaign Access Code</span>
@@ -252,7 +252,7 @@ export default function ManagerCampaignsPage() {
             return (
               <div
                 key={camp.id}
-                className="rounded-2xl bg-[#0D131D] border border-slate-800/80 hover:border-slate-700/80 transition-all p-5 flex flex-col justify-between h-full group shadow-lg"
+                className="rounded-2xl bg-[#0D131D] border border-slate-800/80 hover:border-slate-700/80 transition p-5 flex flex-col justify-between h-full group shadow-lg"
               >
                 <div className="flex-1 flex flex-col">
                   {/* Top Row: Avatar, Brand, Name & Status */}
@@ -263,7 +263,7 @@ export default function ManagerCampaignsPage() {
                       <div className="min-w-0 flex-1">
                         <Link
                           href={`/manager/campaigns/${camp.id}`}
-                          className="font-bold text-white text-base leading-snug line-clamp-1 group-hover:text-purple-400 transition-colors"
+                          className="font-bold text-white text-base leading-snug line-clamp-1 group-hover:text-cyan-400 transition-colors"
                           title={camp.name}
                         >
                           {camp.name}
@@ -314,7 +314,7 @@ export default function ManagerCampaignsPage() {
 
                   {/* Middle Specs: CPM & Allowed Platforms */}
                   <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-800/60">
-                    <span className="px-2.5 py-1 rounded-lg bg-slate-800/90 text-white font-bold text-xs border border-slate-700/60 font-mono">
+                    <span className="px-2.5 py-1 rounded-lg bg-slate-800/90 text-white font-bold text-xs border border-slate-700/60 tabular">
                       ${Number(camp.cpm).toFixed(2)} CPM
                     </span>
 
@@ -367,16 +367,16 @@ export default function ManagerCampaignsPage() {
                     {/* View Details */}
                     <Link
                       href={`/manager/campaigns/${camp.id}`}
-                      className="h-9 flex-1 px-3 rounded-xl bg-slate-850 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-750 text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                      className="h-9 flex-1 px-3 rounded-xl bg-slate-850 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-750 text-xs font-bold transition flex items-center justify-center gap-1.5"
                     >
-                      <Eye className="w-3.5 h-3.5 text-purple-400" />
+                      <Eye className="w-3.5 h-3.5 text-cyan-400" />
                       <span>Details</span>
                     </Link>
 
                     {/* Review Submissions */}
                     <Link
                       href={`/manager/submissions?campaign_id=${camp.id}`}
-                      className="h-9 px-3 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shrink-0"
+                      className="h-9 px-3 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 text-xs font-bold transition flex items-center justify-center gap-1.5 shrink-0"
                       title="Review Submissions"
                     >
                       <FileCheck className="w-3.5 h-3.5" />
@@ -386,7 +386,7 @@ export default function ManagerCampaignsPage() {
                     {/* Leaderboard */}
                     <Link
                       href={`/manager/leaderboard?campaign_id=${camp.id}`}
-                      className="h-9 px-3 rounded-xl bg-slate-850 hover:bg-slate-800 text-slate-200 hover:text-yellow-400 border border-slate-750 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shrink-0"
+                      className="h-9 px-3 rounded-xl bg-slate-850 hover:bg-slate-800 text-slate-200 hover:text-yellow-400 border border-slate-750 text-xs font-bold transition flex items-center justify-center gap-1.5 shrink-0"
                       title="Campaign Leaderboard"
                     >
                       <Trophy className="w-3.5 h-3.5 text-yellow-500" />
@@ -396,7 +396,7 @@ export default function ManagerCampaignsPage() {
                     <button
                       type="button"
                       onClick={() => handleExportSheet(camp)}
-                      className="h-9 px-3 rounded-xl bg-slate-850 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-750 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shrink-0"
+                      className="h-9 px-3 rounded-xl bg-slate-850 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-750 text-xs font-bold transition flex items-center justify-center gap-1.5 shrink-0"
                       title="Export Performance Report (.xlsx)"
                     >
                       <FileSpreadsheet className="w-3.5 h-3.5 text-brand-emerald" />

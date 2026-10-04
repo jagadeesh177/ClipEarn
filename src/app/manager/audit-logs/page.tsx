@@ -18,7 +18,7 @@ export default function ManagerAuditLogsPage() {
   }, []);
 
   return (
-    <div className="space-y-8 animate-fadeIn">
+    <div className="space-y-8">
       {/* Header */}
       <div className="pb-4 border-b border-slate-800/80">
         <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-2.5">

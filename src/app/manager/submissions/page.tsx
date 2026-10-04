@@ -115,7 +115,7 @@ function SubmissionsReviewContent() {
   };
 
   return (
-    <div className="space-y-8 animate-fadeIn">
+    <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
         <div>
@@ -175,7 +175,7 @@ function SubmissionsReviewContent() {
               role="tab"
               aria-selected={statusFilter === st.id}
               onClick={() => setStatusFilter(st.id)}
-              className={`px-3 py-1.5 rounded-lg transition-all whitespace-nowrap text-xs font-semibold ${
+              className={`px-3 py-1.5 rounded-lg transition whitespace-nowrap text-xs font-semibold ${
                 statusFilter === st.id
                   ? "bg-brand-cyan text-slate-950 font-bold shadow-sm"
                   : "text-slate-400 hover:text-white hover:bg-slate-800/80 border border-transparent hover:border-slate-800"
@@ -306,9 +306,9 @@ function SubmissionsReviewContent() {
                         </span>
                       </td>
 
-                      <td className="py-4 pr-3 font-mono font-bold text-purple-400 whitespace-nowrap">
+                      <td className="py-4 pr-3 font-mono font-bold text-cyan-400 whitespace-nowrap">
                         <span className="flex items-center gap-1">
-                          <Bookmark className="w-3.5 h-3.5 text-purple-400" />
+                          <Bookmark className="w-3.5 h-3.5 text-cyan-400" />
                           {sub.current_saves != null ? sub.current_saves.toLocaleString() : "N/A"}
                         </span>
                       </td>
@@ -329,8 +329,8 @@ function SubmissionsReviewContent() {
                           </span>
                         )}
                         {sub.status === "APPEALED" && (
-                          <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center gap-1 w-fit">
-                            <Clock className="w-3 h-3 text-purple-400" />
+                          <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center gap-1 w-fit">
+                            <Clock className="w-3 h-3 text-cyan-400" />
                             Appealed
                           </span>
                         )}
@@ -349,7 +349,7 @@ function SubmissionsReviewContent() {
                                 setSelectedSubmission(sub);
                                 setActionType("APPROVE");
                               }}
-                              className="px-3.5 py-1.5 rounded-xl bg-brand-emerald hover:bg-brand-emerald/90 text-slate-950 font-bold text-xs flex items-center gap-1 shadow-sm transition-all active:scale-95"
+                              className="px-3.5 py-1.5 rounded-xl bg-brand-emerald hover:bg-brand-emerald/90 text-slate-950 font-bold text-xs flex items-center gap-1 shadow-sm transition active:scale-95"
                             >
                               <CheckCircle2 className="w-3.5 h-3.5" />
                               <span>Approve</span>
@@ -360,7 +360,7 @@ function SubmissionsReviewContent() {
                                 setSelectedSubmission(sub);
                                 setActionType("REJECT");
                               }}
-                              className="px-3.5 py-1.5 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/30 font-bold text-xs flex items-center gap-1 transition-all active:scale-95"
+                              className="px-3.5 py-1.5 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/30 font-bold text-xs flex items-center gap-1 transition active:scale-95"
                             >
                               <XCircle className="w-3.5 h-3.5" />
                               <span>Reject</span>
@@ -375,7 +375,7 @@ function SubmissionsReviewContent() {
                                 setRejectionReason("Campaign requirement not followed");
                                 setCustomReason("");
                               }}
-                              className="px-3 py-1.5 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/30 font-bold text-xs flex items-center gap-1 transition-all active:scale-95"
+                              className="px-3 py-1.5 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/30 font-bold text-xs flex items-center gap-1 transition active:scale-95"
                               title="Reject approved clip"
                             >
                               <XCircle className="w-3.5 h-3.5" />
@@ -404,7 +404,7 @@ function SubmissionsReviewContent() {
 
       {/* Review Confirmation / Reason Modal */}
       {selectedSubmission && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
           <div className="bg-[#0F141F] border border-slate-800 rounded-2xl max-w-lg w-full p-6 relative shadow-2xl">
             <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
               {actionType === "APPROVE" ? (
@@ -439,9 +439,9 @@ function SubmissionsReviewContent() {
 
             {/* Appeal Context Banner if Appealed */}
             {selectedSubmission.status === "APPEALED" && (
-              <div className="p-3.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-xs space-y-2.5 my-3">
-                <div className="flex items-center gap-1.5 text-purple-300 font-bold">
-                  <Clock className="w-4 h-4 text-purple-400" />
+              <div className="p-3.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-xs space-y-2.5 my-3">
+                <div className="flex items-center gap-1.5 text-cyan-300 font-bold">
+                  <Clock className="w-4 h-4 text-cyan-400" />
                   <span>Clipper Appeal Re-Evaluation</span>
                 </div>
 
@@ -450,8 +450,8 @@ function SubmissionsReviewContent() {
                     <span className="text-red-400 font-bold block">Previous Rejection Reason:</span>
                     <span>{selectedSubmission.rejection_reason || "Campaign requirement not followed"}</span>
                   </div>
-                  <div className="pt-1 border-t border-purple-500/20">
-                    <span className="text-purple-300 font-bold block">Clipper's Appeal Explanation:</span>
+                  <div className="pt-1 border-t border-cyan-500/20">
+                    <span className="text-cyan-300 font-bold block">Clipper's Appeal Explanation:</span>
                     <span className="text-white italic">"{selectedSubmission.appeal_reason}"</span>
                   </div>
                 </div>
@@ -486,7 +486,7 @@ function SubmissionsReviewContent() {
                   <div className="text-[11px] text-slate-400 flex items-center justify-center gap-1">
                     <Eye className="w-3 h-3 text-slate-400" /> Views
                   </div>
-                  <div className="text-sm font-bold font-mono text-white mt-0.5">
+                  <div className="text-sm font-bold tabular text-white mt-0.5">
                     {(selectedSubmission.current_views || 0).toLocaleString()}
                   </div>
                 </div>
@@ -494,7 +494,7 @@ function SubmissionsReviewContent() {
                   <div className="text-[11px] text-red-300 flex items-center justify-center gap-1">
                     <Heart className="w-3 h-3 text-red-400" /> Likes
                   </div>
-                  <div className="text-sm font-bold font-mono text-red-400 mt-0.5">
+                  <div className="text-sm font-bold tabular text-red-400 mt-0.5">
                     {(selectedSubmission.current_likes || 0).toLocaleString()}
                   </div>
                 </div>
@@ -502,7 +502,7 @@ function SubmissionsReviewContent() {
                   <div className="text-[11px] text-blue-300 flex items-center justify-center gap-1">
                     <MessageSquare className="w-3 h-3 text-blue-400" /> Comments
                   </div>
-                  <div className="text-sm font-bold font-mono text-blue-400 mt-0.5">
+                  <div className="text-sm font-bold tabular text-blue-400 mt-0.5">
                     {(selectedSubmission.current_comments || 0).toLocaleString()}
                   </div>
                 </div>
@@ -594,7 +594,7 @@ function SubmissionsReviewContent() {
                 <button
                   type="submit"
                   disabled={processing}
-                  className={`px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all shadow-md active:scale-95 disabled:opacity-50 ${
+                  className={`px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition shadow-md active:scale-95 disabled:opacity-50 ${
                     actionType === "APPROVE"
                       ? "bg-brand-emerald text-slate-950 hover:bg-brand-emerald/90 shadow-emerald-500/20"
                       : "bg-red-500 text-white hover:bg-red-600 shadow-red-500/20"
@@ -619,7 +619,7 @@ export default function ManagerSubmissionsReviewPage() {
     <Suspense
       fallback={
         <div className="py-20 text-center text-slate-500">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto text-purple-400 mb-2" />
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-cyan-400 mb-2" />
           <p className="text-xs">Loading submissions review queue...</p>
         </div>
       }

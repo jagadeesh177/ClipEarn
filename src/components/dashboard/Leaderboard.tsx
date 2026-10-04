@@ -161,11 +161,11 @@ export function Leaderboard({
                     </div>
                   </td>
 
-                  <td className="py-3 px-3 text-right font-mono font-bold text-brand-cyan">
+                  <td className="py-3 px-3 text-right tabular font-bold text-brand-cyan">
                     {(item.approvedViews || 0).toLocaleString()}
                   </td>
 
-                  <td className="py-3 px-3 text-right font-mono text-slate-400">
+                  <td className="py-3 px-3 text-right tabular text-slate-400">
                     {(item.approvedLikes || 0).toLocaleString()}
                   </td>
 
@@ -173,7 +173,7 @@ export function Leaderboard({
                     {item.clipsCount}
                   </td>
 
-                  <td className="py-3 px-3 text-right font-mono font-bold text-emerald-400">
+                  <td className="py-3 px-3 text-right tabular font-bold text-emerald-400">
                     ${Number(item.earnings || 0).toFixed(2)}
                   </td>
 

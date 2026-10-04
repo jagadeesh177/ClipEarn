@@ -179,7 +179,7 @@ export default function AdminManagersPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl sm:text-3xl font-black text-white">Campaign Managers</h1>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-purple-500/20 text-purple-300 border border-purple-500/30">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
               DELEGATION & ACCESS
             </span>
           </div>
@@ -191,7 +191,7 @@ export default function AdminManagersPage() {
         <button
           onClick={handleGenerateKey}
           disabled={generatingKey}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-white font-bold text-xs transition shadow-lg shadow-purple-500/20 disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-white font-bold text-xs transition shadow-lg shadow-cyan-500/20 disabled:opacity-50"
         >
           {generatingKey ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
           Generate Manager Access Code
@@ -214,10 +214,10 @@ export default function AdminManagersPage() {
 
       {/* Just Generated Key Banner */}
       {justGeneratedKey && (
-        <div className="p-5 rounded-2xl bg-purple-500/10 border border-purple-500/40 space-y-3 animate-fadeIn">
+        <div className="p-5 rounded-2xl bg-cyan-500/10 border border-cyan-500/40 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-purple-200">
-              🔑 New Manager Access Code Generated (Save Now — Shown ONCE):
+            <span className="text-xs font-bold text-cyan-200">
+              New manager access code. Copy it now; it is only shown once.
             </span>
             <button
               onClick={() => {
@@ -225,13 +225,13 @@ export default function AdminManagersPage() {
                 setCopiedKey(true);
                 setTimeout(() => setCopiedKey(false), 2000);
               }}
-              className="px-3 py-1.5 rounded-lg bg-purple-500/30 hover:bg-purple-500/40 text-purple-200 text-xs font-bold transition flex items-center gap-1.5"
+              className="px-3 py-1.5 rounded-lg bg-cyan-500/30 hover:bg-cyan-500/40 text-cyan-200 text-xs font-bold transition flex items-center gap-1.5"
             >
               {copiedKey ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
               {copiedKey ? "Copied to Clipboard!" : "Copy Code"}
             </button>
           </div>
-          <div className="p-3 rounded-xl bg-black/70 border border-purple-500/30 font-mono text-sm font-bold text-purple-300 select-all tracking-wider">
+          <div className="p-3 rounded-xl bg-black/70 border border-cyan-500/30 font-mono text-sm font-bold text-cyan-300 select-all tracking-wider">
             {justGeneratedKey}
           </div>
           <p className="text-[11px] text-slate-400 leading-relaxed">
@@ -246,7 +246,7 @@ export default function AdminManagersPage() {
           onClick={() => setModalTab("MANAGERS")}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
             modalTab === "MANAGERS"
-              ? "bg-purple-500/20 text-purple-300 border border-purple-500/40"
+              ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
               : "text-slate-400 hover:text-white"
           }`}
         >
@@ -257,7 +257,7 @@ export default function AdminManagersPage() {
           onClick={() => setModalTab("INVITES")}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
             modalTab === "INVITES"
-              ? "bg-purple-500/20 text-purple-300 border border-purple-500/40"
+              ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
               : "text-slate-400 hover:text-white"
           }`}
         >
@@ -271,7 +271,7 @@ export default function AdminManagersPage() {
         <div className="rounded-2xl bg-[#0D131D] border border-slate-800/80 overflow-hidden shadow-xl">
           {loadingManagers ? (
             <div className="p-12 text-center text-slate-500 flex flex-col items-center gap-2">
-              <Loader2 className="w-6 h-6 animate-spin text-purple-400" />
+              <Loader2 className="w-6 h-6 animate-spin text-cyan-400" />
               <span className="text-xs">Loading manager accounts...</span>
             </div>
           ) : managersList.length === 0 ? (
@@ -295,7 +295,7 @@ export default function AdminManagersPage() {
                   {managersList.map((m) => (
                     <tr key={m.id} className="hover:bg-slate-900/40 transition">
                       <td className="py-4 px-4 font-bold text-white flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-xs border border-purple-500/30">
+                        <div className="w-7 h-7 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-xs border border-cyan-500/30">
                           {m.username.charAt(0).toUpperCase()}
                         </div>
                         <span>{m.username}</span>
@@ -347,7 +347,7 @@ export default function AdminManagersPage() {
         <div className="rounded-2xl bg-[#0D131D] border border-slate-800/80 overflow-hidden shadow-xl">
           {loadingKeys ? (
             <div className="p-12 text-center text-slate-500 flex flex-col items-center gap-2">
-              <Loader2 className="w-6 h-6 animate-spin text-purple-400" />
+              <Loader2 className="w-6 h-6 animate-spin text-cyan-400" />
               <span className="text-xs">Loading access keys...</span>
             </div>
           ) : accessKeysList.length === 0 ? (
@@ -413,7 +413,7 @@ export default function AdminManagersPage() {
 
       {/* Confirmation Modal: Revoke Manager */}
       {revokingManager && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
           <div className="bg-[#0F141F] border border-rose-500/30 rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl">
             <div className="w-12 h-12 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center mx-auto">
               <UserMinus className="w-6 h-6" />
@@ -443,7 +443,7 @@ export default function AdminManagersPage() {
 
       {/* Confirmation Modal: Restore Manager */}
       {restoringManager && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
           <div className="bg-[#0F141F] border border-emerald-500/30 rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl">
             <div className="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
               <UserCheck className="w-6 h-6" />

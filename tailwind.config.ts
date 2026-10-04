@@ -9,7 +9,28 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+      },
       colors: {
+        ink: {
+          0: "var(--ink-0)",
+          1: "var(--ink-1)",
+          2: "var(--ink-2)",
+        },
+        line: {
+          DEFAULT: "var(--line)",
+          strong: "var(--line-strong)",
+        },
+        fg: {
+          DEFAULT: "var(--fg)",
+          muted: "var(--fg-muted)",
+          subtle: "var(--fg-subtle)",
+        },
+        signal: {
+          DEFAULT: "var(--signal)",
+          press: "var(--signal-press)",
+        },
         background: "#070A0F",
         card: {
           DEFAULT: "#0F141F",
@@ -33,8 +54,11 @@ const config: Config = {
         }
       },
       boxShadow: {
-        glow: "0 0 25px -5px rgba(28, 247, 253, 0.35)",
-        "glow-emerald": "0 0 25px -5px rgba(28, 247, 253, 0.35)",
+        // Elevation, not halos: offset + soft blur (craft floor: depth)
+        glow: "0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -8px rgba(0, 0, 0, 0.6)",
+        "glow-emerald": "0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -8px rgba(0, 0, 0, 0.6)",
+        raised: "0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -8px rgba(0, 0, 0, 0.6)",
+        overlay: "0 2px 4px rgba(0, 0, 0, 0.4), 0 24px 48px -12px rgba(0, 0, 0, 0.7)",
       },
     },
   },

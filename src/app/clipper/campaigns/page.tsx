@@ -77,7 +77,7 @@ function CampaignAvatar({ imageUrl, name }: { imageUrl?: string | null; name: st
   if (!imageUrl || imageError) {
     return (
       <div
-        className="w-11 h-11 rounded-full bg-gradient-to-br from-cyan-950 via-[#0E1B2A] to-slate-900 border border-brand-cyan/40 shrink-0 flex items-center justify-center font-black text-brand-cyan text-base shadow-sm select-none"
+        className="w-11 h-11 rounded-full bg-[#0E1B2A] border border-brand-cyan/40 shrink-0 flex items-center justify-center font-black text-brand-cyan text-base shadow-sm select-none"
         aria-label={`${name} avatar`}
       >
         <span>{initial}</span>
@@ -162,7 +162,7 @@ export default function BrowseCampaignsPage() {
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="space-y-6">
       {/* Top Search & Filter Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
         <div className="relative flex-1 w-full max-w-md">
@@ -238,7 +238,7 @@ export default function BrowseCampaignsPage() {
             return (
               <div
                 key={camp.id}
-                className="rounded-2xl bg-[#0D131D] border border-slate-800/80 hover:border-slate-700/80 transition-all p-5 flex flex-col justify-between h-full group shadow-lg"
+                className="rounded-2xl bg-[#0D131D] border border-slate-800/80 hover:border-slate-700/80 transition p-5 flex flex-col justify-between h-full group shadow-lg"
               >
                 <div className="flex-1 flex flex-col">
                   {/* Top Row: Brand Logo, Title & Active tag, and Top-Right Avg Review tag */}
@@ -275,7 +275,7 @@ export default function BrowseCampaignsPage() {
                   <div className="flex items-center justify-between mt-4">
                     {/* Left: CPM / Retainer Chip */}
                     {isRetainer ? (
-                      <span className="px-2.5 py-1 rounded-lg bg-[#2A1838] text-[#C084FC] border border-purple-500/30 font-bold text-[11px] uppercase tracking-wider">
+                      <span className="px-2.5 py-1 rounded-lg bg-[#2A1838] text-[#C084FC] border border-cyan-500/30 font-bold text-[11px] uppercase tracking-wider">
                         RETAINER
                       </span>
                     ) : (
@@ -326,7 +326,7 @@ export default function BrowseCampaignsPage() {
                         className="w-full h-2 bg-slate-900 border border-slate-700/60 rounded-full overflow-hidden mt-1.5"
                       >
                         <div
-                          className="h-full bg-brand-cyan rounded-full transition-all duration-500"
+                          className="h-full bg-brand-cyan rounded-full transition-[width] duration-500"
                           style={{ width: `${budgetPercent}%` }}
                         />
                       </div>
@@ -350,7 +350,7 @@ export default function BrowseCampaignsPage() {
                           className="w-full h-2 bg-slate-900 border border-slate-700/60 rounded-full overflow-hidden mt-1.5"
                         >
                           <div
-                            className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                            className="h-full bg-blue-500 rounded-full transition-[width] duration-500"
                             style={{ width: `${viewsPercent}%` }}
                           />
                         </div>
@@ -386,7 +386,7 @@ export default function BrowseCampaignsPage() {
                       type="button"
                       onClick={(e) => handleJoin(camp.id, e)}
                       disabled={joiningId === camp.id}
-                      className="h-10 flex-1 px-4 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-slate-950 font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md shadow-brand-cyan/20 active:scale-[0.98]"
+                      className="h-10 flex-1 px-4 rounded-xl bg-brand-cyan hover:bg-[#8afcfe] text-slate-950 font-extrabold text-xs flex items-center justify-center gap-1.5 transition shadow-md shadow-brand-cyan/20 active:scale-[0.98]"
                     >
                       {joiningId === camp.id ? (
                         <>

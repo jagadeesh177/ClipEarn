@@ -2,69 +2,235 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==========================================================================
+   ClipEarn foundation
+   - Palette: near-black ink surfaces, one signal colour (brand cyan) used
+     for money and primary actions only. Secondary text stays >= 4.5:1.
+   - Type: Archivo (self-hosted via next/font). Display copy uses the
+     expanded width axis; body copy uses the normal width.
+   - Motion: transitions.dev token scale. One authored moment per page;
+     no scroll-triggered fades, no transition: all.
+   ========================================================================== */
+
 @layer base {
   :root {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 6.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 180 100% 50%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 180 100% 50%;
+    --ink-0: #05080c;   /* page */
+    --ink-1: #0a1017;   /* raised surface */
+    --ink-2: #111a24;   /* hover / inset */
+    --line: #1d2a36;    /* structural borders, dividers */
+    --line-strong: #2c3c4a;
+    --fg: #f3f6f8;
+    --fg-muted: #a9b6c3;  /* 9.6:1 on ink-0 */
+    --fg-subtle: #8a98a7; /* 6.4:1 on ink-0, minimum for any text */
+    --signal: #1cf7fd;
+    --signal-press: #12d9df;
+
+    /* transitions.dev motion tokens */
+    --duration-stagger: 40ms;
+    --duration-micro: 80ms;
+    --duration-quick: 150ms;
+    --duration-fast: 250ms;
+    --duration-medium: 350ms;
+    --duration-slow: 400ms;
+    --duration-very-slow: 500ms;
+    --ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-in-out: ease-in-out;
+    --ease-out: ease-out;
+    --ease-linear: linear;
+    --distance-micro: 4px;
+    --distance-base: 8px;
+    --distance-medium: 12px;
+    --scale-large: 0.96;
+    --blur-small: 2px;
+    --blur-medium: 3px;
+
+    /* Accordion (transitions.dev #21) */
+    --acc-expand: 250ms;
+    --acc-collapse: 250ms;
+    --acc-chevron: 250ms;
+    --acc-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    /* Modal (transitions.dev #06) */
+    --modal-open-dur: 250ms;
+    --modal-close-dur: 150ms;
+    --modal-scale: 0.96;
+    --modal-scale-close: 0.96;
+    --modal-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    color-scheme: dark;
+    accent-color: var(--signal);
+    caret-color: var(--signal);
+  }
+
+  body {
+    background-color: var(--ink-0);
+    color: var(--fg);
+    font-family: var(--font-sans), system-ui, sans-serif;
+    font-feature-settings: "ss01";
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4 {
+    text-wrap: balance;
+  }
+
+  p, li, dd, figcaption {
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    background: rgba(28, 247, 253, 0.28);
+    color: #ffffff;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--signal);
+    outline-offset: 2px;
+  }
+
+  a {
+    text-underline-offset: 0.2em;
+  }
+
+  table, [data-numeric] {
+    font-variant-numeric: tabular-nums;
   }
 }
 
-body {
-  background-color: #070A0F;
-  color: #F8FAFC;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  overflow-x: hidden;
+@layer utilities {
+  /* Expanded display cut of Archivo for headlines */
+  .font-display {
+    font-stretch: 125%;
+    letter-spacing: -0.03em;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  /* Tactile press feedback (make-interfaces-feel-better #12) */
+  .press {
+    transition-property: transform, background-color, border-color, color, box-shadow;
+    transition-duration: var(--duration-quick);
+    transition-timing-function: var(--ease-out);
+  }
+  .press:active {
+    transform: scale(0.96);
+  }
 }
 
-/* Custom modern scrollbar */
+/* Scrollbars carry the palette */
+* {
+  scrollbar-color: var(--line-strong) transparent;
+  scrollbar-width: thin;
+}
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #0A0E17;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1E293B;
+  background: var(--line-strong);
   border-radius: 9999px;
+  border: 2px solid var(--ink-0);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #1cf7fd;
+  background: #3d5060;
 }
 
-.gradient-border {
-  position: relative;
-  background: #0F141F;
-  border-radius: 0.75rem;
+/* ---------- Accordion expand (transitions.dev #21) ---------- */
+.t-acc-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--acc-collapse) var(--acc-ease);
 }
-.gradient-border::before {
-  content: "";
-  position: absolute;
-  inset: -1px;
-  border-radius: 0.8rem;
-  padding: 1px;
-  background: linear-gradient(135deg, rgba(28, 247, 253, 0.4), rgba(28, 247, 253, 0.15), transparent 60%);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
+.t-acc[data-open="true"] .t-acc-panel {
+  grid-template-rows: 1fr;
+  transition: grid-template-rows var(--acc-expand) var(--acc-ease);
+}
+.t-acc-panel-inner {
+  overflow: hidden;
+  opacity: 0;
+  filter: blur(2px);
+  transition:
+    opacity var(--acc-collapse) var(--acc-ease),
+    filter var(--acc-collapse) var(--acc-ease);
+}
+.t-acc[data-open="true"] .t-acc-panel-inner {
+  opacity: 1;
+  filter: blur(0);
+  transition:
+    opacity var(--acc-expand) var(--acc-ease),
+    filter var(--acc-expand) var(--acc-ease);
+}
+.t-acc-chevron {
+  display: inline-flex;
+  transform: scaleY(1);
+  transform-origin: center;
+  transition: transform var(--acc-chevron) var(--acc-ease);
+}
+.t-acc-chevron path { vector-effect: non-scaling-stroke; }
+.t-acc[data-open="true"] .t-acc-chevron {
+  transform: scaleY(-1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-acc-panel, .t-acc-panel-inner, .t-acc-chevron {
+    transition: none !important;
+  }
+}
+
+/* ---------- Modal (transitions.dev #06) ---------- */
+.t-modal {
+  transform-origin: center;
+  transform: scale(var(--modal-scale));
+  opacity: 0;
   pointer-events: none;
+  transition:
+    transform var(--modal-open-dur) var(--modal-ease),
+    opacity   var(--modal-open-dur) var(--modal-ease);
+  will-change: transform, opacity;
+}
+.t-modal.is-open {
+  transform: scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+.t-modal.is-closing {
+  transform: scale(var(--modal-scale-close));
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform var(--modal-close-dur) var(--modal-ease),
+    opacity   var(--modal-close-dur) var(--modal-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-modal { transition: none !important; }
+}
+
+/* ---------- Hero ledger: the page's one authored motion moment ---------- */
+@keyframes ledger-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--distance-base));
+    filter: blur(var(--blur-small));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+.ledger-row {
+  animation: ledger-row-in var(--duration-very-slow) var(--ease-smooth-out) both;
+  animation-delay: calc(var(--row, 0) * 90ms + 150ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ledger-row { animation: none; }
 }
 
 /* ========================================================

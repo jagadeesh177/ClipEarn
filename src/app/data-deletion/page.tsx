@@ -29,7 +29,7 @@ export default function DataDeletionPage() {
   return (
     <div className="min-h-screen bg-[#070A0F] text-slate-100 flex flex-col selection:bg-brand-cyan/20 selection:text-brand-cyan">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#070A0F]/90 border-b border-slate-800/80 w-full">
+      <header className="sticky top-0 z-50 bg-[#070A0F] border-b border-slate-800/80 w-full">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-4">
           <div className="flex items-center gap-6">
             <ClipEarnLogo size="md" href="/" />
@@ -56,7 +56,7 @@ export default function DataDeletionPage() {
             </Link>
             <Link
               href="/login"
-              className="px-4 py-2 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-black font-bold text-xs sm:text-sm transition-all shadow-[0_0_20px_-5px_rgba(28,247,253,0.3)]"
+              className="px-4 py-2 rounded-xl bg-brand-cyan hover:bg-[#8afcfe] text-black font-bold text-xs sm:text-sm transition"
             >
               Clipper Sign In
             </Link>
@@ -121,7 +121,7 @@ export default function DataDeletionPage() {
                 </div>
               </li>
               <li className="flex items-start gap-3">
-                <span className="font-mono text-brand-cyan font-bold shrink-0 bg-slate-900 w-6 h-6 rounded flex items-center justify-center text-xs">2</span>
+                <span className="tabular text-brand-cyan font-bold shrink-0 bg-slate-900 w-6 h-6 rounded flex items-center justify-center text-xs">2</span>
                 <div>
                   <strong className="text-white">Go to Social Accounts:</strong> Open the sidebar and click on <strong className="text-white">&quot;Social Accounts&quot;</strong> (or visit <Link href="/clipper/social-accounts" className="text-brand-cyan hover:underline">/clipper/social-accounts</Link>).
                 </div>
@@ -144,11 +144,11 @@ export default function DataDeletionPage() {
           {/* Method 2 */}
           <section className="rounded-2xl bg-[#0D131D] border border-slate-800 p-6 sm:p-8">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 font-bold text-sm shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-bold text-sm shrink-0">
                 2
               </div>
               <div>
-                <span className="text-xs uppercase font-bold text-purple-400 tracking-wider">Method 2 (Complete Purge)</span>
+                <span className="text-xs uppercase font-bold text-cyan-400 tracking-wider">Method 2 (Complete Purge)</span>
                 <h2 className="text-lg sm:text-xl font-bold text-white">
                   Full Account &amp; Personal Data Deletion Request (Email)
                 </h2>
@@ -163,7 +163,7 @@ export default function DataDeletionPage() {
               <div className="text-xs text-slate-400">
                 Send an email with the following details to our dedicated privacy desk:
               </div>
-              <div className="text-sm font-mono text-brand-cyan bg-black/60 px-3 py-2 rounded-lg border border-slate-800 flex items-center justify-between">
+              <div className="text-sm tabular text-brand-cyan bg-black/60 px-3 py-2 rounded-lg border border-slate-800 flex items-center justify-between">
                 <span>To: clipearnbusiness@gmail.com</span>
                 <a href="mailto:clipearnbusiness@gmail.com?subject=ClipEarn%20Data%20Deletion%20Request" className="text-xs text-white hover:underline">Draft Email</a>
               </div>
@@ -326,7 +326,7 @@ export default function DataDeletionPage() {
           </section>
 
           {/* Need Assistance Card */}
-          <section className="p-6 sm:p-8 rounded-2xl bg-gradient-to-r from-slate-900 to-[#0D131D] border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+          <section className="p-6 sm:p-8 rounded-2xl bg-[#0D131D] border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
             <div>
               <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
                 <HelpCircle className="w-5 h-5 text-brand-cyan" />
@@ -338,7 +338,7 @@ export default function DataDeletionPage() {
             </div>
             <a
               href="mailto:clipearnbusiness@gmail.com?subject=ClipEarn%20Data%20Deletion%20Inquiry"
-              className="px-6 py-3 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-black font-bold text-xs sm:text-sm transition-all shadow-[0_0_20px_-5px_rgba(28,247,253,0.3)] shrink-0 flex items-center gap-2"
+              className="px-6 py-3 rounded-xl bg-brand-cyan hover:bg-[#8afcfe] text-black font-bold text-xs sm:text-sm transition shrink-0 flex items-center gap-2"
             >
               <Mail className="w-4 h-4 text-black" />
               <span>Contact Deletion Desk</span>

@@ -79,7 +79,7 @@ export default function ManagerCampaignDetailPage() {
   if (loading) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4">
-        <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
+        <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
         <p className="text-xs text-slate-400">Loading campaign details & metrics...</p>
       </div>
     );
@@ -87,7 +87,7 @@ export default function ManagerCampaignDetailPage() {
 
   if (error || !campaign) {
     return (
-      <div className="max-w-xl mx-auto py-12 px-4 animate-fadeIn">
+      <div className="max-w-xl mx-auto py-12 px-4">
         <div className="p-8 rounded-2xl bg-[#0D131D] border border-slate-800 text-center space-y-4">
           <div className="w-14 h-14 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-400 flex items-center justify-center mx-auto">
             <Lock className="w-7 h-7" />
@@ -115,7 +115,7 @@ export default function ManagerCampaignDetailPage() {
   const approvedSaves = Number(campaign.approved_saves || 0);
 
   return (
-    <div className="space-y-6 animate-fadeIn pb-12">
+    <div className="space-y-6 pb-12">
       {/* Back button */}
       <div>
         <Link
@@ -138,7 +138,7 @@ export default function ManagerCampaignDetailPage() {
                 className="w-16 h-16 rounded-2xl object-cover border border-slate-700/80 shrink-0 bg-slate-900"
               />
             ) : (
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-950 via-[#130E20] to-slate-900 border border-purple-500/40 text-purple-400 font-black text-xl flex items-center justify-center shrink-0">
+              <div className="w-16 h-16 rounded-2xl bg-[#0E1B2A] border border-cyan-500/40 text-cyan-400 font-black text-xl flex items-center justify-center shrink-0">
                 {(campaign.brand_name || campaign.name).charAt(0).toUpperCase()}
               </div>
             )}
@@ -167,7 +167,7 @@ export default function ManagerCampaignDetailPage() {
               </p>
 
               <div className="flex items-center gap-2 mt-3 flex-wrap text-xs">
-                <span className="px-2.5 py-1 rounded-lg bg-slate-850 text-slate-200 border border-slate-750 font-mono font-bold">
+                <span className="px-2.5 py-1 rounded-lg bg-slate-850 text-slate-200 border border-slate-750 tabular font-bold">
                   ${Number(campaign.cpm).toFixed(2)} CPM
                 </span>
                 <span className="px-2.5 py-1 rounded-lg bg-slate-850 text-slate-300 border border-slate-750 font-medium">
@@ -184,7 +184,7 @@ export default function ManagerCampaignDetailPage() {
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
             <Link
               href={`/manager/submissions?campaign_id=${campaign.id}`}
-              className="px-4 py-2.5 rounded-xl bg-purple-500 hover:bg-purple-600 text-white font-bold text-xs transition-colors flex items-center gap-2 shadow-lg shadow-purple-500/20"
+              className="px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-600 text-white font-bold text-xs transition-colors flex items-center gap-2 shadow-lg shadow-cyan-500/20"
             >
               <FileCheck className="w-4 h-4" />
               <span>Review Submissions</span>
@@ -213,7 +213,7 @@ export default function ManagerCampaignDetailPage() {
               <Eye className="w-4 h-4 text-brand-cyan" />
               <span>Approved Views</span>
             </div>
-            <div className="text-xl font-black text-brand-cyan font-mono">
+            <div className="text-xl font-black text-brand-cyan tabular">
               {formatNumber(approvedViews)}
             </div>
           </div>
@@ -348,22 +348,22 @@ export default function ManagerCampaignDetailPage() {
                     </td>
                     <td className="py-3 px-3">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-xs uppercase border border-purple-500/30">
+                        <div className="w-7 h-7 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-xs uppercase border border-cyan-500/30">
                           {item.clipper.username.charAt(0)}
                         </div>
                         <span className="font-bold text-white">{item.clipper.username}</span>
                       </div>
                     </td>
-                    <td className="py-3 px-3 text-right font-mono font-bold text-brand-cyan">
+                    <td className="py-3 px-3 text-right tabular font-bold text-brand-cyan">
                       {item.approved_views.toLocaleString()}
                     </td>
-                    <td className="py-3 px-3 text-right font-mono text-slate-300">
+                    <td className="py-3 px-3 text-right tabular text-slate-300">
                       {(item.approved_likes || 0).toLocaleString()}
                     </td>
-                    <td className="py-3 px-3 text-right font-mono text-slate-300">
+                    <td className="py-3 px-3 text-right tabular text-slate-300">
                       {item.clips_count}
                     </td>
-                    <td className="py-3 px-3 text-right font-mono font-bold text-emerald-400">
+                    <td className="py-3 px-3 text-right tabular font-bold text-emerald-400">
                       ${item.earned.toFixed(2)}
                     </td>
                     <td className="py-3 px-3 text-center">

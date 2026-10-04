@@ -72,7 +72,7 @@ function LeaderboardContent() {
   const selectedCampaign = campaigns.find((c) => c.id === selectedCampaignId);
 
   return (
-    <div className="space-y-6 animate-fadeIn max-w-6xl">
+    <div className="space-y-6 max-w-6xl">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
         <div>
@@ -94,7 +94,7 @@ function LeaderboardContent() {
             <select
               value={selectedCampaignId}
               onChange={(e) => setSelectedCampaignId(e.target.value)}
-              className="bg-[#0F141F] border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400"
+              className="bg-[#0F141F] border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
             >
               {campaigns.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -108,12 +108,12 @@ function LeaderboardContent() {
 
       {loadingCampaigns ? (
         <div className="py-16 text-center text-slate-500">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto text-purple-400 mb-2" />
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-cyan-400 mb-2" />
           <p className="text-xs">Loading assigned campaigns...</p>
         </div>
       ) : campaigns.length === 0 ? (
         <div className="p-8 rounded-2xl bg-[#0D131D] border border-slate-800 text-center space-y-4">
-          <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mx-auto">
+          <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center mx-auto">
             <Compass className="w-6 h-6" />
           </div>
           <h2 className="text-base font-bold text-white">No Assigned Campaigns</h2>
@@ -123,7 +123,7 @@ function LeaderboardContent() {
           <div className="pt-2">
             <Link
               href="/manager/redeem"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-500 hover:bg-purple-600 text-white font-bold text-xs transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-600 text-white font-bold text-xs transition-colors"
             >
               <Key className="w-4 h-4" />
               <span>Redeem Access Code</span>
@@ -136,7 +136,7 @@ function LeaderboardContent() {
           {selectedCampaign && (
             <div className="p-4 rounded-xl bg-[#0D131D] border border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400 font-bold flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-bold flex items-center justify-center shrink-0">
                   {(selectedCampaign.brand_name || selectedCampaign.name).charAt(0)}
                 </div>
                 <div>
@@ -148,11 +148,11 @@ function LeaderboardContent() {
               <div className="flex items-center gap-4 flex-wrap">
                 <div>
                   <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-semibold">CPM Rate</span>
-                  <span className="font-mono font-bold text-slate-200">${Number(selectedCampaign.cpm).toFixed(2)}</span>
+                  <span className="tabular font-bold text-slate-200">${Number(selectedCampaign.cpm).toFixed(2)}</span>
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-semibold">Payout Threshold</span>
-                  <span className="font-mono font-bold text-brand-cyan">
+                  <span className="tabular font-bold text-brand-cyan">
                     {minViewsForPayout > 0 ? `${minViewsForPayout.toLocaleString()} views` : "None"}
                   </span>
                 </div>
@@ -168,7 +168,7 @@ function LeaderboardContent() {
           <div className="p-6 rounded-2xl bg-[#0F141F] border border-slate-800">
             {loadingLeaderboard ? (
               <div className="py-12 text-center text-slate-500">
-                <Loader2 className="w-6 h-6 animate-spin mx-auto text-purple-400 mb-2" />
+                <Loader2 className="w-6 h-6 animate-spin mx-auto text-cyan-400 mb-2" />
                 <p className="text-xs">Calculating approved rankings...</p>
               </div>
             ) : leaderboard.length === 0 ? (
@@ -210,25 +210,25 @@ function LeaderboardContent() {
                         </td>
                         <td className="py-3 px-3">
                           <div className="flex items-center gap-2 text-white font-bold">
-                            <div className="w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-[10px] uppercase border border-purple-500/30">
+                            <div className="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-[10px] uppercase border border-cyan-500/30">
                               {item.username.charAt(0)}
                             </div>
                             <span>@{item.username}</span>
                           </div>
                         </td>
-                        <td className="py-3 px-3 text-right font-mono font-bold text-brand-cyan">
+                        <td className="py-3 px-3 text-right tabular font-bold text-brand-cyan">
                           {item.approvedViews.toLocaleString()}
                         </td>
-                        <td className="py-3 px-3 text-right font-mono text-slate-300">
+                        <td className="py-3 px-3 text-right tabular text-slate-300">
                           {(item.approvedLikes || 0).toLocaleString()}
                         </td>
-                        <td className="py-3 px-3 text-right font-mono text-slate-300">
+                        <td className="py-3 px-3 text-right tabular text-slate-300">
                           {(item.approvedComments || 0).toLocaleString()}
                         </td>
                         <td className="py-3 px-3 text-right font-mono text-slate-300">
                           {item.clipsCount}
                         </td>
-                        <td className="py-3 px-3 text-right font-mono font-bold text-emerald-400">
+                        <td className="py-3 px-3 text-right tabular font-bold text-emerald-400">
                           ${item.earnings.toFixed(2)}
                         </td>
                         <td className="py-3 px-3 text-center">
@@ -262,7 +262,7 @@ export default function ManagerLeaderboardPage() {
     <Suspense
       fallback={
         <div className="py-20 text-center text-slate-500">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto text-purple-400 mb-2" />
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-cyan-400 mb-2" />
           <p className="text-xs">Loading leaderboards...</p>
         </div>
       }

@@ -49,7 +49,7 @@ export async function POST(
       data: {
         user_id: user.id,
         type: "CAMPAIGN_JOINED",
-        title: "Joined Campaign! 🚀",
+        title: "You joined a campaign",
         message: `You have successfully joined "${campaign.name}". Connect your verified social accounts and start submitting clips!`,
       },
     });

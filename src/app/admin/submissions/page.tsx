@@ -146,7 +146,7 @@ function AdminSubmissionsContent() {
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+    <div className="space-y-6 max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
         <div>
@@ -271,23 +271,23 @@ function AdminSubmissionsContent() {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-4 text-xs text-slate-300">
-                    <div className="flex items-center gap-1.5 font-mono text-amber-400">
+                    <div className="flex items-center gap-1.5 tabular text-amber-400">
                       <Eye className="w-3.5 h-3.5" />
                       <span>{sub.currentViews.toLocaleString()} views</span>
                     </div>
-                    <div className="flex items-center gap-1.5 font-mono text-slate-400">
+                    <div className="flex items-center gap-1.5 tabular text-slate-400">
                       <Heart className="w-3.5 h-3.5 text-rose-400" />
                       <span>{sub.currentLikes.toLocaleString()}</span>
                     </div>
-                    <div className="flex items-center gap-1.5 font-mono text-slate-400">
+                    <div className="flex items-center gap-1.5 tabular text-slate-400">
                       <MessageSquare className="w-3.5 h-3.5 text-blue-400" />
                       <span>{sub.currentComments.toLocaleString()}</span>
                     </div>
-                    <div className="flex items-center gap-1.5 font-mono text-slate-400">
-                      <Share2 className="w-3.5 h-3.5 text-purple-400" />
+                    <div className="flex items-center gap-1.5 tabular text-slate-400">
+                      <Share2 className="w-3.5 h-3.5 text-cyan-400" />
                       <span>{sub.currentShares.toLocaleString()}</span>
                     </div>
-                    <div className="flex items-center gap-1.5 font-mono text-emerald-400 font-bold">
+                    <div className="flex items-center gap-1.5 tabular text-emerald-400 font-bold">
                       <span>${sub.currentEarnings.toFixed(2)} earnings</span>
                     </div>
                   </div>
@@ -347,7 +347,7 @@ function AdminSubmissionsContent() {
 
       {/* Review Modal */}
       {selectedSubmission && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
           <div className="bg-[#0F141F] border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 relative">
             <h3 className="text-base font-bold text-white flex items-center gap-2">
               {actionType === "APPROVE" ? (

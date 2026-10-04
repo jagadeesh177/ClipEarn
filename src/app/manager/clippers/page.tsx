@@ -130,7 +130,7 @@ export default function ManagerClippersPage() {
   };
 
   return (
-    <div className="space-y-8 animate-fadeIn">
+    <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
         <div>
@@ -280,7 +280,7 @@ export default function ManagerClippersPage() {
 
       {/* Suspension Modal with Required Reason */}
       {suspendingClipper && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
           <div className="bg-[#0F141F] border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
               <div className="flex items-center gap-2.5">
@@ -325,7 +325,7 @@ export default function ManagerClippersPage() {
                       key={preset}
                       type="button"
                       onClick={() => setSuspensionReason(preset)}
-                      className={`text-[11px] px-2.5 py-1 rounded-lg border transition-all text-left ${
+                      className={`text-[11px] px-2.5 py-1 rounded-lg border transition text-left ${
                         suspensionReason === preset
                           ? "bg-brand-cyan/20 border-brand-cyan text-brand-cyan font-bold"
                           : "bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700"

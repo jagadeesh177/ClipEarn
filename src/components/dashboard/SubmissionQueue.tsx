@@ -193,11 +193,11 @@ export function SubmissionQueue({
                       </a>
                     </td>
 
-                    <td className="py-3.5 px-3 text-right font-mono font-bold text-slate-200">
+                    <td className="py-3.5 px-3 text-right tabular font-bold text-slate-200">
                       {(sub.current_views || 0).toLocaleString()}
                     </td>
 
-                    <td className="py-3.5 px-3 text-right font-mono text-rose-400">
+                    <td className="py-3.5 px-3 text-right tabular text-rose-400">
                       {sub.current_likes != null ? sub.current_likes.toLocaleString() : "—"}
                     </td>
 
@@ -238,7 +238,7 @@ export function SubmissionQueue({
 
       {/* Review Modal */}
       {selectedSub && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
           <div className="bg-[#0F141F] border border-slate-800 rounded-2xl max-w-md w-full p-6 relative shadow-2xl">
             <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
               {actionType === "APPROVE" ? (

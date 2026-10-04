@@ -74,8 +74,8 @@ export async function GET(
 
     // Sheet 1: Client Executive Summary
     const summaryRows: any[][] = [
-      ["CLIPEARN — OFFICIAL CLIENT CAMPAIGN PERFORMANCE REPORT", ""],
-      ["Confidential — Prepared for Brand & Agency Review", ""],
+      ["ClipEarn campaign performance report", ""],
+      ["Confidential: prepared for brand and agency review", ""],
       ["", ""],
       ["CAMPAIGN PROFILE", ""],
       ["Client / Brand Name", campaign.brand_name],

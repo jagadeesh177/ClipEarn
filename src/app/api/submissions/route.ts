@@ -476,7 +476,7 @@ export async function POST(request: Request) {
         data: {
           user_id: user.id,
           type: "SUBMISSION_PENDING",
-          title: "Clip Submitted! ⏳",
+          title: "Clip submitted",
           message: `Your clip for "${campaign.name}" was submitted and is pending review by a campaign manager.`,
         },
       });

@@ -131,7 +131,7 @@ export async function GET(request: NextRequest) {
         data: {
           user_id: userId,
           type: "SOCIAL_VERIFIED",
-          title: "Instagram Account Verified! ✅",
+          title: "Instagram account verified",
           message: `Your Instagram account @${account.username} was verified successfully. You can now submit clips from this account!`,
         },
       });

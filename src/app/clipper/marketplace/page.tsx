@@ -75,7 +75,7 @@ export default function ClipperMarketplacePage() {
   ];
 
   return (
-    <div className="space-y-8 animate-fadeIn max-w-6xl mx-auto">
+    <div className="space-y-8 max-w-6xl mx-auto">
       {/* Header */}
       <div className="pb-4 border-b border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -99,7 +99,7 @@ export default function ClipperMarketplacePage() {
         {categories.map((c, i) => (
           <button
             key={c.id}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
               i === 0
                 ? "bg-brand-cyan text-slate-950 shadow-md shadow-cyan-500/25"
                 : "bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800"
@@ -115,7 +115,7 @@ export default function ClipperMarketplacePage() {
         {items.map((item) => (
           <div
             key={item.id}
-            className="rounded-2xl bg-[#0D131D] border border-slate-800/80 p-5 hover:border-slate-700 transition-all flex flex-col justify-between group"
+            className="rounded-2xl bg-[#0D131D] border border-slate-800/80 p-5 hover:border-slate-700 transition flex flex-col justify-between group"
           >
             <div>
               <div className="flex items-start justify-between gap-3">

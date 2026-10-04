@@ -1,9 +1,19 @@
 import type { Metadata } from "next";
+import { Archivo } from "next/font/google";
 import "./globals.css";
 
+// Self-hosted variable Archivo with the width axis: expanded cut for display,
+// normal width for body copy.
+const archivo = Archivo({
+  subsets: ["latin"],
+  axes: ["wdth"],
+  variable: "--font-sans",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "ClipEarn — Get Paid to Post Short-Form Clips",
-  description: "The premier payout and campaign platform for short-form video clippers and clip channels.",
+  title: "ClipEarn: get paid for the views your clips earn",
+  description: "Brands pay per 1,000 verified views. Clippers post short-form clips on their own accounts and get paid for what they earn.",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
@@ -26,7 +36,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className="dark">
+    <html lang="en" suppressHydrationWarning className={`dark ${archivo.variable}`}>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -40,7 +50,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="bg-[#070A0F] text-slate-100 min-h-screen antialiased selection:bg-brand-cyan/20 selection:text-brand-cyan">
+      <body className="bg-[var(--ink-0)] text-[var(--fg)] min-h-screen font-sans antialiased">
         {children}
       </body>
     </html>

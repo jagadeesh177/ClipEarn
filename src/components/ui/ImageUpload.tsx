@@ -175,7 +175,7 @@ export function ImageUpload({
               onDragLeave={() => setDragOver(false)}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              className={`cursor-pointer rounded-2xl border-2 border-dashed p-6 text-center transition-all flex flex-col items-center justify-center gap-2.5 ${
+              className={`cursor-pointer rounded-2xl border-2 border-dashed p-6 text-center transition flex flex-col items-center justify-center gap-2.5 ${
                 dragOver
                   ? "border-brand-cyan bg-brand-cyan/10"
                   : "border-slate-800 hover:border-slate-700 bg-slate-900/60 hover:bg-slate-900"

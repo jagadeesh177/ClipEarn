@@ -41,7 +41,7 @@ export default function AdminSettingsPage() {
   };
 
   return (
-    <div className="space-y-8 animate-fadeIn max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
+    <div className="space-y-8 max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
         <div>
@@ -149,13 +149,13 @@ export default function AdminSettingsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
           <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
             <span className="text-xs font-semibold text-slate-400 block mb-1">Standard Default CPM</span>
-            <span className="text-xl font-bold text-white font-mono">$1.00 USD</span>
+            <span className="text-xl font-bold text-white tabular">$1.00 USD</span>
             <span className="text-[11px] text-slate-500 block mt-1">Configurable per campaign during creation</span>
           </div>
 
           <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
             <span className="text-xs font-semibold text-slate-400 block mb-1">Default Payout View Threshold</span>
-            <span className="text-xl font-bold text-white font-mono">100,000 views</span>
+            <span className="text-xl font-bold text-white tabular">100,000 views</span>
             <span className="text-[11px] text-slate-500 block mt-1">Clippers qualify once approved views reach minimum</span>
           </div>
         </div>
@@ -164,7 +164,7 @@ export default function AdminSettingsPage() {
       {/* Production Canonical URLs */}
       <div className="rounded-2xl bg-[#0F141F] border border-slate-800 p-6 space-y-4">
         <div className="flex items-center gap-2">
-          <Globe className="w-5 h-5 text-purple-400" />
+          <Globe className="w-5 h-5 text-cyan-400" />
           <h2 className="text-base font-bold text-white">Production Portal Route Architecture</h2>
         </div>
         <div className="space-y-2 text-xs font-mono">
@@ -173,7 +173,7 @@ export default function AdminSettingsPage() {
             <span className="text-slate-500">Administrator Console</span>
           </div>
           <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between">
-            <span className="text-purple-400 font-semibold">https://clipearn.vercel.app/manager/dashboard</span>
+            <span className="text-cyan-400 font-semibold">https://clipearn.vercel.app/manager/dashboard</span>
             <span className="text-slate-500">Campaign Manager Portal</span>
           </div>
           <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between">

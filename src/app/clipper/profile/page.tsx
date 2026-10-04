@@ -223,7 +223,7 @@ function ProfileAndAccountsContent() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-fadeIn">
+    <div className="max-w-4xl mx-auto space-y-8">
       {/* Page Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -240,7 +240,7 @@ function ProfileAndAccountsContent() {
             setAddError("");
             setIsAddModalOpen(true);
           }}
-          className="px-4 py-2.5 rounded-xl bg-brand-cyan hover:bg-[#1cf7fd] text-black font-bold text-xs sm:text-sm transition-all shadow-[0_0_20px_-5px_rgba(28,247,253,0.3)] flex items-center justify-center gap-2"
+          className="px-4 py-2.5 rounded-xl bg-brand-cyan hover:bg-[#8afcfe] text-black font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2"
         >
           <Plus className="w-4 h-4 text-black stroke-[2.5]" />
           <span>Connect Social Account</span>
@@ -276,7 +276,7 @@ function ProfileAndAccountsContent() {
       {/* Clipper Profile Card */}
       <div className="rounded-2xl bg-[#0F141F] border border-slate-800 p-6 sm:p-8">
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-brand-cyan to-brand-emerald p-[2px] shrink-0">
+          <div className="w-20 h-20 rounded-2xl bg-brand-cyan p-[2px] shrink-0">
             <div className="w-full h-full rounded-2xl bg-[#090E17] flex items-center justify-center text-2xl font-black text-white">
               {profile?.avatar_url ? (
                 <img
@@ -415,7 +415,7 @@ function ProfileAndAccountsContent() {
                         {acc.platform === "INSTAGRAM" && (
                           <a
                             href={`/api/social-accounts/oauth/instagram?accountId=${acc.id}`}
-                            className="py-2 px-3 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 font-bold text-xs flex items-center justify-center gap-1.5"
+                            className="py-2 px-3 rounded-xl bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/30 font-bold text-xs flex items-center justify-center gap-1.5"
                             title="Authorize with Instagram"
                           >
                             <span>OAuth</span>
@@ -433,7 +433,7 @@ function ProfileAndAccountsContent() {
 
       {/* Connect Account Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
           <div className="bg-[#0F141F] border border-slate-800 rounded-2xl max-w-md w-full p-6 relative">
             <h3 className="text-xl font-bold text-white mb-2">Connect Social Account</h3>
             <p className="text-xs text-slate-400 mb-6">
@@ -489,7 +489,7 @@ function ProfileAndAccountsContent() {
                 <button
                   type="submit"
                   disabled={addLoading}
-                  className="px-5 py-2.5 rounded-xl bg-brand-cyan text-black font-bold flex items-center gap-2 hover:opacity-90"
+                  className="px-5 py-2.5 rounded-xl press bg-brand-cyan text-black font-bold flex items-center gap-2 hover:bg-[#8afcfe]"
                 >
                   {addLoading ? <Loader2 className="w-4 h-4 animate-spin text-black" /> : null}
                   <span>Next: Verify Ownership &rarr;</span>
@@ -502,7 +502,7 @@ function ProfileAndAccountsContent() {
 
       {/* Verification Instructions Modal */}
       {verifyingAccount && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
           <div className="bg-[#0F141F] border border-slate-800 rounded-2xl max-w-lg w-full p-6 relative">
             <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
               <ShieldCheck className="w-5 h-5 text-brand-cyan" />
@@ -570,7 +570,7 @@ function ProfileAndAccountsContent() {
                 type="button"
                 onClick={() => handleVerifyBio()}
                 disabled={checkingBio}
-                className="px-6 py-2.5 rounded-xl bg-brand-cyan text-black font-bold text-xs flex items-center gap-2 hover:opacity-90 disabled:opacity-50"
+                className="px-6 py-2.5 rounded-xl press bg-brand-cyan text-black font-bold text-xs flex items-center gap-2 hover:bg-[#8afcfe] disabled:opacity-50"
               >
                 {checkingBio ? <Loader2 className="w-4 h-4 animate-spin text-black" /> : null}
                 <span>Verify Now</span>
